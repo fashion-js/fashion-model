@@ -70,6 +70,10 @@ Enum.create = function(config) {
 			return (this === enumValue);
 		};
 		
+		Type.prototype.value = function() {
+			return this.data;
+		};
+		
 		Type[value] = Type[name] = enumValue;
 	});
 	

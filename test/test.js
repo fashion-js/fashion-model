@@ -366,6 +366,9 @@ describe('Model' , function() {
 			values: ['red', 'green', 'blue']
 		});
 		
+		expect(Color.RED.clean()).to.equal('red');
+		expect(Color.RED.value()).to.equal('red');
+		
         var ColorPalette = Model.extend({
 			attributes: {
 				colors: [Color]
@@ -390,5 +393,42 @@ describe('Model' , function() {
 		expect(colorPalette.getColor(0)).to.equal(Color.RED);
 		expect(colorPalette.getColor(1)).to.equal(Color.GREEN);
 		expect(colorPalette.getColor(2)).to.equal(Color.BLUE);
+    });
+	
+	it('should support "singular" property for array type', function() {
+		
+		
+        var Team = Model.extend({
+			attributes: {
+				people: {
+					type: [Member],
+					singular: 'person'
+				}
+			}
+		});
+		
+		var team = new Team({
+			people: [
+				{
+					displayName: 'John'
+				},
+				{
+					displayName: 'Jane'
+				}
+			]
+		});
+		
+		var teamMembers = [];
+		team.forEachPerson(function(person, index) {
+			expect(person.constructor).to.equal(Member);
+			teamMembers[index] = person;
+		});
+		
+		expect(teamMembers.length).to.equal(2);
+		expect(teamMembers[0].getDisplayName()).to.equal('John');
+		expect(teamMembers[1].getDisplayName()).to.equal('Jane');
+		
+		expect(team.getPerson(0).getDisplayName()).to.equal('John');
+		expect(team.getPerson(1).getDisplayName()).to.equal('Jane');
     });
 });
