@@ -12,7 +12,7 @@ The `typed-model` module provides utility code for defining data model types.
 These data model types provide helpful accessor methods (getters, setters,
 for each methods, etc.) for the attributes defined for the model type.
 
-These models can be thought of as a "schema" that provides extra safeguards
+These models can be thought of as a "schema" that provide extra safeguards
 for working with objects. These model types are not tied to a specific
 data storage backend so you can use these in the browser or on the
 server-side with very little overhead. This approach to defining your
