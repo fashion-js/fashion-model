@@ -112,7 +112,7 @@ assert(address.getCity() === 'New York')
 
 **Note:** The getter function name will be always in the form
 `get<AttributeName>`. The setter function name will be always in the form
-`set<AttributeName>`. These rules **do not* change for the boolean type.
+`set<AttributeName>`. These rules **do not** change for attributes with Boolean type.
 
 ### Inheritance
 
@@ -185,6 +185,7 @@ var Person = Entity.extend({
 			_updateDisplayName(this);
 		}
 	},
+	// displayName is updated whenever firstName or lastName change
 	displayName: {
 		type: String,
 		persist: false
@@ -215,12 +216,13 @@ wrapped as `SomeType`. If `obj` is already `SomeType` then `obj`
 will simply be returned.
 
 Note, an unwrapped object that has been previously wrapped will
-have a `$clean` property inside of it that stores a cached instance
+have a `$model` property inside of it that stores a cached value
 of the actual model instance. This allows for very efficient
 wrapping and unwrapping without creating a lot of new objects
 in the heap. If you want to ensure that your model is not
 "polluted" with this metadata then use `obj.clean()` or
-`Model.clean(obj)`.
+`Model.clean(obj)` which will create a cloned version of `obj`
+without any extra metadata or non-persisted attributes.
 
 **Examples:**
 ```javascript
