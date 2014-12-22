@@ -317,7 +317,7 @@ var ObjectId = Model.extend({
 var Entity = Model.extend({
 	id: {
 		// ObjectId is a type that we use just to make sure that the value
-		// is automatically converted the type that we need for storage
+		// is automatically converted to the type that we need for storage
 		type: ObjectId,
 		
 		// MongoDB data storage expects a document to store its
