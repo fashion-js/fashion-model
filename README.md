@@ -88,8 +88,8 @@ address = Address.wrap({
 ```
 
 ### Getters and Setters
-Each attribute in defined for the model, will result in a getter and
-setter method being added to the Model prototype.
+A getter and setter will be generated on the prototype,
+for each attribute defined in the model.
 
 **For example:**
 ```javascript
