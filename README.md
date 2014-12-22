@@ -114,6 +114,27 @@ assert(address.getCity() === 'New York')
 `get<AttributeName>`. The setter function name will be always in the form
 `set<AttributeName>`. These rules **do not** change for attributes with Boolean type.
 
+### Model prototype
+The `Model` types are created via standard prototypical inheritance.
+If you wish to conveniently add other methods or properties to the
+prototype then use use the `prototype` property in the `Model`
+configuration.
+
+**For example:**
+```javascript
+var Person = Entity.extend({
+    attributes: {
+		firstName: String,
+		lastName: String
+	},
+	prototype: {
+		getDisplayName: function() {
+			return this.getFirstName() + ' ' + this.getLastName();
+		}
+	}
+});
+```
+
 ### Inheritance
 
 **Define your base Entity type:**
