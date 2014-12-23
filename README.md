@@ -421,11 +421,12 @@ var colorPalette = new ColorPalette({
 var colors = [];
 
 // A forEach<Item> function is automatically created
+// for attributes of type Array.
 // The name of the forEach function will constructed
 // using the singular form of the attribute name.
 // If the singular form cannot be inferred then you can
-// a "singular" property to the attribute config that
-// helps model generator pick the right name.
+// add a "singular" property to the attribute config that
+// helps the model generator pick the right name.
 colorPalette.forEachColor(function(color, index) {
 	expect(color.constructor).to.equal(Color);
 	colors[index] = color;
