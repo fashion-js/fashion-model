@@ -436,7 +436,7 @@ colorPalette.forEachColor(function(color, index) {
 assert(colorPalette.getColor(0) === Color.RED);
 ```
 
-**Providing hints for the "singular" form of an Array attribute name:
+**Providing hints for the "singular" form of an Array attribute name:**
 ```javascript
 var Person = Entity.extend({
     displayName: String
