@@ -275,7 +275,7 @@ assert(addressWrapped === address);
 ### Clean
 
 `Model.clean(obj)` should be used to return a clone of an object in which
-all non-persisted attributes and metadata has been removed.
+all non-persisted attributes and metadata have been removed.
 
 ```javascript
 var address = new Address({
