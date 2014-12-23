@@ -228,7 +228,7 @@ assert(personObj.displayName === undefined);
 ### Wrap/Unwrap
 
 `Model.unwrap(obj)` can be safely called with any object. If the
-given is `obj` is a model then it will be unwrapped via `obj.unwrap()`.
+given `obj` is a model then it will be unwrapped via `obj.unwrap()`.
 If the given `obj` is not a model then the `obj` will simply be
 returned.
 
