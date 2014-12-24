@@ -59,19 +59,20 @@ Enum.create = function(config) {
 		};
 	}
 	
-	var values = config.values;
+	var values = Type.values = config.values;
 	
+	Type.prototype.value = Type.prototype.toString = function() {
+		return this.data;
+	};
 	
-	values.forEach(function(value) {
+	values.forEach(function(value, index) {
 		var name = Enum.toConstantName(value);
 		var enumValue = new Type(value);
 		
+		values[index] = enumValue;
+		
 		Type.prototype['is' + Enum.toTitleCase(name)] = function() {
 			return (this === enumValue);
-		};
-		
-		Type.prototype.value = function() {
-			return this.data;
 		};
 		
 		Type[value] = Type[name] = enumValue;

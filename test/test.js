@@ -368,6 +368,7 @@ describe('Model' , function() {
 		
 		expect(Color.RED.clean()).to.equal('red');
 		expect(Color.RED.value()).to.equal('red');
+		expect(Color.RED.toString()).to.equal('red');
 		
         var ColorPalette = Model.extend({
 			attributes: {
