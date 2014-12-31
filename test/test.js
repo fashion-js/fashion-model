@@ -5,6 +5,7 @@ var expect = require('chai').expect;
 
 var Model = require('../Model');
 var Enum = require('../Enum');
+var DateType = require('../Date');
 
 var Gender = Enum.create({
 	values: ['M', 'F'],
@@ -79,6 +80,13 @@ describe('Model' , function() {
     });
     
     it('should handle Date type', function() {
+		var date = DateType.coerce('1980-02-01T05:00:00.000Z');
+		expect(date).to.deep.equal(new Date(1980, 1, 1));
+		
+		expect(function() {
+			DateType.coerce(true);
+		}).to.throw();
+		
         var Person = Model.extend({
             attributes: {
                 dateOfBirth: Date
@@ -300,6 +308,8 @@ describe('Model' , function() {
     });
     
     it('should allow enum type models', function() {
+		expect(Gender.wrap('F').isF()).to.equal(true);
+		
         var Person = Model.extend({
             attributes: {
                 gender: Gender
@@ -312,8 +322,6 @@ describe('Model' , function() {
         
         expect(Gender.M.data).to.equal('M');
         expect(Gender.F.data).to.equal('F');
-        
-        expect(Gender.wrap('F').isF()).to.equal(true);
         
         expect(Gender.M.isM()).to.equal(true);
         expect(Gender.M.isF()).to.equal(false);
@@ -431,5 +439,67 @@ describe('Model' , function() {
 		
 		expect(team.getPerson(0).getDisplayName()).to.equal('John');
 		expect(team.getPerson(1).getDisplayName()).to.equal('Jane');
+    });
+	
+	it('should handle enum conversion errors', function() {
+		var Color = Enum.create({
+			values: ['red', 'green', 'blue']
+		});
+		
+		expect(function() {
+			try {
+				Color.coerce('yellow');
+			} catch(e) {
+				expect(e.source).to.equal(Model);
+				throw e;
+			}
+		}).to.throw(Error);
+		
+		
+		
+		var errors;
+		
+		errors = [];
+		// "yellow" is not a valid color
+		Color.coerce('yellow', errors);
+		expect(errors.length).to.equal(1);
+		
+		var Shirt = Model.extend({
+			attributes: {
+				color: Color
+			}
+		});
+		
+		var Person = Model.extend({
+			attributes: {
+				shirt: Shirt
+			}
+		});
+		
+		errors = [];
+		var person = new Person({
+			shirt: {
+				// "pink" is not a valid color
+				color: 'pink'
+			}
+		}, errors);
+		
+		
+		expect(errors.length).to.equal(1);
+		
+		errors = [];
+		
+		// Manually add unrecognized attribute
+		person.data.blah = true;
+		
+		var rawPerson = person.clean(errors);
+		expect(errors.length).to.equal(1);
+		
+		// color will be undefined since it is invalid
+		expect(rawPerson).to.deep.equal({
+			shirt: {
+				color: undefined
+			}
+		});
     });
 });

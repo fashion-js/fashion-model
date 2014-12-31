@@ -36,17 +36,9 @@ var NORMALIZE_UPPER_CASE = function(str) {
 };
 
 Enum.create = function(config) {
-	var Type = Model.extend(config);
 	
-	var normalize;
-	if (config.autoUpperCase) {
-		normalize = NORMALIZE_UPPER_CASE;
-	} else if (config.autoLowerCase) {
-		normalize = NORMALIZE_LOWER_CASE;
-	}
-	
-	if (!Type.coerce) {
-		Type.coerce = function(value) {
+	if (!config.coerce) {
+		config.coerce = function(value, attribute, errors) {
 			if ((value == null) || (value.constructor === Type)) {
 				return value;
 			}
@@ -55,8 +47,21 @@ Enum.create = function(config) {
 				value = normalize(value);
 			}
 			
-			return Type[value];
+			var enumValue = Type[value];
+			if (enumValue === undefined) {
+				this.coercionError(value, attribute, errors);
+			}
+			return enumValue;
 		};
+	}
+	
+	var Type = Model.extend(config);
+	
+	var normalize;
+	if (config.autoUpperCase) {
+		normalize = NORMALIZE_UPPER_CASE;
+	} else if (config.autoLowerCase) {
+		normalize = NORMALIZE_LOWER_CASE;
 	}
 	
 	var values = Type.values = config.values;

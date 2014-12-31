@@ -2,6 +2,7 @@ var DateType;
 
 var inherit = require('raptor-util/inherit');
 var Model;
+var EMPTY_ATTRIBUTES = {};
 
 function _get(model, attribute) {
     var getter = attribute.getGetter();
@@ -15,7 +16,7 @@ function _get(model, attribute) {
     }
     
     var type = attribute.getType();
-    if (type.Model && type.isWrapped()) {
+    if (Model.isModelType(type) && type.isWrapped()) {
         if (type.isAutoUnwrapped()) {
             // auto unwrap
             value = Model.unwrap(value);
@@ -28,7 +29,7 @@ function _get(model, attribute) {
     return value;
 }
 
-function _set(model, attribute, value) {
+function _set(model, attribute, value, errors) {
     var type = attribute.getType();
     
     if (Model.isModel(value) && (value instanceof type)) {
@@ -36,12 +37,17 @@ function _set(model, attribute, value) {
         // store raw data in this model's data
         value = value.data;
     } else if (type.coerce) {
-        value = type.coerce(value, attribute);
+        value = type.coerce(value, attribute, errors);
     }
     
     var setter = attribute.getSetter();
     if (setter) {
         return setter.call(model, attribute.getProperty(), value, attribute);
+    }
+    
+    if ((value != null) && Model.isModelType(type) && type.isWrapped()) {
+        // recursively call setters
+        type.wrap(value, errors);
     }
     
     model.data[attribute.getProperty()] = Model.unwrap(value);
@@ -101,9 +107,9 @@ function _initialUpperCase(str) {
     return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
-module.exports = Model = function Model(data) {
+module.exports = Model = function Model(data, errors) {
     if (this.constructor.constructable === false) {
-        throw new Error('Instances of this type cannot be created');
+        throw new Error('Instances of this type cannot be created. data: ' + data);
     }
     
     if (this.constructor.hasAttributes()) {
@@ -111,10 +117,12 @@ module.exports = Model = function Model(data) {
         if (data != null) {
             // use setters to make sure values get properly coerced
             for (var key in data) {
-                if (data.hasOwnProperty(key)) {
+                if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
                     var attribute = this.getAttribute(key);
                     if (attribute) {
-                        _set(this, attribute, data[key]);
+                        _set(this, attribute, data[key], errors);
+                    } else if (errors) {
+                        errors.push('Unrecognized attribute: ' + key);
                     }
                 }
             }
@@ -145,12 +153,36 @@ Model.unwrap = function(obj) {
     return obj;
 };
 
-Model.clean = function(obj) {
+Model.clean = function(obj, errors) {
     if ((obj = Model.unwrap(obj)) == null) {
         return obj;
     }
     
-    return obj.$model ? obj.$model.clean() : obj;
+    return obj.$model ? obj.$model.clean(errors) : obj;
+};
+
+Model.hasAttributes = function() {
+    return this.attributes !== EMPTY_ATTRIBUTES;
+};
+
+Model.preventConstruction = function() {
+    this.constructable = false;
+};
+
+Model.coercionError = function(value, attribute, errors) {
+    var message = '';
+    if (attribute) {
+        message += attribute.getName() + ': ';
+    }
+    message += 'Invalid value: ' + value;
+    
+    if (errors) {
+        errors.push(message);
+    } else {
+        var err = new Error(message);
+        err.source = Model;
+        throw err;
+    }
 };
 
 function _jsonStringifyReplacer(key, value) {
@@ -181,17 +213,19 @@ Model_proto.unwrap = function() {
  * Creates a deep clone of the data stored in this object with all temporary
  * and non-persisted values removed.
  */
-Model_proto.clean = function() {
+Model_proto.clean = function(errors) {
     var data = this.data;
     
     if (this.constructor.hasAttributes()) {
         var clone = {};
         for (var key in data) {
-            if (data.hasOwnProperty(key)) {
+            if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
                 var attribute = this.getAttribute(key);
                 var value = data[key];
                 if (attribute && (attribute.isPersisted())) {
-                    clone[key] = Model.clean(value);
+                    clone[key] = Model.clean(value, errors);
+                } else if (errors) {
+                    errors.push('Unrecognized attribute: ' + key);
                 }
             }
         }
@@ -201,13 +235,12 @@ Model_proto.clean = function() {
     }
 };
 
-
 Model_proto.getAttribute = function(attributeName) {
     return this.constructor.attributes[attributeName];
 };
 
-Model_proto.set = function(attribute, value) {
-    _set(this, this.getAttribute(attribute), value);
+Model_proto.set = function(attribute, value, errors) {
+    _set(this, this.getAttribute(attribute), value, errors);
 };
 
 Model_proto.get = function(attribute) {
@@ -297,16 +330,6 @@ function _toAttribute(name, attributeConfig) {
     return new Attribute(attributeConfig);
 }
 
-var EMPTY_ATTRIBUTES = {};
-
-function Model_hasAttributes() {
-    return this.attributes !== EMPTY_ATTRIBUTES;
-}
-
-function Model_preventConstruction() {
-    this.constructable = false;
-}
-
 function _extend(Base, config) {
     config = config || {};
     
@@ -314,6 +337,7 @@ function _extend(Base, config) {
     var wrap = config.wrap;
     var unwrap = config.unwrap;
     var autoUnwrap = !!config.autoUnwrap;
+    var coerce = config.coerce;
     
     function Derived() {
         Derived.$super.apply(this, arguments);
@@ -322,17 +346,31 @@ function _extend(Base, config) {
         }
     }
 
-    Derived.preventConstruction = Model_preventConstruction;
-    Derived.hasAttributes = Model_hasAttributes;
+    // Selectively copy properties from Model to Derived
+    [
+        'hasAttributes',
+        'preventConstruction',
+        'unwrap',
+        'coercionError'
+    ].forEach(function(property) {
+        Derived[property] = Model[property];
+    });
     
     // Store reference to Model
     Derived.Model = Model;
     
-    Derived.coerce = config.coerce;
-
-    // put static unwrap method in the Derived class
-    Derived.unwrap = Model.unwrap;
-
+    if (coerce) {
+        Derived.coerce = function(value, attribute, errors) {
+            // Simple proxy for the coerce function to fix arguments
+            if (Array.isArray(attribute)) {
+                errors = arguments[1];
+                attribute = null;
+            }
+            
+            return coerce.call(Derived, value, attribute, errors);
+        };
+    }
+    
     // provide method to extend this model
     Derived.extend = function(config) {
         return _extend(Derived, config);
@@ -350,7 +388,7 @@ function _extend(Base, config) {
     if (wrap && wrap.constructor === Function) {
         factory = wrap;
     } else {
-        factory = function(data) {
+        factory = function(data, errors) {
             if (arguments.length === 0) {
                 return new Derived();
             }
@@ -359,8 +397,12 @@ function _extend(Base, config) {
                 return data;
             }
             
-            if (Derived.coerce) {
-                data = Derived.coerce(data);
+            if (coerce) {
+                data = coerce.call(Derived, data, null /* attribute */, errors);
+            }
+            
+            if (data == null) {
+                return data;
             }
             
             if (Model.isModel(data)) {
@@ -383,7 +425,7 @@ function _extend(Base, config) {
             
             // return existing model or create a new model
             // NOTE: Model constructor will store $model in data
-            return (data && data.$model) || new Derived(data);
+            return (data && data.$model) || new Derived(data, errors);
         };
     }
     
