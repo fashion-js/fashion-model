@@ -153,16 +153,44 @@ Model.unwrap = function(obj) {
     return obj;
 };
 
-Model.clean = function(obj, errors) {
+function _clean(obj, errors) {
     if ((obj = Model.unwrap(obj)) == null) {
         return obj;
     }
-    
     return obj.$model ? obj.$model.clean(errors) : obj;
+}
+
+Model.clean = function(obj, errors) {
+    if (Array.isArray(obj)) {
+        var result = new Array(obj.length);
+        var i = obj.length;
+        while(--i >= 0) {
+            result[i] = _clean(obj[i], errors);
+        }
+        return result;
+    } else {
+        return _clean(obj, errors);
+    }
 };
 
 Model.hasAttributes = function() {
     return this.attributes !== EMPTY_ATTRIBUTES;
+};
+
+Model.forEachAttribute = function(callback) {
+    var proto = this.Attributes.prototype;
+    do {
+        for (var key in proto) {
+            if (proto.hasOwnProperty(key)) {
+                var attribute = proto[key];
+                if (attribute.constructor === Attribute) {
+                    if (key == attribute.getName()) {
+                        callback(attribute);
+                    }
+                }
+            }
+        }
+    } while((proto = Object.getPrototypeOf(proto)) != null);
 };
 
 Model.preventConstruction = function() {
@@ -351,7 +379,8 @@ function _extend(Base, config) {
         'hasAttributes',
         'preventConstruction',
         'unwrap',
-        'coercionError'
+        'coercionError',
+        'forEachAttribute'
     ].forEach(function(property) {
         Derived[property] = Model[property];
     });

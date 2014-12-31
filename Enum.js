@@ -3,7 +3,7 @@ var constantRenameRegex = /([a-z])([A-Z])|(\-)/g;
 var toCamelCaseRegex = /([a-z])[_\-]([a-z])/g;
 
 var Model = require('./Model');
-var Enum = exports;
+var Enum = module.exports = Model.extend({});
 
 Enum.toConstantName = function(str) {
 	return str.replace(constantRenameRegex, function(match, lowerCh, upperCh, specialCh) {
@@ -55,7 +55,7 @@ Enum.create = function(config) {
 		};
 	}
 	
-	var Type = Model.extend(config);
+	var Type = Enum.extend(config);
 	
 	var normalize;
 	if (config.autoUpperCase) {
