@@ -197,6 +197,16 @@ Model.preventConstruction = function() {
     this.constructable = false;
 };
 
+Model.isCompatibleWith = function(other) {
+    var cur = this;
+    do {
+        if (cur === other) {
+            return true;
+        }
+    } while((cur = (cur.$super)));
+    return false;
+};
+
 Model.coercionError = function(value, attribute, errors) {
     var message = '';
     if (attribute) {
@@ -380,7 +390,8 @@ function _extend(Base, config) {
         'preventConstruction',
         'unwrap',
         'coercionError',
-        'forEachAttribute'
+        'forEachAttribute',
+        'isCompatibleWith'
     ].forEach(function(property) {
         Derived[property] = Model[property];
     });
