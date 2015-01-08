@@ -184,7 +184,7 @@ Model.forEachAttribute = function(callback) {
             if (proto.hasOwnProperty(key)) {
                 var attribute = proto[key];
                 if (attribute.constructor === Attribute) {
-                    if (key == attribute.getName()) {
+                    if (key === attribute.getName()) {
                         callback(attribute);
                     }
                 }
@@ -368,6 +368,24 @@ function _toAttribute(name, attributeConfig) {
     return new Attribute(attributeConfig);
 }
 
+var SPECIAL_PROPERTIES = {
+    init: 1,
+    wrap: 1,
+    unwrap: 1,
+    autoUnwrap: 1,
+    coerce: 1,
+    attributes: 1,
+    prototype: 1
+};
+
+function _copyNonSpecialPropertiesToType(config, Type) {
+    for (var key in config) {
+        if (config.hasOwnProperty(key) && !SPECIAL_PROPERTIES[key]) {
+            Type[key] = config[key];
+        }
+    }
+}
+
 function _extend(Base, config) {
     config = config || {};
     
@@ -376,6 +394,8 @@ function _extend(Base, config) {
     var unwrap = config.unwrap;
     var autoUnwrap = !!config.autoUnwrap;
     var coerce = config.coerce;
+    var attributes = config.attributes;
+    var prototype = config.prototype;
     
     function Derived() {
         Derived.$super.apply(this, arguments);
@@ -383,6 +403,8 @@ function _extend(Base, config) {
             init.apply(this, arguments);
         }
     }
+    
+    _copyNonSpecialPropertiesToType(config, Derived);
 
     // Selectively copy properties from Model to Derived
     [
@@ -450,6 +472,7 @@ function _extend(Base, config) {
                     return data;
                 } else {
                     data = Model.unwrap(data);
+                    delete data.$model;
                 }
             }
             
@@ -481,7 +504,7 @@ function _extend(Base, config) {
     }
     
     var attributeNames;
-    if (config.attributes && (attributeNames = Object.keys(config.attributes)).length > 0) {
+    if (attributes && (attributeNames = Object.keys(attributes)).length > 0) {
         // Use prototype chaining to create attribute map
         Derived.Attributes = function() {};
         
@@ -489,10 +512,10 @@ function _extend(Base, config) {
             inherit(Derived.Attributes, Base.Attributes);
         }
         
-        if (config.attributes) {
+        if (attributes) {
             var attributesPrototype = Derived.Attributes.prototype;
             attributeNames.forEach(function(name) {
-                var attribute = _toAttribute(name, config.attributes[name]);
+                var attribute = _toAttribute(name, attributes[name]);
                 
                 var property = attribute.getProperty();
                 
@@ -552,9 +575,9 @@ function _extend(Base, config) {
         Derived.attributes = Base.attributes || EMPTY_ATTRIBUTES;
     }
 
-    if (config.prototype) {
-        Object.keys(config.prototype).forEach(function(key) {
-            classPrototype[key] = config.prototype[key];
+    if (prototype) {
+        Object.keys(prototype).forEach(function(key) {
+            classPrototype[key] = prototype[key];
         });
     }
 
