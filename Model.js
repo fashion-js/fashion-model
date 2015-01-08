@@ -157,7 +157,12 @@ function _clean(obj, errors) {
     if ((obj = Model.unwrap(obj)) == null) {
         return obj;
     }
-    return obj.$model ? obj.$model.clean(errors) : obj;
+    
+    if (obj.$model) {
+        return obj.$model.clean(errors);
+    }
+    
+    return obj.toJSON ? obj.toJSON() : obj;
 }
 
 Model.clean = function(obj, errors) {
