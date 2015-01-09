@@ -1,4 +1,7 @@
 var DateType;
+var BooleanType;
+var NumberType;
+var StringType;
 
 var inherit = require('raptor-util/inherit');
 var Model;
@@ -360,6 +363,15 @@ function _toAttribute(name, attributeConfig) {
             case Date:
                 attributeConfig.type = DateType;
                 break;
+            case Number:
+                attributeConfig.type = NumberType;
+                break;
+            case Boolean:
+                attributeConfig.type = BooleanType;
+                break;
+            case String:
+                attributeConfig.type = StringType;
+                break;
             }
         }
     } else {
@@ -595,3 +607,6 @@ Model.extend = function(config) {
 
 
 DateType = require('./Date');
+BooleanType = require('./Boolean');
+NumberType = require('./Number');
+StringType = require('./String');

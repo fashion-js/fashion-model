@@ -502,4 +502,72 @@ describe('Model' , function() {
 			}
 		});
     });
+	
+	it('should coerce Number primitive type', function() {
+		var Person = Model.extend({
+			attributes: {
+				age: Number
+			}
+		});
+		
+		var person = new Person();
+		person.setAge('10');
+		expect(person.getAge()).to.equal(10);
+		
+		expect(function() {
+			person.setAge('asdfsadf');
+		}).to.throw(Error);
+	});
+	
+	it('should coerce Boolean primitive type', function() {
+		var Person = Model.extend({
+			attributes: {
+				happy: Boolean
+			}
+		});
+		
+		var person = new Person();
+		person.setHappy(1);
+		expect(person.getHappy()).to.equal(true);
+		
+		person.setHappy(0);
+		expect(person.getHappy()).to.equal(false);
+		
+		person.setHappy();
+		expect(person.getHappy()).to.equal(undefined);
+		
+		person.setHappy(null);
+		expect(person.getHappy()).to.equal(null);
+	});
+	
+	it('should coerce String primitive type', function() {
+		var Person = Model.extend({
+			attributes: {
+				message: String
+			}
+		});
+		
+		var person = new Person();
+		
+		person.setMessage(true);
+		expect(person.getMessage()).to.equal('true');
+		
+		person.setMessage('Hello');
+		expect(person.getMessage()).to.equal('Hello');
+		
+		person.setMessage(new Date(0));
+		expect(person.getMessage()).to.equal('Wed Dec 31 1969 19:00:00 GMT-0500 (EST)');
+		
+		person.setMessage(42);
+		expect(person.getMessage()).to.equal('42');
+		
+		person.setMessage(0);
+		expect(person.getMessage()).to.equal('0');
+		
+		person.setMessage();
+		expect(person.getMessage()).to.equal(undefined);
+		
+		person.setMessage(null);
+		expect(person.getMessage()).to.equal(null);
+	});
 });

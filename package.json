@@ -1,22 +1,26 @@
 {
-    "name": "typed-model",
-    "version": "1.0.7",
-    "description": "JavaScript library for defining types and their attributes with support for wrapping/unwrapping and serialization/deserialization.",
-    "keywords": [
-        "data",
-        "models",
-        "types",
-        "data-modeling",
+	"name": "typed-model",
+	"version": "1.0.8",
+	"description": "JavaScript library for defining types and their attributes with support for wrapping/unwrapping and serialization/deserialization.",
+	"keywords": [
+		"data",
+		"models",
+		"types",
+		"data-modeling",
 		"modeling"
-    ],
-    "homepage": "https://github.com/philidem/typed-model",
-    "author": "Phil Gates-Idem <phillip.idem@gmail.com",
-    "scripts": {
-        "test": "node_modules/.bin/mocha --ui bdd --reporter spec ./test"
-    },
-    "main": "./index.js",
-    "devDependencies": {
-        "mocha": "~1.15.1",
-        "chai": "~1.8.1"
-    }
+	],
+	"homepage": "https://github.com/philidem/typed-model",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/philidem/typed-model.git"
+	},
+	"author": "Phil Gates-Idem <phillip.idem@gmail.com",
+	"scripts": {
+		"test": "node_modules/.bin/mocha --ui bdd --reporter spec ./test"
+	},
+	"main": "./index.js",
+	"devDependencies": {
+		"mocha": "~1.15.1",
+		"chai": "~1.8.1"
+	}
 }
