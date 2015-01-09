@@ -162,7 +162,7 @@ function _clean(obj, errors) {
         return obj.$model.clean(errors);
     }
     
-    return obj.toJSON ? obj.toJSON() : obj;
+    return obj;
 }
 
 Model.clean = function(obj, errors) {
