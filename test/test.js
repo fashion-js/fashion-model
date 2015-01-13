@@ -570,4 +570,119 @@ describe('Model' , function() {
 		person.setMessage(null);
 		expect(person.getMessage()).to.equal(null);
 	});
+	
+	it('should coerce array of primitives', function() {
+		var Something = Model.extend({
+			attributes: {
+				arrayOfBooleans: [Boolean]
+			}
+		});
+		
+		var something = Something.wrap({
+			arrayOfBooleans: [0, 1, 'abc', -1]
+		});
+		
+		var arrayOfBooleans = something.getArrayOfBooleans();
+		expect(arrayOfBooleans[0]).to.equal(false);
+		expect(arrayOfBooleans[1]).to.equal(true);
+		expect(arrayOfBooleans[2]).to.equal(true);
+		expect(arrayOfBooleans[3]).to.equal(true);
+	});
+	
+	it('should coerce array of enums', function() {
+		var Color = Enum.create({
+			values: ['red', 'green', 'blue']
+		});
+		
+		var Person = Model.extend({
+			attributes: {
+				favoriteColors: [Color]
+			}
+		});
+		
+		var person = Person.wrap({
+			favoriteColors: ['red', 'green', 'blue']
+		});
+		
+		var favoriteColors = person.getFavoriteColors();
+		expect(favoriteColors[0]).to.equal('red');
+		expect(favoriteColors[1]).to.equal('green');
+		expect(favoriteColors[2]).to.equal('blue');
+		
+		expect(function() {
+			person = Person.wrap({
+				favoriteColors: ['zero']
+			});
+		}).to.throw(Error);
+		
+		var errors = [];
+		person = Person.wrap({
+			favoriteColors: ['fake']
+		}, errors);
+		
+		// should capture one error
+		expect(errors.length).to.equal(1);
+	});
+	
+	it('should coerce array of models', function() {
+		
+		var Person = Model.extend({
+			attributes: {
+				happy: Boolean
+			}
+		});
+		
+		var Something = Model.extend({
+			attributes: {
+				people: [Person]
+			}
+		});
+		
+		var something = Something.wrap({
+			people: [
+				{
+					happy: 0
+				},
+				{
+					happy: false
+				},
+				{
+					happy: 1
+				},
+				{
+					happy: true
+				}
+			]
+		});
+		
+		var people = something.getPeople();
+		expect(people[0].happy).to.equal(false);
+		expect(people[1].happy).to.equal(false);
+		expect(people[2].happy).to.equal(true);
+		expect(people[3].happy).to.equal(true);
+		
+		
+		expect(something.getPeopleItem(0).getHappy()).to.equal(false);
+		expect(something.getPeopleItem(1).getHappy()).to.equal(false);
+		expect(something.getPeopleItem(2).getHappy()).to.equal(true);
+		expect(something.getPeopleItem(3).getHappy()).to.equal(true);
+		
+		var cleanSomething = Model.clean(something);
+		expect(cleanSomething).to.deep.equal({
+			people: [
+				{
+					happy: false
+				},
+				{
+					happy: false
+				},
+				{
+					happy: true
+				},
+				{
+					happy: true
+				}
+			]
+		});
+	});
 });

@@ -2,6 +2,7 @@ var DateType;
 var BooleanType;
 var NumberType;
 var StringType;
+var ArrayType;
 
 var inherit = require('raptor-util/inherit');
 var Model;
@@ -343,6 +344,22 @@ Attribute_proto.isPersisted = function() {
     return (this.persist !== false);
 };
 
+function _convertToSpecialType(type) {
+    switch(type) {
+    case Date:
+        return DateType;
+    case Number:
+        return NumberType;
+    case Boolean:
+        return BooleanType;
+    case String:
+        return StringType;
+    case Array:
+        return ArrayType;
+    }
+    
+    return type;
+}
 function _toAttribute(name, attributeConfig) {
     if (Array.isArray(attributeConfig)) {
         attributeConfig = {
@@ -356,22 +373,16 @@ function _toAttribute(name, attributeConfig) {
 
     if (attributeConfig.type) {
         if (Array.isArray(attributeConfig.type)) {
-            attributeConfig.subtype = attributeConfig.type[0];
-            attributeConfig.type =  Array;
+            // handle short-hand notation for Array types
+            attributeConfig.subtype = _convertToSpecialType(attributeConfig.type[0]);
+            attributeConfig.type =  ArrayType;
         } else {
-            switch(attributeConfig.type) {
-            case Date:
-                attributeConfig.type = DateType;
-                break;
-            case Number:
-                attributeConfig.type = NumberType;
-                break;
-            case Boolean:
-                attributeConfig.type = BooleanType;
-                break;
-            case String:
-                attributeConfig.type = StringType;
-                break;
+            // handle normal notation for types
+            attributeConfig.type = _convertToSpecialType(attributeConfig.type);
+            
+            // Convert the subtype to special type if necessary
+            if (attributeConfig.subtype) {
+                attributeConfig.subtype = _convertToSpecialType(attributeConfig.subtype);
             }
         }
     } else {
@@ -556,7 +567,7 @@ function _extend(Base, config) {
                     classPrototype[funcName] = _generateSetter(attribute);
                 }
                 
-                if (attribute.getType() === Array) {
+                if (attribute.getType() === ArrayType) {
                     var singular;
                     if (attribute.singular) {
                         singular = _initialUpperCase(attribute.singular);
@@ -610,3 +621,4 @@ DateType = require('./Date');
 BooleanType = require('./Boolean');
 NumberType = require('./Number');
 StringType = require('./String');
+ArrayType = require('./Array');

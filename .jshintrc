@@ -16,7 +16,7 @@
     "unused": "vars",
     "curly": true,
     "debug": false,
-    "devel": true,
+    "devel": false,
     "eqeqeq": true,
     "eqnull": true,
     "evil": true,
