@@ -562,22 +562,18 @@ function _extend(Base, config) {
                         singular = _initialUpperCase(attribute.singular);
                     } else {
                         singular = funcSuffix.replace(/(ies)|(s|List|Set)$/, function(match, ies, truncate) {
-                            if (ies) {
-                                // cities --> city
-                                return 'y';
-                            } else {
-                                return '';
-                            }
+                            // cities --> city
+                            return ies ? 'y' : '';
                         });
                     }
                     
                     funcName = 'forEach' + singular;
                     classPrototype[funcName] = _generateForEach(attribute);
+
+                    funcName = 'get' + singular;
                     
                     if (singular === funcSuffix) {
-                        funcName = 'get' + singular + 'Item';
-                    } else {
-                        funcName = 'get' + singular;
+                        funcName += 'Item';
                     }
                     
                     classPrototype[funcName] = _generateArrayIndexGetter(attribute);
