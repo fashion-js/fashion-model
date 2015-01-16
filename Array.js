@@ -7,8 +7,13 @@ module.exports = Model.extend({
             return null;
         }
         
-		var subtype = attribute.subtype;
 		var array = Array.isArray(value) ? value : [value];
+		
+		var subtype = attribute.subtype;
+		if (!subtype) {
+			return array;
+		}
+		
         var isModelType = Model.isModelType(subtype);
 		var coerce = subtype.coerce;
 		
