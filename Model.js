@@ -112,20 +112,24 @@ function _initialUpperCase(str) {
 }
 
 module.exports = Model = function Model(data, errors) {
-    if (this.constructor.constructable === false) {
+    var Derived = this.constructor;
+    
+    if (Derived.constructable === false) {
         throw new Error('Instances of this type cannot be created. data: ' + data);
     }
     
-    if (this.constructor.hasAttributes()) {
+    if (Derived.hasAttributes()) {
+        var attributes = Derived.attributes;
         this.data = data || {};
         if (data != null) {
             // use setters to make sure values get properly coerced
             for (var key in data) {
                 if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
-                    var attribute = this.getAttribute(key);
+                    
+                    var attribute = attributes[key];
                     if (attribute) {
                         _set(this, attribute, data[key], errors);
-                    } else if (errors) {
+                    } else if (!Derived.allowAnyAttribute && errors) {
                         errors.push('Unrecognized attribute: ' + key);
                     }
                 }
@@ -184,6 +188,14 @@ Model.clean = function(obj, errors) {
 
 Model.hasAttributes = function() {
     return this.attributes !== EMPTY_ATTRIBUTES;
+};
+
+Model.getAttributes = function(attributeName) {
+    return this.attributes;
+};
+
+Model.getAttribute = function(attributeName) {
+    return this.attributes[attributeName];
 };
 
 Model.forEachAttribute = function(callback) {
@@ -263,15 +275,18 @@ Model_proto.unwrap = function() {
 Model_proto.clean = function(errors) {
     var data = this.data;
     
-    if (this.constructor.hasAttributes()) {
+    var Derived = this.constructor;
+    var attributes = Derived.attributes;
+    
+    if (Derived.hasAttributes()) {
         var clone = {};
         for (var key in data) {
             if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
-                var attribute = this.getAttribute(key);
+                var attribute = attributes[key];
                 var value = data[key];
                 if (attribute && (attribute.isPersisted())) {
                     clone[key] = Model.clean(value, errors);
-                } else if (errors) {
+                } else if (!Derived.allowAnyAttribute && errors) {
                     errors.push('Unrecognized attribute: ' + key);
                 }
             }
@@ -286,12 +301,14 @@ Model_proto.getAttribute = function(attributeName) {
     return this.constructor.attributes[attributeName];
 };
 
-Model_proto.set = function(attribute, value, errors) {
-    _set(this, this.getAttribute(attribute), value, errors);
+Model_proto.set = function(attributeName, value, errors) {
+    var attributes = this.constructor.attributes;
+    _set(this, attributes[attributeName], value, errors);
 };
 
-Model_proto.get = function(attribute) {
-    return _get(this, this.getAttribute(attribute));
+Model_proto.get = function(attributeName) {
+    var attributes = this.constructor.attributes;
+    return _get(this, attributes[attributeName]);
 };
 
 Model_proto.stringify = function(pretty) {
@@ -436,6 +453,7 @@ function _extend(Base, config) {
 
     // Selectively copy properties from Model to Derived
     [
+        'getAttributes',
         'hasAttributes',
         'preventConstruction',
         'unwrap',
