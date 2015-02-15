@@ -13,12 +13,12 @@ function _get(model, attribute) {
     if (getter) {
         return getter.call(model, attribute);
     }
-    
+
     var value = model.data[attribute.getProperty()];
     if (value == null) {
         return value;
     }
-    
+
     var type = attribute.getType();
     if (Model.isModelType(type) && type.isWrapped()) {
         if (type.isAutoUnwrapped()) {
@@ -29,13 +29,13 @@ function _get(model, attribute) {
             value = attribute.getType().wrap(value);
         }
     }
-    
+
     return value;
 }
 
 function _set(model, attribute, value, errors) {
     var type = attribute.getType();
-    
+
     if (Model.isModel(value) && (value instanceof type)) {
         // value is expected type
         // store raw data in this model's data
@@ -43,17 +43,17 @@ function _set(model, attribute, value, errors) {
     } else if (type.coerce) {
         value = type.coerce(value, attribute, errors);
     }
-    
+
     var setter = attribute.getSetter();
     if (setter) {
         return setter.call(model, attribute.getProperty(), value, attribute);
     }
-    
+
     if ((value != null) && Model.isModelType(type) && type.isWrapped()) {
         // recursively call setters
         type.wrap(value, errors);
     }
-    
+
     model.data[attribute.getProperty()] = Model.unwrap(value);
 }
 
@@ -72,13 +72,13 @@ function _generateSetter(attribute) {
 function _generateForEach(attribute) {
     var subtype = attribute.getSubtype();
     var SubtypeModel = (subtype && Model.isModelType(subtype)) ? subtype : null;
-    
+
     return function(callback) {
         var values = this.data[attribute.getProperty()];
         if (values == null || !values.length) {
             return;
         }
-        
+
         var i = 0;
         var len = values.length;
         if (SubtypeModel) {
@@ -101,7 +101,7 @@ function _generateArrayIndexGetter(attribute) {
         if (values == null || !values.length) {
             return undefined;
         }
-        
+
         var value = values[index];
         return (SubtypeModel) ? SubtypeModel.wrap(value) : value;
     };
@@ -113,11 +113,11 @@ function _initialUpperCase(str) {
 
 module.exports = Model = function Model(data, errors) {
     var Derived = this.constructor;
-    
+
     if (Derived.constructable === false) {
         throw new Error('Instances of this type cannot be created. data: ' + data);
     }
-    
+
     if (Derived.hasAttributes()) {
         var attributes = Derived.attributes;
         this.data = data || {};
@@ -125,7 +125,7 @@ module.exports = Model = function Model(data, errors) {
             // use setters to make sure values get properly coerced
             for (var key in data) {
                 if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
-                    
+
                     var attribute = attributes[key];
                     if (attribute) {
                         _set(this, attribute, data[key], errors);
@@ -165,11 +165,11 @@ function _clean(obj, errors) {
     if ((obj = Model.unwrap(obj)) == null) {
         return obj;
     }
-    
+
     if (obj.$model) {
         return obj.$model.clean(errors);
     }
-    
+
     return obj;
 }
 
@@ -188,6 +188,10 @@ Model.clean = function(obj, errors) {
 
 Model.hasAttributes = function() {
     return this.attributes !== EMPTY_ATTRIBUTES;
+};
+
+Model.hasAttribute = function(attributeName) {
+    return !!this.attributes[attributeName];
 };
 
 Model.getAttributes = function(attributeName) {
@@ -234,7 +238,7 @@ Model.coercionError = function(value, attribute, errors) {
         message += attribute.getName() + ': ';
     }
     message += 'Invalid value: ' + value;
-    
+
     if (errors) {
         errors.push(message);
     } else {
@@ -248,13 +252,13 @@ function _jsonStringifyReplacer(key, value) {
     if (key.charAt(0) === '$') {
         return undefined;
     }
-    
+
     if (value != null) {
         if (Model.isModel(value)) {
             return Model.unwrap(value);
         }
     }
-    
+
     return value;
 }
 
@@ -274,10 +278,10 @@ Model_proto.unwrap = function() {
  */
 Model_proto.clean = function(errors) {
     var data = this.data;
-    
+
     var Derived = this.constructor;
     var attributes = Derived.attributes;
-    
+
     if (Derived.hasAttributes()) {
         var clone = {};
         for (var key in data) {
@@ -295,10 +299,6 @@ Model_proto.clean = function(errors) {
     } else {
         return data;
     }
-};
-
-Model_proto.getAttribute = function(attributeName) {
-    return this.constructor.attributes[attributeName];
 };
 
 Model_proto.set = function(attributeName, value, errors) {
@@ -374,7 +374,7 @@ function _convertToSpecialType(type) {
     case Array:
         return ArrayType;
     }
-    
+
     return type;
 }
 function _toAttribute(name, attributeConfig) {
@@ -396,7 +396,7 @@ function _toAttribute(name, attributeConfig) {
         } else {
             // handle normal notation for types
             attributeConfig.type = _convertToSpecialType(attributeConfig.type);
-            
+
             // Convert the subtype to special type if necessary
             if (attributeConfig.subtype) {
                 attributeConfig.subtype = _convertToSpecialType(attributeConfig.subtype);
@@ -405,7 +405,7 @@ function _toAttribute(name, attributeConfig) {
     } else {
         attributeConfig.type = Object;
     }
-    
+
 
     attributeConfig.name = name;
     attributeConfig.property = attributeConfig.property || name;
@@ -433,7 +433,7 @@ function _copyNonSpecialPropertiesToType(config, Type) {
 
 function _extend(Base, config) {
     config = config || {};
-    
+
     var init = config.init;
     var wrap = config.wrap;
     var unwrap = config.unwrap;
@@ -441,19 +441,21 @@ function _extend(Base, config) {
     var coerce = config.coerce;
     var attributes = config.attributes;
     var prototype = config.prototype;
-    
+
     function Derived() {
         Derived.$super.apply(this, arguments);
         if (init) {
             init.apply(this, arguments);
         }
     }
-    
+
     _copyNonSpecialPropertiesToType(config, Derived);
 
     // Selectively copy properties from Model to Derived
     [
+        'getAttribute',
         'getAttributes',
+        'hasAttribute',
         'hasAttributes',
         'preventConstruction',
         'unwrap',
@@ -463,10 +465,10 @@ function _extend(Base, config) {
     ].forEach(function(property) {
         Derived[property] = Model[property];
     });
-    
+
     // Store reference to Model
     Derived.Model = Model;
-    
+
     if (coerce) {
         Derived.coerce = function(value, attribute, errors) {
             // Simple proxy for the coerce function to fix arguments
@@ -474,11 +476,11 @@ function _extend(Base, config) {
                 errors = arguments[1];
                 attribute = null;
             }
-            
+
             return coerce.call(Derived, value, attribute, errors);
         };
     }
-    
+
     // provide method to extend this model
     Derived.extend = function(config) {
         return _extend(Derived, config);
@@ -487,11 +489,11 @@ function _extend(Base, config) {
     Derived.isWrapped = function() {
         return (wrap !== false);
     };
-    
+
     Derived.isAutoUnwrapped = function() {
         return autoUnwrap;
     };
-    
+
     var factory;
     if (wrap && wrap.constructor === Function) {
         factory = wrap;
@@ -500,19 +502,19 @@ function _extend(Base, config) {
             if (arguments.length === 0) {
                 return new Derived();
             }
-            
+
             if (data instanceof Derived) {
                 return data;
             }
-            
+
             if (coerce) {
                 data = coerce.call(Derived, data, null /* attribute */, errors);
             }
-            
+
             if (data == null) {
                 return data;
             }
-            
+
             if (Model.isModel(data)) {
                 if (data instanceof Derived) {
                     return data;
@@ -521,25 +523,25 @@ function _extend(Base, config) {
                     delete data.$model;
                 }
             }
-            
+
             if (wrap === false) {
                 return data;
             }
-            
+
             if (Array.isArray(data)) {
                 // TODO: Handle wrapping Array?
                 // If so, replace items or return new Array?
                 throw new Error('Wrapping Array object is not allowed.');
             }
-            
+
             // return existing model or create a new model
             // NOTE: Model constructor will store $model in data
             return (data && data.$model) || new Derived(data, errors);
         };
     }
-    
+
     Derived.create = Derived.wrap = factory;
-    
+
     inherit(Derived, Base);
 
     var classPrototype = Derived.prototype;
@@ -548,43 +550,43 @@ function _extend(Base, config) {
     if (unwrap) {
         classPrototype.unwrap = unwrap;
     }
-    
+
     var attributeNames;
     if (attributes && (attributeNames = Object.keys(attributes)).length > 0) {
         // Use prototype chaining to create attribute map
         Derived.Attributes = function() {};
-        
+
         if (Base.Attributes) {
             inherit(Derived.Attributes, Base.Attributes);
         }
-        
+
         if (attributes) {
             var attributesPrototype = Derived.Attributes.prototype;
             attributeNames.forEach(function(name) {
                 var attribute = _toAttribute(name, attributes[name]);
-                
+
                 var property = attribute.getProperty();
-                
+
                 // Put the attributes in the prototype by name and property
                 attributesPrototype[name] = attribute;
                 if (name !== property) {
                     attributesPrototype[property] = attribute;
                 }
-                
+
                 var funcName;
                 var funcSuffix = _initialUpperCase(name);
-                
-                
+
+
                 if (attribute.getGetter() !== null) {
                     funcName = 'get' + funcSuffix;
                     classPrototype[funcName] = _generateGetter(attribute);
                 }
-                
+
                 if (attribute.getSetter() !== null) {
                     funcName = 'set' + funcSuffix;
                     classPrototype[funcName] = _generateSetter(attribute);
                 }
-                
+
                 if (attribute.getType() === ArrayType) {
                     var singular;
                     if (attribute.singular) {
@@ -595,23 +597,23 @@ function _extend(Base, config) {
                             return ies ? 'y' : '';
                         });
                     }
-                    
+
                     funcName = 'forEach' + singular;
                     classPrototype[funcName] = _generateForEach(attribute);
 
                     funcName = 'get' + singular;
-                    
+
                     if (singular === funcSuffix) {
                         funcName += 'Item';
                     }
-                    
+
                     classPrototype[funcName] = _generateArrayIndexGetter(attribute);
                 }
             });
         }
-        
+
         Derived.attributes = new Derived.Attributes();
-        
+
     } else {
         Derived.Attributes = Base.Attributes;
         Derived.attributes = Base.attributes || EMPTY_ATTRIBUTES;
