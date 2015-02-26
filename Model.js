@@ -1,8 +1,11 @@
 var DateType;
 var BooleanType;
 var NumberType;
+var IntegerType;
 var StringType;
 var ArrayType;
+
+var TYPE_BY_NAME = {};
 
 var inherit = require('raptor-util/inherit');
 var Model;
@@ -362,19 +365,27 @@ Attribute_proto.isPersisted = function() {
 };
 
 function _convertToSpecialType(type) {
-    switch(type) {
-    case Date:
-        return DateType;
-    case Number:
-        return NumberType;
-    case Boolean:
-        return BooleanType;
-    case String:
-        return StringType;
-    case Array:
-        return ArrayType;
+    if (type.constructor === String) {
+        var builtinType = TYPE_BY_NAME[type];
+        if (!builtinType) {
+            throw new Error('Invalid type: "' + type + '"');
+        }
+        return builtinType;
+    } else {
+        switch(type) {
+        case Date:
+            return DateType;
+        case Number:
+            return NumberType;
+        case Boolean:
+            return BooleanType;
+        case String:
+            return StringType;
+        case Array:
+            return ArrayType;
+        }
     }
-
+    
     return type;
 }
 function _toAttribute(name, attributeConfig) {
@@ -388,14 +399,15 @@ function _toAttribute(name, attributeConfig) {
         };
     }
 
-    if (attributeConfig.type) {
-        if (Array.isArray(attributeConfig.type)) {
+    var type = attributeConfig.type;
+    if (type) {
+        if (Array.isArray(type)) {
             // handle short-hand notation for Array types
-            attributeConfig.subtype = _convertToSpecialType(attributeConfig.type[0]);
+            attributeConfig.subtype = _convertToSpecialType(type[0]);
             attributeConfig.type =  ArrayType;
         } else {
             // handle normal notation for types
-            attributeConfig.type = _convertToSpecialType(attributeConfig.type);
+            attributeConfig.type = _convertToSpecialType(type);
 
             // Convert the subtype to special type if necessary
             if (attributeConfig.subtype) {
@@ -636,5 +648,15 @@ Model.extend = function(config) {
 DateType = require('./Date');
 BooleanType = require('./Boolean');
 NumberType = require('./Number');
+IntegerType = require('./Integer');
 StringType = require('./String');
 ArrayType = require('./Array');
+
+TYPE_BY_NAME = {
+    date: DateType,
+    boolean: BooleanType,
+    number: NumberType,
+    integer: IntegerType,
+    string: StringType,
+    srray: ArrayType
+};
