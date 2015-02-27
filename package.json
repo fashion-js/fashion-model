@@ -1,29 +1,29 @@
 {
-  "name": "typed-model",
-  "version": "2.0.0",
-  "description": "JavaScript library for defining types and their properties with support for wrapping/unwrapping and serialization/deserialization.",
-  "keywords": [
-    "data",
-    "models",
-    "types",
-    "data-modeling",
-    "modeling"
-  ],
-  "homepage": "https://github.com/philidem/typed-model",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/philidem/typed-model.git"
-  },
-  "author": "Phil Gates-Idem <phillip.idem@gmail.com",
-  "scripts": {
-    "test": "node_modules/.bin/mocha --ui bdd --reporter spec ./test"
-  },
-  "main": "./index.js",
-  "devDependencies": {
-    "chai": "^2.1.0",
-    "mocha": "^2.1.0"
-  },
-  "dependencies": {
-    "raptor-util": "^1.0.9"
-  }
+    "name": "typed-model",
+    "description": "JavaScript library for defining types and their properties with support for wrapping/unwrapping and serialization/deserialization.",
+    "keywords": [
+        "data",
+        "models",
+        "types",
+        "data-modeling",
+        "modeling"
+    ],
+    "homepage": "https://github.com/philidem/typed-model",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/philidem/typed-model.git"
+    },
+    "author": "Phil Gates-Idem <phillip.idem@gmail.com",
+    "scripts": {
+        "test": "node_modules/.bin/mocha --ui bdd --reporter spec ./test"
+    },
+    "main": "./index.js",
+    "devDependencies": {
+        "chai": "^2.1.0",
+        "mocha": "^2.1.0"
+    },
+    "dependencies": {
+        "raptor-util": "^1.0.9"
+    },
+    "version": "2.0.1"
 }
