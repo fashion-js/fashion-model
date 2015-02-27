@@ -1,6 +1,6 @@
 typed-model
 ===========
-JavaScript library for defining types and their attributes with support for wrapping/unwrapping and serialization/deserialization.
+JavaScript library for defining types and their properties with support for wrapping/unwrapping and serialization/deserialization.
 
 ## Installation
 ```bash
@@ -10,7 +10,7 @@ npm install typed-model --save
 ## Overview
 The `typed-model` module provides utility code for defining data model types.
 These data model types provide helpful accessor methods (getters, setters,
-for each methods, etc.) for the attributes defined for the model type.
+for each methods, etc.) for the properties defined for the model type.
 
 These models can be thought of as a "schema" that provide extra safeguards
 for working with objects. These model types are not tied to a specific
@@ -56,7 +56,7 @@ The following primitive types are supported:
 ### Complex Object Type
 ```javascript
 var Address = Model.extend({
-    attributes: {
+    properties: {
         city: String,
         state: String
     }
@@ -89,13 +89,13 @@ address = Address.wrap({
 
 ### Getters and Setters
 A getter and setter will be generated on the prototype,
-for each attribute defined in the model.
+for each property defined in the model.
 
 **For example:**
 ```javascript
 // Define an Address model
 var Address = Model.extend({
-    attributes: {
+    properties: {
         city: String,
         state: String
     }
@@ -111,8 +111,8 @@ assert(address.getCity() === 'New York')
 ```
 
 **Note:** The getter function name will be always in the form
-`get<AttributeName>`. The setter function name will be always in the form
-`set<AttributeName>`. These rules **do not** change for attributes with Boolean type.
+`get<PropertyName>`. The setter function name will be always in the form
+`set<PropertyName>`. These rules **do not** change for properties with Boolean type.
 
 ### Model prototype
 The `Model` types are created via standard prototypical inheritance.
@@ -123,7 +123,7 @@ configuration.
 **For example:**
 ```javascript
 var Person = Entity.extend({
-    attributes: {
+    properties: {
 		firstName: String,
 		lastName: String
 	},
@@ -140,7 +140,7 @@ var Person = Entity.extend({
 **Define your base Entity type:**
 ```javascript
 var Entity = Model.extend({
-    attributes: {
+    properties: {
         id: String
     }
 });
@@ -154,7 +154,7 @@ var Person = Entity.extend({
 ```
 
 The new `Person` type will recognize `email` (defined for `Person`) and
-`id` (defined for `Entity`) as attributes.
+`id` (defined for `Entity`) as properties.
 
 ```javascript
 var person = new Person();
@@ -171,18 +171,18 @@ var Person = Entity.extend({
 	lastName: String,
 	displayName: {
 		type: String
-		get: function(attribute) {
+		get: function(property) {
 			return this.getFirstName() + ' ' + this.getLastName();
 		}
 	}
 });
 ```
 
-### Non-persisted Attributes
+### Non-persisted Properties
 
 If you'd like to store computed properties in the Model instance for
 performance reasons but you don't want them to be persisted to storage,
-then you might want to mark an attribute as non-persisted.
+then you might want to mark an property as non-persisted.
 
 **For example, here's a Model type that will automatically
 update `displayName` whenever `firstName` or `lastName` is changed:**
@@ -220,7 +220,7 @@ var person = new Person({
 
 assert(person.getDisplayName() === 'John Doe');
 
-// Remove non-persisted attributes
+// Remove non-persisted properties
 var personObj = person.clean();
 assert(personObj.displayName === undefined);
 ```
@@ -243,12 +243,12 @@ wrapping and unwrapping without creating a lot of new objects
 in the heap. If you want to ensure that your model is not
 "polluted" with this metadata then use `obj.clean()` or
 `Model.clean(obj)` which will create a cloned version of `obj`
-without any extra metadata or non-persisted attributes.
+without any extra metadata or non-persisted properties.
 
 **Examples:**
 ```javascript
 var Address = Model.extend({
-    attributes: {
+    properties: {
         city: String,
         state: String
     }
@@ -275,7 +275,7 @@ assert(addressWrapped === address);
 ### Clean
 
 `Model.clean(obj)` should be used to return a clone of an object in which
-all non-persisted attributes and metadata have been removed.
+all non-persisted properties and metadata have been removed.
 
 ```javascript
 var address = new Address({
@@ -318,7 +318,7 @@ var MongoDbObjectID = require('mongodb').ObjectID;
 
 var ObjectId = Model.extend({
 	// Don't wrap object ID.
-	// This means that the getters for attributes of this type
+	// This means that the getters for properties of this type
 	// will return the raw MongoDB ObjectID type
     wrap: false,
 	
@@ -388,9 +388,9 @@ var Color = Enum.create({
 });
 
 var ColorPalette = Model.extend({
-	attributes: {
+	properties: {
 		// The Array type should be a given a subtype.
-		// The generated accessor methods for this attribute
+		// The generated accessor methods for this property
 		// will automatically wrap each item with the subtype.
 		colors: {
 			type: Array,
@@ -403,16 +403,16 @@ var ColorPalette = Model.extend({
 **Short-hand syntax:**
 ```javascript
 var ColorPalette = Model.extend({
-	attributes: {
+	properties: {
 		// Using an Array instance is short-hand for specifying
-		// that the attribute is of type array. The first item
+		// that the property is of type array. The first item
 		// in this array indicates the subtype.
 		colors: [Color]
 	}
 });
 ```
 
-**Accessing an array attribute:**
+**Accessing an array property:**
 ```javascript
 var colorPalette = new ColorPalette({
 	colors: ['red', 'green', 'blue']
@@ -421,11 +421,11 @@ var colorPalette = new ColorPalette({
 var colors = [];
 
 // A forEach<Item> function is automatically created
-// for attributes of type Array.
+// for properties of type Array.
 // The name of the forEach function will constructed
-// using the singular form of the attribute name.
+// using the singular form of the property name.
 // If the singular form cannot be inferred then you can
-// add a "singular" property to the attribute config that
+// add a "singular" property to the property config that
 // helps the model generator pick the right name.
 colorPalette.forEachColor(function(color, index) {
 	expect(color.constructor).to.equal(Color);
@@ -436,14 +436,14 @@ colorPalette.forEachColor(function(color, index) {
 assert(colorPalette.getColor(0) === Color.RED);
 ```
 
-**Providing hints for the "singular" form of an Array attribute name:**
+**Providing hints for the "singular" form of an Array property name:**
 ```javascript
 var Person = Entity.extend({
     displayName: String
 });
 
 var Team = Model.extend({
-	attributes: {
+	properties: {
 		people: {
 			type: [Person],
 			singular: 'person'

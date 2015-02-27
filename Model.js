@@ -1,55 +1,56 @@
-var DateType;
-var BooleanType;
-var NumberType;
-var IntegerType;
-var StringType;
+// var DateType;
+// var BooleanType;
+// var NumberType;
+// var IntegerType;
+// var StringType;
 var ArrayType;
+var primitives;
 
-var TYPE_BY_NAME = {};
+//var TYPE_BY_NAME = {};
 
 var inherit = require('raptor-util/inherit');
 var Model;
 var EMPTY_ATTRIBUTES = {};
 
-function _get(model, attribute) {
-    var getter = attribute.getGetter();
+function _get(model, property) {
+    var getter = property.getGetter();
     if (getter) {
-        return getter.call(model, attribute);
+        return getter.call(model, property);
     }
 
-    var value = model.data[attribute.getProperty()];
+    var value = model.data[property.getProperty()];
     if (value == null) {
         return value;
     }
 
-    var type = attribute.getType();
+    var type = property.getType();
     if (Model.isModelType(type) && type.isWrapped()) {
         if (type.isAutoUnwrapped()) {
             // auto unwrap
             value = Model.unwrap(value);
         } else {
             // make sure we return an instance of the actual type and not the raw value
-            value = attribute.getType().wrap(value);
+            value = property.getType().wrap(value);
         }
     }
 
     return value;
 }
 
-function _set(model, attribute, value, errors) {
-    var type = attribute.getType();
+function _set(model, property, value, errors) {
+    var type = property.getType();
 
     if (Model.isModel(value) && (value instanceof type)) {
         // value is expected type
         // store raw data in this model's data
         value = value.data;
     } else if (type.coerce) {
-        value = type.coerce(value, attribute, errors);
+        value = type.coerce(value, property, errors);
     }
 
-    var setter = attribute.getSetter();
+    var setter = property.getSetter();
     if (setter) {
-        return setter.call(model, attribute.getProperty(), value, attribute);
+        return setter.call(model, property.getProperty(), value, property);
     }
 
     if ((value != null) && Model.isModelType(type) && type.isWrapped()) {
@@ -57,27 +58,27 @@ function _set(model, attribute, value, errors) {
         type.wrap(value, errors);
     }
 
-    model.data[attribute.getProperty()] = Model.unwrap(value);
+    model.data[property.getProperty()] = Model.unwrap(value);
 }
 
-function _generateGetter(attribute) {
+function _generateGetter(property) {
     return function () {
-        return _get(this, attribute);
+        return _get(this, property);
     };
 }
 
-function _generateSetter(attribute) {
+function _generateSetter(property) {
     return function(value) {
-        return _set(this, attribute, value);
+        return _set(this, property, value);
     };
 }
 
-function _generateForEach(attribute) {
-    var subtype = attribute.getSubtype();
+function _generateForEach(property) {
+    var subtype = property.getSubtype();
     var SubtypeModel = (subtype && Model.isModelType(subtype)) ? subtype : null;
 
     return function(callback) {
-        var values = this.data[attribute.getProperty()];
+        var values = this.data[property.getProperty()];
         if (values == null || !values.length) {
             return;
         }
@@ -96,11 +97,11 @@ function _generateForEach(attribute) {
     };
 }
 
-function _generateArrayIndexGetter(attribute) {
-    var subtype = attribute.getSubtype();
+function _generateArrayIndexGetter(property) {
+    var subtype = property.getSubtype();
     var SubtypeModel = (subtype && Model.isModelType(subtype)) ? subtype : null;
     return function(index) {
-        var values = this.data[attribute.getProperty()];
+        var values = this.data[property.getProperty()];
         if (values == null || !values.length) {
             return undefined;
         }
@@ -121,19 +122,19 @@ module.exports = Model = function Model(data, errors) {
         throw new Error('Instances of this type cannot be created. data: ' + data);
     }
 
-    if (Derived.hasAttributes()) {
-        var attributes = Derived.attributes;
+    if (Derived.hasProperties()) {
+        var properties = Derived.properties;
         this.data = data || {};
         if (data != null) {
             // use setters to make sure values get properly coerced
             for (var key in data) {
                 if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
 
-                    var attribute = attributes[key];
-                    if (attribute) {
-                        _set(this, attribute, data[key], errors);
-                    } else if (!Derived.allowAnyAttribute && errors) {
-                        errors.push('Unrecognized attribute: ' + key);
+                    var property = properties[key];
+                    if (property) {
+                        _set(this, property, data[key], errors);
+                    } else if (!Derived.allowAnyProperty && errors) {
+                        errors.push('Unrecognized property: ' + key);
                     }
                 }
             }
@@ -189,31 +190,31 @@ Model.clean = function(obj, errors) {
     }
 };
 
-Model.hasAttributes = function() {
-    return this.attributes !== EMPTY_ATTRIBUTES;
+Model.hasProperties = function() {
+    return this.properties !== EMPTY_ATTRIBUTES;
 };
 
-Model.hasAttribute = function(attributeName) {
-    return !!this.attributes[attributeName];
+Model.hasProperty = function(propertyName) {
+    return !!this.properties[propertyName];
 };
 
-Model.getAttributes = function(attributeName) {
-    return this.attributes;
+Model.getProperties = function() {
+    return this.properties;
 };
 
-Model.getAttribute = function(attributeName) {
-    return this.attributes[attributeName];
+Model.getProperty = function(propertyName) {
+    return this.properties[propertyName];
 };
 
-Model.forEachAttribute = function(callback) {
-    var proto = this.Attributes.prototype;
+Model.forEachProperty = function(callback) {
+    var proto = this.Properties.prototype;
     do {
         for (var key in proto) {
             if (proto.hasOwnProperty(key)) {
-                var attribute = proto[key];
-                if (attribute.constructor === Attribute) {
-                    if (key === attribute.getName()) {
-                        callback(attribute);
+                var property = proto[key];
+                if (property.constructor === Property) {
+                    if (key === property.getName()) {
+                        callback(property);
                     }
                 }
             }
@@ -235,10 +236,10 @@ Model.isCompatibleWith = function(other) {
     return false;
 };
 
-Model.coercionError = function(value, attribute, errors) {
+Model.coercionError = function(value, property, errors) {
     var message = '';
-    if (attribute) {
-        message += attribute.getName() + ': ';
+    if (property) {
+        message += property.getName() + ': ';
     }
     message += 'Invalid value: ' + value;
 
@@ -283,18 +284,18 @@ Model_proto.clean = function(errors) {
     var data = this.data;
 
     var Derived = this.constructor;
-    var attributes = Derived.attributes;
+    var properties = Derived.properties;
 
-    if (Derived.hasAttributes()) {
+    if (Derived.hasProperties()) {
         var clone = {};
         for (var key in data) {
             if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
-                var attribute = attributes[key];
+                var property = properties[key];
                 var value = data[key];
-                if (attribute && (attribute.isPersisted())) {
+                if (property && (property.isPersisted())) {
                     clone[key] = Model.clean(value, errors);
-                } else if (!Derived.allowAnyAttribute && errors) {
-                    errors.push('Unrecognized attribute: ' + key);
+                } else if (!Derived.allowAnyProperty && errors) {
+                    errors.push('Unrecognized property: ' + key);
                 }
             }
         }
@@ -304,14 +305,14 @@ Model_proto.clean = function(errors) {
     }
 };
 
-Model_proto.set = function(attributeName, value, errors) {
-    var attributes = this.constructor.attributes;
-    _set(this, attributes[attributeName], value, errors);
+Model_proto.set = function(propertyName, value, errors) {
+    var properties = this.constructor.properties;
+    _set(this, properties[propertyName], value, errors);
 };
 
-Model_proto.get = function(attributeName) {
-    var attributes = this.constructor.attributes;
-    return _get(this, attributes[attributeName]);
+Model_proto.get = function(propertyName) {
+    var properties = this.constructor.properties;
+    return _get(this, properties[propertyName]);
 };
 
 Model_proto.stringify = function(pretty) {
@@ -322,7 +323,7 @@ Model_proto.toJSON = function() {
     return this.clean();
 };
 
-function Attribute(config) {
+function Property(config) {
     for (var key in config) {
         if (config.hasOwnProperty(key)) {
             this[key] = config[key];
@@ -330,99 +331,120 @@ function Attribute(config) {
     }
 }
 
-var Attribute_proto = Attribute.prototype;
+var Property_proto = Property.prototype;
 
-Attribute_proto.getName = function() {
+Property_proto.getName = function() {
     return this.name;
 };
 
-Attribute_proto.getProperty = function() {
+Property_proto.getProperty = function() {
     return this.property;
 };
 
-Attribute_proto.getType = function() {
+Property_proto.getType = function() {
     return this.type;
 };
 
-Attribute_proto.getSubtype = function() {
+Property_proto.getSubtype = function() {
     return this.subtype;
 };
 
-Attribute_proto.isModelType = function() {
+Property_proto.isModelType = function() {
     return Model.isModelType(this.getType());
 };
 
-Attribute_proto.getGetter = function() {
+Property_proto.getGetter = function() {
     return this.get;
 };
 
-Attribute_proto.getSetter = function() {
+Property_proto.getSetter = function() {
     return this.set;
 };
 
-Attribute_proto.isPersisted = function() {
+Property_proto.isPersisted = function() {
     return (this.persist !== false);
 };
 
-function _convertToSpecialType(type) {
-    if (type.constructor === String) {
-        var builtinType = TYPE_BY_NAME[type];
-        if (!builtinType) {
-            throw new Error('Invalid type: "' + type + '"');
-        }
-        return builtinType;
-    } else {
-        switch(type) {
-        case Date:
-            return DateType;
-        case Number:
-            return NumberType;
-        case Boolean:
-            return BooleanType;
-        case String:
-            return StringType;
-        case Array:
-            return ArrayType;
-        }
+function _parseType(type, propertyConfig) {
+    switch(type) {
+    case Date:
+        return primitives.date;
+    case Number:
+        return primitives.number;
+    case Boolean:
+        return primitives.boolean;
+    case String:
+        return primitives.string;
+    case Object:
+        return primitives.object;
+    case Array:
+        return ArrayType;
     }
-    
+
     return type;
 }
-function _toAttribute(name, attributeConfig) {
-    if (Array.isArray(attributeConfig)) {
-        attributeConfig = {
-            type: attributeConfig
+
+function _resolve(typeName, resolver) {
+    var type = primitives[typeName];
+    if (type) {
+        return type;
+    }
+
+    if (resolver) {
+        if ((type = resolver(typeName))) {
+            return type;
+        }
+    }
+
+    throw new Error('Invalid type: ' + typeName);
+}
+
+function _toProperty(name, propertyConfig, resolver) {
+    if (Array.isArray(propertyConfig)) {
+        propertyConfig = {
+            type: propertyConfig
         };
-    } else if ((typeof attributeConfig) !== 'object') {
-        attributeConfig = {
-            type: attributeConfig
+    } else if ((typeof propertyConfig) !== 'object') {
+        propertyConfig = {
+            type: propertyConfig
         };
     }
 
-    var type = attributeConfig.type;
+    var type = propertyConfig.type;
     if (type) {
         if (Array.isArray(type)) {
             // handle short-hand notation for Array types
-            attributeConfig.subtype = _convertToSpecialType(type[0]);
-            attributeConfig.type =  ArrayType;
+            propertyConfig.subtype = (type.length === 0) ? null : _parseType(type[0]);
+            propertyConfig.type =  ArrayType;
+        } else if (type.constructor === String) {
+            var len = type.length;
+            if ((type.charAt(len - 2) === '[') && (type.charAt(len - 1) === ']')) {
+                // array type
+                propertyConfig.type = ArrayType;
+
+                type = type.substring(0, len - 2);
+                propertyConfig.subtype = _resolve(type, resolver);
+            } else {
+                propertyConfig.type = _resolve(type, resolver);
+            }
         } else {
             // handle normal notation for types
-            attributeConfig.type = _convertToSpecialType(type);
+            propertyConfig.type = _parseType(type);
 
             // Convert the subtype to special type if necessary
-            if (attributeConfig.subtype) {
-                attributeConfig.subtype = _convertToSpecialType(attributeConfig.subtype);
+            if (propertyConfig.subtype) {
+                propertyConfig.subtype = _parseType(propertyConfig.subtype);
             }
         }
     } else {
-        attributeConfig.type = Object;
+        propertyConfig.type = Object;
     }
 
 
-    attributeConfig.name = name;
-    attributeConfig.property = attributeConfig.property || name;
+    propertyConfig.name = name;
+    propertyConfig.property = propertyConfig.property || name;
 
-    return new Attribute(attributeConfig);
+    return new Property(propertyConfig);
 }
 
 var SPECIAL_PROPERTIES = {
@@ -431,7 +453,7 @@ var SPECIAL_PROPERTIES = {
     unwrap: 1,
     autoUnwrap: 1,
     coerce: 1,
-    attributes: 1,
+    properties: 1,
     prototype: 1
 };
 
@@ -443,7 +465,7 @@ function _copyNonSpecialPropertiesToType(config, Type) {
     }
 }
 
-function _extend(Base, config) {
+function _extend(Base, config, resolver) {
     config = config || {};
 
     var init = config.init;
@@ -451,7 +473,7 @@ function _extend(Base, config) {
     var unwrap = config.unwrap;
     var autoUnwrap = !!config.autoUnwrap;
     var coerce = config.coerce;
-    var attributes = config.attributes;
+    var properties = config.properties;
     var prototype = config.prototype;
 
     function Derived() {
@@ -465,14 +487,14 @@ function _extend(Base, config) {
 
     // Selectively copy properties from Model to Derived
     [
-        'getAttribute',
-        'getAttributes',
-        'hasAttribute',
-        'hasAttributes',
+        'getProperty',
+        'getProperties',
+        'hasProperty',
+        'hasProperties',
         'preventConstruction',
         'unwrap',
         'coercionError',
-        'forEachAttribute',
+        'forEachProperty',
         'isCompatibleWith'
     ].forEach(function(property) {
         Derived[property] = Model[property];
@@ -482,14 +504,14 @@ function _extend(Base, config) {
     Derived.Model = Model;
 
     if (coerce) {
-        Derived.coerce = function(value, attribute, errors) {
+        Derived.coerce = function(value, property, errors) {
             // Simple proxy for the coerce function to fix arguments
-            if (Array.isArray(attribute)) {
+            if (Array.isArray(property)) {
                 errors = arguments[1];
-                attribute = null;
+                property = null;
             }
 
-            return coerce.call(Derived, value, attribute, errors);
+            return coerce.call(Derived, value, property, errors);
         };
     }
 
@@ -520,7 +542,7 @@ function _extend(Base, config) {
             }
 
             if (coerce) {
-                data = coerce.call(Derived, data, null /* attribute */, errors);
+                data = coerce.call(Derived, data, null /* property */, errors);
             }
 
             if (data == null) {
@@ -563,46 +585,45 @@ function _extend(Base, config) {
         classPrototype.unwrap = unwrap;
     }
 
-    var attributeNames;
-    if (attributes && (attributeNames = Object.keys(attributes)).length > 0) {
-        // Use prototype chaining to create attribute map
-        Derived.Attributes = function() {};
+    var propertyNames;
+    if (properties && (propertyNames = Object.keys(properties)).length > 0) {
+        // Use prototype chaining to create property map
+        Derived.Properties = function() {};
 
-        if (Base.Attributes) {
-            inherit(Derived.Attributes, Base.Attributes);
+        if (Base.Properties) {
+            inherit(Derived.Properties, Base.Properties);
         }
 
-        if (attributes) {
-            var attributesPrototype = Derived.Attributes.prototype;
-            attributeNames.forEach(function(name) {
-                var attribute = _toAttribute(name, attributes[name]);
+        if (properties) {
+            var propertiesPrototype = Derived.Properties.prototype;
+            propertyNames.forEach(function(name) {
+                var property = _toProperty(name, properties[name], resolver);
+                var propertyName = property.getProperty();
 
-                var property = attribute.getProperty();
-
-                // Put the attributes in the prototype by name and property
-                attributesPrototype[name] = attribute;
-                if (name !== property) {
-                    attributesPrototype[property] = attribute;
+                // Put the properties in the prototype by name and property
+                propertiesPrototype[name] = property;
+                if (name !== propertyName) {
+                    propertiesPrototype[propertyName] = property;
                 }
 
                 var funcName;
                 var funcSuffix = _initialUpperCase(name);
 
 
-                if (attribute.getGetter() !== null) {
+                if (property.getGetter() !== null) {
                     funcName = 'get' + funcSuffix;
-                    classPrototype[funcName] = _generateGetter(attribute);
+                    classPrototype[funcName] = _generateGetter(property);
                 }
 
-                if (attribute.getSetter() !== null) {
+                if (property.getSetter() !== null) {
                     funcName = 'set' + funcSuffix;
-                    classPrototype[funcName] = _generateSetter(attribute);
+                    classPrototype[funcName] = _generateSetter(property);
                 }
 
-                if (attribute.getType() === ArrayType) {
+                if (property.getType() === ArrayType) {
                     var singular;
-                    if (attribute.singular) {
-                        singular = _initialUpperCase(attribute.singular);
+                    if (property.singular) {
+                        singular = _initialUpperCase(property.singular);
                     } else {
                         singular = funcSuffix.replace(/(ies)|(s|List|Set)$/, function(match, ies, truncate) {
                             // cities --> city
@@ -611,7 +632,7 @@ function _extend(Base, config) {
                     }
 
                     funcName = 'forEach' + singular;
-                    classPrototype[funcName] = _generateForEach(attribute);
+                    classPrototype[funcName] = _generateForEach(property);
 
                     funcName = 'get' + singular;
 
@@ -619,16 +640,16 @@ function _extend(Base, config) {
                         funcName += 'Item';
                     }
 
-                    classPrototype[funcName] = _generateArrayIndexGetter(attribute);
+                    classPrototype[funcName] = _generateArrayIndexGetter(property);
                 }
             });
         }
 
-        Derived.attributes = new Derived.Attributes();
+        Derived.properties = new Derived.Properties();
 
     } else {
-        Derived.Attributes = Base.Attributes;
-        Derived.attributes = Base.attributes || EMPTY_ATTRIBUTES;
+        Derived.Properties = Base.Properties;
+        Derived.properties = Base.properties || EMPTY_ATTRIBUTES;
     }
 
     if (prototype) {
@@ -640,23 +661,9 @@ function _extend(Base, config) {
     return Derived;
 }
 
-Model.extend = function(config) {
-    return _extend(Model, config);
+Model.extend = function(config, resolver) {
+    return _extend(Model, config, resolver);
 };
 
-
-DateType = require('./Date');
-BooleanType = require('./Boolean');
-NumberType = require('./Number');
-IntegerType = require('./Integer');
-StringType = require('./String');
-ArrayType = require('./Array');
-
-TYPE_BY_NAME = {
-    date: DateType,
-    boolean: BooleanType,
-    number: NumberType,
-    integer: IntegerType,
-    string: StringType,
-    srray: ArrayType
-};
+primitives = require('./primitives');
+ArrayType = primitives.array;

@@ -1,22 +1,23 @@
 var Model = require('./Model');
 
 module.exports = Model.extend({
+	typeName: 'array',
 	wrap: false,
-	coerce: function(value, attribute, errors) {
+	coerce: function(value, property, errors) {
         if (value == null) {
             return null;
         }
-        
+
 		var array = Array.isArray(value) ? value : [value];
-		
-		var subtype = attribute.subtype;
+
+		var subtype = property.subtype;
 		if (!subtype) {
 			return array;
 		}
-		
+
         var isModelType = Model.isModelType(subtype);
 		var coerce = subtype.coerce;
-		
+
 		if (isModelType || coerce) {
 			// We might need to do some type conversion on each item in the array.
 			// Even if we do type conversion we store the "raw" value in the
@@ -30,14 +31,14 @@ module.exports = Model.extend({
 				} else {
 					if (coerce) {
 						// need to coerce
-						item = coerce(item, attribute, errors);
+						item = coerce(item, property, errors);
 					}
-					
+
 					if (isModelType) {
 						if (subtype.isWrapped()) {
 							subtype.wrap(item, errors);
 						}
-						
+
 						array[i] = Model.unwrap(item);
 					} else {
 						array[i] = item;
@@ -45,7 +46,7 @@ module.exports = Model.extend({
 				}
 			}
 		}
-		
+
 		return array;
 	}
 });

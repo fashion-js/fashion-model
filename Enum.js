@@ -12,7 +12,7 @@ Enum.toConstantName = function(str) {
 		} else {
 			return '_';
 		}
-		
+
 	}).toUpperCase();
 };
 
@@ -36,54 +36,53 @@ var NORMALIZE_UPPER_CASE = function(str) {
 };
 
 Enum.create = function(config) {
-	
 	if (!config.coerce) {
-		config.coerce = function(value, attribute, errors) {
+		config.coerce = function(value, property, errors) {
 			if ((value == null) || (value.constructor === Type)) {
 				return value;
 			}
-			
+
 			if (normalize !== undefined) {
 				value = normalize(value);
 			}
-			
+
 			var enumValue = Type[value];
 			if (enumValue === undefined) {
-				this.coercionError(value, attribute, errors);
+				this.coercionError(value, property, errors);
 			}
 			return enumValue;
 		};
 	}
-	
+
 	var Type = Enum.extend(config);
-	
+
 	var normalize;
 	if (config.autoUpperCase) {
 		normalize = NORMALIZE_UPPER_CASE;
 	} else if (config.autoLowerCase) {
 		normalize = NORMALIZE_LOWER_CASE;
 	}
-	
+
 	var values = Type.values = config.values;
-	
+
 	Type.prototype.value = Type.prototype.toString = function() {
 		return this.data;
 	};
-	
+
 	values.forEach(function(value, index) {
 		var name = Enum.toConstantName(value);
 		var enumValue = new Type(value);
-		
+
 		values[index] = enumValue;
-		
+
 		Type.prototype['is' + Enum.toTitleCase(name)] = function() {
 			return (this === enumValue);
 		};
-		
+
 		Type[value] = Type[name] = enumValue;
 	});
-	
+
 	Type.preventConstruction();
-	
+
 	return Type;
 };
