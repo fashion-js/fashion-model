@@ -1,5 +1,5 @@
 var chai = require('chai');
-chai.Assertion.includeStack = true;
+chai.config.includeStack = true;
 require('chai').should();
 var expect = require('chai').expect;
 
@@ -626,7 +626,6 @@ describe('Model' , function() {
 	});
 
 	it('should coerce array of models', function() {
-
 		var Person = Model.extend({
 			properties: {
 				happy: Boolean
@@ -685,5 +684,26 @@ describe('Model' , function() {
 				}
 			]
 		});
+	});
+
+	it('should support integer type', function() {
+		var IntegerType = require('../Integer');
+		var ArrayType = require('../Array');
+
+		var Something = Model.extend({
+			properties: {
+				first: 'integer',
+				second: IntegerType,
+				firstArray: ['integer'],
+				secondArray: [IntegerType]
+			}
+		});
+
+		expect(Something.getProperty('first').getType()).to.equal(IntegerType);
+		expect(Something.getProperty('second').getType()).to.equal(IntegerType);
+		expect(Something.getProperty('firstArray').getType()).to.equal(ArrayType);
+		expect(Something.getProperty('secondArray').getType()).to.equal(ArrayType);
+		expect(Something.getProperty('firstArray').getSubtype()).to.equal(IntegerType);
+		expect(Something.getProperty('secondArray').getSubtype()).to.equal(IntegerType);
 	});
 });

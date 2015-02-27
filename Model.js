@@ -365,7 +365,7 @@ Property_proto.isPersisted = function() {
     return (this.persist !== false);
 };
 
-function _parseType(type, propertyConfig) {
+function _parseType(type) {
     switch(type) {
     case Date:
         return primitives.date;
@@ -414,8 +414,17 @@ function _toProperty(name, propertyConfig, resolver) {
     if (type) {
         if (Array.isArray(type)) {
             // handle short-hand notation for Array types
-            propertyConfig.subtype = (type.length === 0) ? null : _parseType(type[0]);
             propertyConfig.type =  ArrayType;
+            if (type.length) {
+                var subtype = type[0];
+                if (subtype != null) {
+                    if (subtype.constructor === String) {
+                        propertyConfig.subtype = _resolve(subtype, resolver);
+                    } else {
+                        propertyConfig.subtype = _parseType(subtype);
+                    }
+                }
+            }
         } else if (type.constructor === String) {
             var len = type.length;
             if ((type.charAt(len - 2) === '[') && (type.charAt(len - 1) === ']')) {
