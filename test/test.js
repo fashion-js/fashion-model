@@ -706,4 +706,94 @@ describe('Model' , function() {
 		expect(Something.getProperty('firstArray').getSubtype()).to.equal(IntegerType);
 		expect(Something.getProperty('secondArray').getSubtype()).to.equal(IntegerType);
 	});
+
+	it('should support complex object validation', function() {
+		var IntegerType = require('../Integer');
+
+		var Something = Model.extend({
+			properties: {
+				name: String,
+				age: IntegerType
+			}
+		});
+
+		var errors;
+		var something;
+
+		errors = [];
+		something = Something.wrap({
+			name: 'John',
+			age: 30
+		}, errors);
+		expect(errors.length).to.equal(0);
+
+		something = Something.wrap({
+			name: 'John',
+			age: 'blah'
+		}, errors);
+
+		expect(errors.length).to.equal(1);
+
+		errors = [];
+		something = Something.wrap({
+			blah: 'Blah',
+		}, errors);
+		expect(errors.length).to.equal(1);
+	});
+
+	it('should support additionalProperties', function() {
+		var IntegerType = require('../Integer');
+
+		var Something = Model.extend({
+			properties: {
+				name: String,
+				age: IntegerType
+			},
+			additionalProperties: true
+		});
+
+		var errors;
+		var something;
+
+		errors = [];
+		something = Something.wrap({
+			blah: 'Blah',
+		}, errors);
+		expect(errors.length).to.equal(0);
+	});
+
+	it.skip('should support array of array type', function() {
+		var IntegerType = require('../Integer');
+		var Item = Model.extend({
+			properties: {
+				id: IntegerType
+			}
+		});
+
+		var Something = Model.extend({
+			properties: {
+				stuff: [[Item]]
+			},
+			additionalProperties: true
+		});
+
+		var errors;
+		var something;
+
+		errors = [];
+		something = Something.wrap({
+			stuff: [
+				[{id: '1'}, {id: '2'}],
+				[{id: '3'}, {id: '4'}]
+			]
+		}, errors);
+		expect(errors.length).to.equal(0);
+
+		expect(something.clean()).to.deep.equal({
+			stuff: [
+				[{id: 1}, {id: 2}],
+				[{id: 3}, {id: 4}]
+			]
+		});
+	});
 });

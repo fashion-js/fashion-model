@@ -6,7 +6,7 @@ module.exports = require('./Model').extend({
 			return value;
 		}
 
-        var number = parseInt(value);
+        var number = parseInt(value, 10);
 
         if (isNaN(number)) {
             this.coercionError(value, property, errors);

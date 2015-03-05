@@ -87,7 +87,10 @@ describe('typed-model json-schema support', function() {
 
             var valid = zschemaValidator.validate(data, schema);
             if (!valid) {
-                return callback(zschemaValidator.getLastError());
+				var err = zschemaValidator.getLastError();
+				var betterErr = new Error(err.name + ' - ' + err.message + ': ' + err.details.toString());
+				betterErr.stack = err.stack;
+                return callback(betterErr);
             }
 
             jschemaValidator.validate(data, schema, callback);

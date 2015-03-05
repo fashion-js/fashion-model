@@ -48,12 +48,16 @@ var NewEnum = require('typed-model').createEnum({/* config */});
 
 ### Primitive Types
 The following primitive types are supported:
-- Date
-- Boolean
-- Number
-- String
+- **Date Type:** `Date` / `"date"` / `require("typed-model/Date")`
+- **Boolean Type:** `Boolean` / `"boolean"` / `require("typed-model/Boolean")`
+- **Number Type:** `Number` / `"number"` / `require("typed-model/Number")`
+- **Integer Type:** `"integer"` / `require("typed-model/Integer")`
+- **String Type:** `String` / `"string"` / `require("typed-model/String")`
+- **Array Type:** `Array` / `[]` / `"array"` / `require("typed-model/Array")`
 
 ### Complex Object Type
+
+**Declare custom complex object type:**
 ```javascript
 var Address = Model.extend({
     properties: {
@@ -61,25 +65,36 @@ var Address = Model.extend({
         state: String
     }
 });
+```
 
-var address;
-
+**Create instance via `new` constructor with no initial data:**
+```javascript
 // Create via constructor with no initial data
-address = new Address();
+var address = new Address();
 address.setCity('San Francisco');
 address.setState('CA');
+```
 
+**Create instance via `new` constructor with some initial data:**
+```javascript
 // Create via constructor with initial data
-address = new Address({
+var address = new Address({
 	city: 'San Francisco',
 	state: 'CA'
 });
+```
 
+**Create instance via `create` method:**
+```javascript
+#### Object Creation via Getters & Setters
 // Create via "create" function
-address = Address.create();
+var address = Address.create();
 address.setCity('San Francisco');
 address.setState('CA');
+```
 
+**Create instance by wrapping existing data:**
+```javascript
 // Create via "wrap" function
 address = Address.wrap({
 	city: 'San Francisco',
@@ -103,6 +118,7 @@ var Address = Model.extend({
 
 // Create instance of Address
 var address = new Address();
+
 // Use the generated setter to set the city
 address.setCity('New York');
 
@@ -167,14 +183,16 @@ You can also create getters for "computed" properties.
 **For example:**
 ```javascript
 var Person = Entity.extend({
-	firstName: String,
-	lastName: String,
-	displayName: {
-		type: String
-		get: function(property) {
-			return this.getFirstName() + ' ' + this.getLastName();
-		}
-	}
+    properties: {
+        firstName: String,
+    	lastName: String,
+    	displayName: {
+    		type: String
+    		get: function(property) {
+    			return this.getFirstName() + ' ' + this.getLastName();
+    		}
+    	}
+    }
 });
 ```
 
@@ -303,6 +321,10 @@ safely stringify the instance.
 
 **For example:**
 ```javascript
+// Stringify and do not add extra white-space
+console.log(model.stringify());
+
+// Stringify and include extra white-space for better readability
 console.log(model.stringify());
 ```
 
@@ -321,7 +343,7 @@ var ObjectId = Model.extend({
 	// This means that the getters for properties of this type
 	// will return the raw MongoDB ObjectID type
     wrap: false,
-	
+
 	// We provide a "coerce" function to convert a value to the proper
 	// MongoDB ObjectID type
     coerce: function(data) {
@@ -340,7 +362,7 @@ var Entity = Model.extend({
 		// ObjectId is a type that we use just to make sure that the value
 		// is automatically converted to the type that we need for storage
 		type: ObjectId,
-		
+
 		// MongoDB data storage expects a document to store its
 		// identifier in the "_id" property but we still want to
 		// access it via "getId" and "setId" (and not "get_id" and "set_id")
@@ -475,3 +497,197 @@ assert(teamMembers[1].getDisplayName() === 'Jane');
 assert(team.getPerson(0).getDisplayName() === 'John');
 assert(team.getPerson(1).getDisplayName()) === 'Jane');
 ```
+
+### JSON Schema
+
+A `Model` type can be easily converted to an equivalent JSON schema
+with the following module:
+```javascript
+var jsonSchema = require('typed-model/json-schema-draft4');
+var someModelSchema = jsonSchema.fromModel(SomeModel, options);
+```
+
+| Option | Type | Purpose |
+| ------ | ---- | ------- |
+| `toRef` | `function(Model)` | This function can be used to turn a Model definition to a reference name (return value will be used as value for `$ref` properties) |
+| `isIgnoredProperty` | `function(name, property)` | This function can be used to exclude a property from the schema definition of a complex object |
+
+
+#### Convert Model to JSON Schema
+
+**Define your models:**
+```javascript
+var Model = require('typed-model/Model');
+var Enum = require('typed-model/Enum');
+
+var Entity = Model.extend({
+    typeName: 'Entity',
+	properties: {
+		id: String
+	}
+});
+
+var Gender = Enum.create({
+    typeName: 'Gender',
+	title: 'Gender',
+	description: 'A person\'s gender',
+	values: ['M', 'F']
+});
+
+var Species = Enum.create({
+    typeName: 'Species',
+	title: 'Species',
+	description: 'A species',
+	values: ['dog', 'cat']
+});
+
+var Pet = Model.extend({
+    typeName: 'Pet',
+	properties: {
+		name: String,
+		species: Species
+	}
+});
+
+var Person = Entity.extend({
+    typeName: 'Person',
+	title: 'Person',
+	description: 'A person',
+	properties: {
+		name: String,
+		dateOfBirth: Date,
+		gender: Gender,
+		age: 'integer',
+		pets: [Pet],
+		favoriteNumbers: ['integer'],
+		anything: [],
+		blob: Object
+	}
+});
+```
+
+**NOTE:**
+
+
+**Convert your model to JSON schema:**
+```javascript
+var jsonSchema = require('typed-model/json-schema-draft4');
+var jsonSchemaOptions = {
+    toRef: function(Model) {
+        return Model.typeName;
+    }
+};
+
+var EntitySchema = jsonSchema.fromModel(Entity, jsonSchemaOptions);
+var GenderSchema = jsonSchema.fromModel(Gender, jsonSchemaOptions);
+var SpeciesSchema = jsonSchema.fromModel(Species, jsonSchemaOptions);
+var PetSchema = jsonSchema.fromModel(Pet, jsonSchemaOptions);
+var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
+```
+
+**Entity:**
+```json
+{
+   "id": "Entity",
+   "type": "object",
+   "properties": {
+      "id": {
+         "type": "string"
+      }
+   }
+}
+```
+
+**Gender:**
+```json
+{
+   "id": "Gender",
+   "title": "Gender",
+   "description": "A person's gender",
+   "type": "string",
+   "enum": [
+      "M",
+      "F"
+   ]
+}
+```
+
+**Species:**
+```json
+{
+   "id": "Species",
+   "title": "Species",
+   "description": "A species",
+   "type": "string",
+   "enum": [
+      "dog",
+      "cat"
+   ]
+}
+```
+
+**Pet:**
+```json
+{
+   "id": "Pet",
+   "type": "object",
+   "properties": {
+      "name": {
+         "type": "string"
+      },
+      "species": {
+         "$ref": "Species"
+      }
+   }
+}
+```
+
+**Person:**
+```json
+{
+   "id": "Person",
+   "title": "Person",
+   "description": "A person",
+   "allOf": [
+      {
+         "$ref": "Entity"
+      }
+   ],
+   "type": "object",
+   "properties": {
+      "name": {
+         "type": "string"
+      },
+      "dateOfBirth": {
+         "type": "string",
+         "format": "date-time"
+      },
+      "gender": {
+         "$ref": "Gender"
+      },
+      "age": {
+         "type": "integer"
+      },
+      "pets": {
+         "type": "array",
+         "items": {
+            "$ref": "Pet"
+         }
+      },
+      "favoriteNumbers": {
+         "type": "array",
+         "items": {
+            "type": "integer"
+         }
+      },
+      "anything": {
+         "type": "array"
+      },
+      "blob": {
+         "type": "object"
+      }
+   }
+}
+```
+
+

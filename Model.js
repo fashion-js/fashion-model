@@ -133,7 +133,7 @@ module.exports = Model = function Model(data, errors) {
                     var property = properties[key];
                     if (property) {
                         _set(this, property, data[key], errors);
-                    } else if (!Derived.allowAnyProperty && errors) {
+                    } else if (!Derived.additionalProperties && errors) {
                         errors.push('Unrecognized property: ' + key);
                     }
                 }
@@ -294,7 +294,7 @@ Model_proto.clean = function(errors) {
                 var value = data[key];
                 if (property && (property.isPersisted())) {
                     clone[key] = Model.clean(value, errors);
-                } else if (!Derived.allowAnyProperty && errors) {
+                } else if (!Derived.additionalProperties && errors) {
                     errors.push('Unrecognized property: ' + key);
                 }
             }
