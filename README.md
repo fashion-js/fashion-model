@@ -30,7 +30,7 @@ helpful to wrap the raw object with a `Model` instance and use the
 getters and setters to work with the data.
 
 ## Relationship to JSON Schema
-Model definitions are JSON Schema and, when possible, similar
+Model definitions are similar to JSON Schema and, when possible, similar
 naming conventions were chosen. However, this module is more tailored to runtime
 usage. If desired, you can convert your model definitions to a JSON Schema
 representation fairly easily. See [JSON Schema section](#json-schema) for more
@@ -416,7 +416,7 @@ var Color = Enum.create({
 });
 
 var ColorPalette = Model.extend({
-	properties: {.
+	properties: {
 		colors: {
             // colors has type array
 			type: Array,
