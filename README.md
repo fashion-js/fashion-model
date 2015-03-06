@@ -324,7 +324,7 @@ safely stringify the instance.
 console.log(model.stringify());
 
 // Stringify and include extra white-space for better readability
-console.log(model.stringify());
+console.log(model.stringify(true));
 ```
 
 ### Type Coercion
@@ -409,13 +409,13 @@ var Color = Enum.create({
 });
 
 var ColorPalette = Model.extend({
-	properties: {
-		// The Array type should be a given a subtype.
-		// The generated accessor methods for this property
-		// will automatically wrap each item with the subtype.
+	properties: {.
 		colors: {
+            // colors has type array
 			type: Array,
-			subtype: Color
+
+            // each item in the array is a Color
+			items: Color
 		}
 	}
 });
@@ -427,7 +427,7 @@ var ColorPalette = Model.extend({
 	properties: {
 		// Using an Array instance is short-hand for specifying
 		// that the property is of type array. The first item
-		// in this array indicates the subtype.
+		// in this array indicates the type of each item.
 		colors: [Color]
 	}
 });
@@ -441,13 +441,8 @@ var colorPalette = new ColorPalette({
 
 var colors = [];
 
-// A forEach<Item> function is automatically created
-// for properties of type Array.
-// The name of the forEach function will constructed
-// using the singular form of the property name.
-// If the singular form cannot be inferred then you can
-// add a "singular" property to the property config that
-// helps the model generator pick the right name.
+// getColors() will return an Array and we can use the "forEach" function.
+// Each item in the array must be wrapped with the correct type.
 colorPalette.getColors().forEach(function(color, index) {
     color = Color.wrap(color);
 	colors[index] = color;
@@ -490,8 +485,6 @@ var person = new Person({
     name: 'John',
     age: 'bad integer'
 }, options);
-
-// options.errors will have been populated with any errors
 ```
 
 ### JSON Schema
