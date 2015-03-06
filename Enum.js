@@ -37,7 +37,7 @@ var NORMALIZE_UPPER_CASE = function(str) {
 
 Enum.create = function(config) {
 	if (!config.coerce) {
-		config.coerce = function(value, property, errors) {
+		config.coerce = function(value, options) {
 			if ((value == null) || (value.constructor === Type)) {
 				return value;
 			}
@@ -48,7 +48,7 @@ Enum.create = function(config) {
 
 			var enumValue = Type[value];
 			if (enumValue === undefined) {
-				this.coercionError(value, property, errors);
+				this.coercionError(value, options);
 			}
 			return enumValue;
 		};

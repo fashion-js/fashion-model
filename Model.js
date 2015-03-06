@@ -24,7 +24,7 @@ function _get(model, property) {
     }
 
     var type = property.getType();
-    if (Model.isModelType(type) && type.isWrapped()) {
+    if (type.isWrapped()) {
         if (type.isAutoUnwrapped()) {
             // auto unwrap
             value = Model.unwrap(value);
@@ -37,15 +37,21 @@ function _get(model, property) {
     return value;
 }
 
-function _set(model, property, value, errors) {
-    var type = property.getType();
+function _set(model, property, value, options) {
+    var Type = property.getType();
 
-    if (Model.isModel(value) && (value instanceof type)) {
+    if (Model.isModel(value) && (value instanceof Type)) {
         // value is expected type
         // store raw data in this model's data
         value = value.data;
-    } else if (type.coerce) {
-        value = type.coerce(value, property, errors);
+    } else if (Type.coerce) {
+
+        options = _toOptions(options);
+        options.property = property;
+
+        value = Type.coerce.call(Type, value, options);
+
+        options.property = undefined;
     }
 
     var setter = property.getSetter();
@@ -53,9 +59,9 @@ function _set(model, property, value, errors) {
         return setter.call(model, property.getProperty(), value, property);
     }
 
-    if ((value != null) && Model.isModelType(type) && type.isWrapped()) {
+    if ((value != null) && Type.isWrapped()) {
         // recursively call setters
-        type.wrap(value, errors);
+        Type.wrap(value, options);
     }
 
     model.data[property.getProperty()] = Model.unwrap(value);
@@ -73,49 +79,11 @@ function _generateSetter(property) {
     };
 }
 
-function _generateForEach(property) {
-    var subtype = property.getSubtype();
-    var SubtypeModel = (subtype && Model.isModelType(subtype)) ? subtype : null;
-
-    return function(callback) {
-        var values = this.data[property.getProperty()];
-        if (values == null || !values.length) {
-            return;
-        }
-
-        var i = 0;
-        var len = values.length;
-        if (SubtypeModel) {
-            for (; i < len; i++) {
-                callback(SubtypeModel.wrap(values[i]), i);
-            }
-        } else {
-            for (; i < len; i++) {
-                callback(values[i], i);
-            }
-        }
-    };
-}
-
-function _generateArrayIndexGetter(property) {
-    var subtype = property.getSubtype();
-    var SubtypeModel = (subtype && Model.isModelType(subtype)) ? subtype : null;
-    return function(index) {
-        var values = this.data[property.getProperty()];
-        if (values == null || !values.length) {
-            return undefined;
-        }
-
-        var value = values[index];
-        return (SubtypeModel) ? SubtypeModel.wrap(value) : value;
-    };
-}
-
 function _initialUpperCase(str) {
     return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
-module.exports = Model = function Model(data, errors) {
+module.exports = Model = function Model(data, options) {
     var Derived = this.constructor;
 
     if (Derived.constructable === false) {
@@ -126,13 +94,26 @@ module.exports = Model = function Model(data, errors) {
         var properties = Derived.properties;
         this.data = data || {};
         if (data != null) {
+            var errors;
+            if (options) {
+                if (Array.isArray(options)) {
+                    // since options is an array we treat as the output array
+                    // for errors
+                    options = {
+                        errors: (errors = options)
+                    };
+                } else {
+                    errors = options.errors;
+                }
+            }
+
             // use setters to make sure values get properly coerced
             for (var key in data) {
                 if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
 
                     var property = properties[key];
                     if (property) {
-                        _set(this, property, data[key], errors);
+                        _set(this, property, data[key], options);
                     } else if (!Derived.additionalProperties && errors) {
                         errors.push('Unrecognized property: ' + key);
                     }
@@ -143,10 +124,6 @@ module.exports = Model = function Model(data, errors) {
     } else {
         this.data = data;
     }
-};
-
-Model.isModelType = function(type) {
-    return type.Model;
 };
 
 Model.isModel = function(obj) {
@@ -182,7 +159,7 @@ Model.clean = function(obj, errors) {
         var result = new Array(obj.length);
         var i = obj.length;
         while(--i >= 0) {
-            result[i] = _clean(obj[i], errors);
+            result[i] = Model.clean(obj[i], errors);
         }
         return result;
     } else {
@@ -236,15 +213,15 @@ Model.isCompatibleWith = function(other) {
     return false;
 };
 
-Model.coercionError = function(value, property, errors) {
+Model.coercionError = function(value, options) {
     var message = '';
-    if (property) {
-        message += property.getName() + ': ';
+    if (options && options.property && options.property.getName) {
+        message += options.property.getName() + ': ';
     }
     message += 'Invalid value: ' + value;
 
-    if (errors) {
-        errors.push(message);
+    if (options && options.errors) {
+        options.errors.push(message);
     } else {
         var err = new Error(message);
         err.source = Model;
@@ -345,12 +322,8 @@ Property_proto.getType = function() {
     return this.type;
 };
 
-Property_proto.getSubtype = function() {
-    return this.subtype;
-};
-
-Property_proto.isModelType = function() {
-    return Model.isModelType(this.getType());
+Property_proto.getItems = function() {
+    return this.items;
 };
 
 Property_proto.getGetter = function() {
@@ -365,7 +338,26 @@ Property_proto.isPersisted = function() {
     return (this.persist !== false);
 };
 
+function Items(owner) {
+    this.owner = owner;
+}
+
+Items.prototype.getName = function() {
+    return this.owner.getName();
+};
+
+var Property_proto = Items.prototype;
+
+Property_proto.getName = function() {
+    return this.name;
+};
+
 function _parseType(type) {
+    if (type.Model) {
+        // type is derived from Model
+        return type;
+    }
+
     switch(type) {
     case Date:
         return primitives.date;
@@ -381,7 +373,19 @@ function _parseType(type) {
         return ArrayType;
     }
 
-    return type;
+    throw new Error('Unrecognized type. Expected type derived from Model or primitive type.');
+}
+
+function _parseTypeStr(typeStr, propertyConfig, resolver) {
+    var len = typeStr.length;
+    if ((typeStr.charAt(len - 2) === '[') && (typeStr.charAt(len - 1) === ']')) {
+        // array type
+        propertyConfig.type = ArrayType;
+        propertyConfig.items = {};
+        _parseTypeStr(typeStr.substring(0, len - 2), propertyConfig.items, resolver);
+    } else {
+        propertyConfig.type = _resolve(typeStr, resolver);
+    }
 }
 
 function _resolve(typeName, resolver) {
@@ -399,7 +403,7 @@ function _resolve(typeName, resolver) {
     throw new Error('Invalid type: ' + typeName);
 }
 
-function _toProperty(name, propertyConfig, resolver) {
+function _parseTypeConfig(propertyConfig, resolver) {
     if (Array.isArray(propertyConfig)) {
         propertyConfig = {
             type: propertyConfig
@@ -416,40 +420,31 @@ function _toProperty(name, propertyConfig, resolver) {
             // handle short-hand notation for Array types
             propertyConfig.type =  ArrayType;
             if (type.length) {
-                var subtype = type[0];
-                if (subtype != null) {
-                    if (subtype.constructor === String) {
-                        propertyConfig.subtype = _resolve(subtype, resolver);
-                    } else {
-                        propertyConfig.subtype = _parseType(subtype);
-                    }
+                var items = type[0];
+                if (items != null) {
+                    propertyConfig.items = _parseTypeConfig(items, resolver);
                 }
             }
         } else if (type.constructor === String) {
-            var len = type.length;
-            if ((type.charAt(len - 2) === '[') && (type.charAt(len - 1) === ']')) {
-                // array type
-                propertyConfig.type = ArrayType;
-
-                type = type.substring(0, len - 2);
-                propertyConfig.subtype = _resolve(type, resolver);
-            } else {
-                propertyConfig.type = _resolve(type, resolver);
-            }
+            _parseTypeStr(type, propertyConfig, resolver);
         } else {
             // handle normal notation for types
             propertyConfig.type = _parseType(type);
 
             // Convert the subtype to special type if necessary
-            if (propertyConfig.subtype) {
-                propertyConfig.subtype = _parseType(propertyConfig.subtype);
+            if (propertyConfig.items) {
+                propertyConfig.items = _parseTypeConfig(propertyConfig.items, resolver);
             }
         }
     } else {
-        propertyConfig.type = Object;
+        propertyConfig.type = primitives.object;
     }
 
+    return propertyConfig;
+}
 
+function _toProperty(name, propertyConfig, resolver) {
+    propertyConfig = _parseTypeConfig(propertyConfig, resolver);
     propertyConfig.name = name;
     propertyConfig.property = propertyConfig.property || name;
 
@@ -474,6 +469,20 @@ function _copyNonSpecialPropertiesToType(config, Type) {
     }
 }
 
+function _toOptions(options) {
+    if (options == null) {
+        return {};
+    }
+
+    if (Array.isArray(options)) {
+        return {
+            errors: options
+        };
+    }
+
+    return options;
+}
+
 function _extend(Base, config, resolver) {
     config = config || {};
 
@@ -485,10 +494,10 @@ function _extend(Base, config, resolver) {
     var properties = config.properties;
     var prototype = config.prototype;
 
-    function Derived() {
-        Derived.$super.apply(this, arguments);
+    function Derived(data, options) {
+        Derived.$super.call(this, data, options);
         if (init) {
-            init.apply(this, arguments);
+            init.call(this, data, options);
         }
     }
 
@@ -513,14 +522,8 @@ function _extend(Base, config, resolver) {
     Derived.Model = Model;
 
     if (coerce) {
-        Derived.coerce = function(value, property, errors) {
-            // Simple proxy for the coerce function to fix arguments
-            if (Array.isArray(property)) {
-                errors = arguments[1];
-                property = null;
-            }
-
-            return coerce.call(Derived, value, property, errors);
+        Derived.coerce = function(value, options) {
+            return coerce.call(Derived, value, _toOptions(options));
         };
     }
 
@@ -541,7 +544,7 @@ function _extend(Base, config, resolver) {
     if (wrap && wrap.constructor === Function) {
         factory = wrap;
     } else {
-        factory = function(data, errors) {
+        factory = function(data, options) {
             if (arguments.length === 0) {
                 return new Derived();
             }
@@ -551,7 +554,8 @@ function _extend(Base, config, resolver) {
             }
 
             if (coerce) {
-                data = coerce.call(Derived, data, null /* property */, errors);
+                options = _toOptions(options);
+                data = coerce.call(Derived, data, options);
             }
 
             if (data == null) {
@@ -579,7 +583,7 @@ function _extend(Base, config, resolver) {
 
             // return existing model or create a new model
             // NOTE: Model constructor will store $model in data
-            return (data && data.$model) || new Derived(data, errors);
+            return (data && data.$model) || new Derived(data, options);
         };
     }
 
@@ -627,29 +631,6 @@ function _extend(Base, config, resolver) {
                 if (property.getSetter() !== null) {
                     funcName = 'set' + funcSuffix;
                     classPrototype[funcName] = _generateSetter(property);
-                }
-
-                if (property.getType() === ArrayType) {
-                    var singular;
-                    if (property.singular) {
-                        singular = _initialUpperCase(property.singular);
-                    } else {
-                        singular = funcSuffix.replace(/(ies)|(s|List|Set)$/, function(match, ies, truncate) {
-                            // cities --> city
-                            return ies ? 'y' : '';
-                        });
-                    }
-
-                    funcName = 'forEach' + singular;
-                    classPrototype[funcName] = _generateForEach(property);
-
-                    funcName = 'get' + singular;
-
-                    if (singular === funcSuffix) {
-                        funcName += 'Item';
-                    }
-
-                    classPrototype[funcName] = _generateArrayIndexGetter(property);
                 }
             });
         }

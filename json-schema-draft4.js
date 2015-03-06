@@ -3,7 +3,6 @@ var Enum = require('./Enum');
 var ArrayType = require('./Array');
 
 //var primitives = require('./primitives');
-var SPECIAL_TYPES;
 
 var DEFAULT_TO_REF = function(Type) {
     if (!Type.typeName) {
@@ -17,17 +16,7 @@ var DEFAULT_IS_IGNORED_PROPERTY = function(name, property) {
     return false;
 };
 
-function _configure(jsonSchemaProperty, Type, options) {
-    var typeName = Type.typeName;
-    var specialType;
-    if (typeName && ((specialType = SPECIAL_TYPES[typeName]) !== undefined)) {
-        specialType.configureJsonSchemaProperty(jsonSchemaProperty);
-    } else {
-        jsonSchemaProperty.$ref = options.toRef(Type);
-    }
-}
-
-SPECIAL_TYPES = {
+var SPECIAL_TYPES = {
     'object': {
         configureJsonSchemaProperty: function(jsonSchemaProperty) {
             jsonSchemaProperty.type = 'object';
@@ -66,6 +55,16 @@ SPECIAL_TYPES = {
         }
     }
 };
+
+function _configure(jsonSchemaProperty, Type, options) {
+    var typeName = Type.typeName;
+    var specialType;
+    if (typeName && ((specialType = SPECIAL_TYPES[typeName]) !== undefined)) {
+        specialType.configureJsonSchemaProperty(jsonSchemaProperty);
+    } else {
+        jsonSchemaProperty.$ref = options.toRef(Type);
+    }
+}
 
 var IGNORED_PROPERTIES = {
     constructor: 1,
@@ -142,10 +141,10 @@ exports.fromModel = function(Type, options) {
                 if (declaredProperty.type === ArrayType) {
                     jsonSchemaProperty.type = 'array';
 
-                    var subtype = declaredProperty.subtype;
-                    if (subtype) {
+                    var items = declaredProperty.items;
+                    if (items) {
                         jsonSchemaProperty.items = {};
-                        _configure(jsonSchemaProperty.items, subtype, options);
+                        _configure(jsonSchemaProperty.items, items.type, options);
                     }
                 } else {
                     _configure(jsonSchemaProperty, PropertyType, options);

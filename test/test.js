@@ -389,7 +389,8 @@ describe('Model' , function() {
 		});
 
 		var colors = [];
-		colorPalette.forEachColor(function(color, index) {
+		colorPalette.getColors().forEach(function(color, index) {
+			color = Color.wrap(color);
 			expect(color.constructor).to.equal(Color);
 			colors[index] = color;
 		});
@@ -399,46 +400,9 @@ describe('Model' , function() {
 		expect(colors[1]).to.equal(Color.GREEN);
 		expect(colors[2]).to.equal(Color.BLUE);
 
-		expect(colorPalette.getColor(0)).to.equal(Color.RED);
-		expect(colorPalette.getColor(1)).to.equal(Color.GREEN);
-		expect(colorPalette.getColor(2)).to.equal(Color.BLUE);
-    });
-
-	it('should support "singular" property for array type', function() {
-
-
-        var Team = Model.extend({
-			properties: {
-				people: {
-					type: [Member],
-					singular: 'person'
-				}
-			}
-		});
-
-		var team = new Team({
-			people: [
-				{
-					displayName: 'John'
-				},
-				{
-					displayName: 'Jane'
-				}
-			]
-		});
-
-		var teamMembers = [];
-		team.forEachPerson(function(person, index) {
-			expect(person.constructor).to.equal(Member);
-			teamMembers[index] = person;
-		});
-
-		expect(teamMembers.length).to.equal(2);
-		expect(teamMembers[0].getDisplayName()).to.equal('John');
-		expect(teamMembers[1].getDisplayName()).to.equal('Jane');
-
-		expect(team.getPerson(0).getDisplayName()).to.equal('John');
-		expect(team.getPerson(1).getDisplayName()).to.equal('Jane');
+		expect(Color.wrap(colorPalette.getColors()[0])).to.equal(Color.RED);
+		expect(Color.wrap(colorPalette.getColors()[1])).to.equal(Color.GREEN);
+		expect(Color.wrap(colorPalette.getColors()[2])).to.equal(Color.BLUE);
     });
 
 	it('should handle enum conversion errors', function() {
@@ -454,8 +418,6 @@ describe('Model' , function() {
 				throw e;
 			}
 		}).to.throw(Error);
-
-
 
 		var errors;
 
@@ -662,10 +624,10 @@ describe('Model' , function() {
 		expect(people[3].happy).to.equal(true);
 
 
-		expect(something.getPeopleItem(0).getHappy()).to.equal(false);
-		expect(something.getPeopleItem(1).getHappy()).to.equal(false);
-		expect(something.getPeopleItem(2).getHappy()).to.equal(true);
-		expect(something.getPeopleItem(3).getHappy()).to.equal(true);
+		expect(Person.wrap(something.getPeople()[0]).getHappy()).to.equal(false);
+		expect(Person.wrap(something.getPeople()[1]).getHappy()).to.equal(false);
+		expect(Person.wrap(something.getPeople()[2]).getHappy()).to.equal(true);
+		expect(Person.wrap(something.getPeople()[3]).getHappy()).to.equal(true);
 
 		var cleanSomething = Model.clean(something);
 		expect(cleanSomething).to.deep.equal({
@@ -703,8 +665,8 @@ describe('Model' , function() {
 		expect(Something.getProperty('second').getType()).to.equal(IntegerType);
 		expect(Something.getProperty('firstArray').getType()).to.equal(ArrayType);
 		expect(Something.getProperty('secondArray').getType()).to.equal(ArrayType);
-		expect(Something.getProperty('firstArray').getSubtype()).to.equal(IntegerType);
-		expect(Something.getProperty('secondArray').getSubtype()).to.equal(IntegerType);
+		expect(Something.getProperty('firstArray').getItems().type).to.equal(IntegerType);
+		expect(Something.getProperty('secondArray').getItems().type).to.equal(IntegerType);
 	});
 
 	it('should support complex object validation', function() {
@@ -762,7 +724,37 @@ describe('Model' , function() {
 		expect(errors.length).to.equal(0);
 	});
 
-	it.skip('should support array of array type', function() {
+	it('should support strict validation', function() {
+		var IntegerType = require('../Integer');
+
+		var Something = Model.extend({
+			properties: {
+				someString: String,
+				someBoolean: Boolean,
+				someDate: Date,
+				someNumber: Number,
+				someInteger: IntegerType
+			},
+			additionalProperties: true
+		});
+
+		var errors = [];
+
+		Something.wrap({
+			someString: 123,
+			someBoolean: 1,
+			someDate: 0,
+			someNumber: '123',
+			someInteger: '123'
+		}, {
+			strict: true,
+			errors: errors
+		});
+
+		expect(errors.length).to.equal(5);
+	});
+
+	it('should support array of array type', function() {
 		var IntegerType = require('../Integer');
 		var Item = Model.extend({
 			properties: {
@@ -772,7 +764,17 @@ describe('Model' , function() {
 
 		var Something = Model.extend({
 			properties: {
-				stuff: [[Item]]
+				// short-hand for defining an Array of Array
+				stuff: [[Item]],
+
+				// long-hand for defining an Array of Array
+				moreStuff: {
+					type: Array,
+					items: {
+						type: Array,
+						items: Item
+					}
+				}
 			},
 			additionalProperties: true
 		});

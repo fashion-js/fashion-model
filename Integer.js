@@ -1,7 +1,15 @@
 module.exports = require('./Model').extend({
 	typeName: 'integer',
 	wrap: false,
-	coerce: function(value, property, errors) {
+	coerce: function(value, options) {
+		if (options.strict) {
+			// strict mode
+			if (value != null && (value.constructor !== Number)) {
+				this.coercionError(value, options);
+			}
+			return value;
+		}
+
 		if (value == null) {
 			return value;
 		}
@@ -9,7 +17,7 @@ module.exports = require('./Model').extend({
         var number = parseInt(value, 10);
 
         if (isNaN(number)) {
-            this.coercionError(value, property, errors);
+            this.coercionError(value, options);
         }
 
         return number;

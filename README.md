@@ -86,7 +86,6 @@ var address = new Address({
 
 **Create instance via `create` method:**
 ```javascript
-#### Object Creation via Getters & Setters
 // Create via "create" function
 var address = Address.create();
 address.setCity('San Francisco');
@@ -449,53 +448,50 @@ var colors = [];
 // If the singular form cannot be inferred then you can
 // add a "singular" property to the property config that
 // helps the model generator pick the right name.
-colorPalette.forEachColor(function(color, index) {
-	expect(color.constructor).to.equal(Color);
+colorPalette.getColors().forEach(function(color, index) {
+    color = Color.wrap(color);
 	colors[index] = color;
 });
-
-// A get<Item> function is also created.
-assert(colorPalette.getColor(0) === Color.RED);
 ```
 
-**Providing hints for the "singular" form of an Array property name:**
+### Object Validation
+
+**Using array to capture errors:**
 ```javascript
-var Person = Entity.extend({
-    displayName: String
-});
+// array that will collect errors
+var errors = [];
 
-var Team = Model.extend({
-	properties: {
-		people: {
-			type: [Person],
-			singular: 'person'
-		}
-	}
-});
+// collect errors while wrapping existing person data
+var person1 = Person.wrap({
+    name: 'John',
+    age: 'bad integer'
+}, errors);
 
-var team = new Team({
-	people: [
-		{
-			displayName: 'John'
-		},
-		{
-			displayName: 'Jane'
-		}
-	]
-});
+// collect errors while constructing new person
+var person2 = new Person({
+    name: 'John',
+    age: 'bad integer'
+}, errors);
+```
 
-var teamMembers = [];
-team.forEachPerson(function(person, index) {
-	expect(person.constructor).to.equal(Person);
-	teamMembers[index] = person;
-});
+**Using extended options:**
+```javascript
+var options = {
+    // array that will collect errors
+    errors: [],
 
-assert(teamMembers.length === 2);
-assert(teamMembers[0].getDisplayName() === 'John');
-assert(teamMembers[1].getDisplayName() === 'Jane');
+    // strict mode is used by some primitive types to require
+    // that values be of the same primitive types
+    // (no automatic type coercion)
+    strict: true
+};
 
-assert(team.getPerson(0).getDisplayName() === 'John');
-assert(team.getPerson(1).getDisplayName()) === 'Jane');
+var person = new Person({
+    name: 'John',
+    age: 'bad integer'
+}, options);
+
+// options.errors will have been populated with any errors
 ```
 
 ### JSON Schema
@@ -566,9 +562,6 @@ var Person = Entity.extend({
 });
 ```
 
-**NOTE:**
-
-
 **Convert your model to JSON schema:**
 ```javascript
 var jsonSchema = require('typed-model/json-schema-draft4');
@@ -585,7 +578,7 @@ var PetSchema = jsonSchema.fromModel(Pet, jsonSchemaOptions);
 var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 ```
 
-**Entity:**
+**Entity JSON Schema:**
 ```json
 {
    "id": "Entity",
@@ -598,7 +591,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 }
 ```
 
-**Gender:**
+**Gender JSON Schema:**
 ```json
 {
    "id": "Gender",
@@ -612,7 +605,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 }
 ```
 
-**Species:**
+**Species JSON Schema:**
 ```json
 {
    "id": "Species",
@@ -626,7 +619,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 }
 ```
 
-**Pet:**
+**Pet JSON Schema:**
 ```json
 {
    "id": "Pet",
@@ -642,7 +635,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 }
 ```
 
-**Person:**
+**Person JSON Schema:**
 ```json
 {
    "id": "Person",

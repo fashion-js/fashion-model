@@ -2,7 +2,15 @@ var isoDateFormat = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2}(?:\.\d*)?)Z
 module.exports = require('./Model').extend({
 	typeName: 'date',
 	wrap: false,
-	coerce: function(value, property, errors) {
+	coerce: function(value, options) {
+		if (options.strict) {
+			// strict mode
+			if (value != null && (value.constructor !== Date)) {
+				this.coercionError(value, options);
+			}
+			return value;
+		}
+
 		if (value != null) {
 			if (value.constructor === String) {
 				var a = isoDateFormat.exec(value);
@@ -16,7 +24,7 @@ module.exports = require('./Model').extend({
 			} else if (value.constructor === Date) {
 				// nothing to do
 			} else {
-				this.coercionError(value, property, errors);
+				this.coercionError(value, options);
 			}
 		}
 		return value;
