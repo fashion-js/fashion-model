@@ -9,8 +9,8 @@ npm install typed-model --save
 
 ## Overview
 The `typed-model` module provides utility code for defining data model types.
-These data model types provide helpful accessor methods (getters, setters,
-for each methods, etc.) for the properties defined for the model type.
+These data model types provide helpful accessor methods (getters and setters)
+for the properties defined for the model type.
 
 These models can be thought of as a "schema" that provide extra safeguards
 for working with objects. These model types are not tied to a specific
@@ -28,6 +28,13 @@ of [Mongoose](http://mongoosejs.com/docs/guide.html)). However, if you're
 accessing or setting properties on an object then you might find it
 helpful to wrap the raw object with a `Model` instance and use the
 getters and setters to work with the data.
+
+## Relationship to JSON Schema
+Model definitions are JSON Schema and, when possible, similar
+naming conventions were chosen. However, this module is more tailored to runtime
+usage. If desired, you can convert your model definitions to a JSON Schema
+representation fairly easily. See [JSON Schema section](#json-schema) for more
+information.
 
 ## Usage
 
@@ -487,7 +494,7 @@ var person = new Person({
 }, options);
 ```
 
-### JSON Schema
+### <a name="json-schema"></a>JSON Schema
 
 A `Model` type can be easily converted to an equivalent JSON schema
 with the following module:
