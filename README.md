@@ -171,7 +171,9 @@ var Entity = Model.extend({
 **Define a type that extends Entity:**
 ```javascript
 var Person = Entity.extend({
+    properties: {
 	email: String
+    }
 });
 ```
 
