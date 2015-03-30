@@ -218,25 +218,27 @@ function _updateDisplayName(person) {
 }
 
 var Person = Entity.extend({
-	firstName: {
-		type: String,
-		set: function(property, value) {
-			this.data[property] = value;
-			_updateDisplayName(this);
-		}
-	},
-	lastName: {
-		type: String,
-		set: function(property, value) {
-			this.data[property] = value;
-			_updateDisplayName(this);
-		}
-	},
-	// displayName is updated whenever firstName or lastName change
-	displayName: {
-		type: String,
-		persist: false
-	}
+    properties: {
+    	firstName: {
+    		type: String,
+    		set: function(property, value) {
+    			this.data[property] = value;
+    			_updateDisplayName(this);
+    		}
+    	},
+    	lastName: {
+    		type: String,
+    		set: function(property, value) {
+    			this.data[property] = value;
+    			_updateDisplayName(this);
+    		}
+    	},
+    	// displayName is updated whenever firstName or lastName change
+    	displayName: {
+    		type: String,
+    		persist: false
+    	}
+    }
 });
 
 var person = new Person({
