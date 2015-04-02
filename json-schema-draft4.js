@@ -1,8 +1,5 @@
 var Model = require('./Model');
 var Enum = require('./Enum');
-var ArrayType = require('./Array');
-
-//var primitives = require('./primitives');
 
 var DEFAULT_TO_REF = function(Type) {
     if (!Type.typeName) {
@@ -138,7 +135,7 @@ exports.fromModel = function(Type, options) {
 
                 var PropertyType = declaredProperty.type;
 
-                if (declaredProperty.type === ArrayType) {
+                if (declaredProperty.type.typeName === 'array') {
                     jsonSchemaProperty.type = 'array';
 
                     var items = declaredProperty.items;
