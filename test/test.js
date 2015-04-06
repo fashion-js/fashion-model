@@ -390,6 +390,25 @@ describe('Model' , function() {
 		expect(Color.blue.value().name).to.equal('Blue');
     });
 
+	it('should allow unwrapping an enum', function() {
+
+		var Color = Enum.create({
+			values: ['red', 'green', 'blue']
+		});
+
+		var Person = Model.extend({
+			properties: {
+				favoriteColor: Color
+			}
+		});
+
+
+		var person = new Person();
+		person.setFavoriteColor(Color.BLUE);
+
+		expect(person.unwrap().favoriteColor).to.equal('blue');
+    });
+
     it('should allow opaque wrapper type', function() {
         var Token = Model.extend({});
 
