@@ -104,7 +104,7 @@ exports.fromModel = function(Type, options) {
 
     if (Type.isCompatibleWith(Enum)) {
         schema.type = 'string';
-        schema.enum = Model.clean(Type.values);
+        schema.enum = Type.names;
     } else if (Type.hasProperties()) {
         schema.type = 'object';
         var properties = schema.properties = {};

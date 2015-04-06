@@ -320,8 +320,10 @@ describe('Model' , function() {
             (new Gender('X')).toString();
         }).to.throw(Error);
 
-        expect(Gender.M.data).to.equal('M');
-        expect(Gender.F.data).to.equal('F');
+		expect(Gender.M.name()).to.equal('M');
+        expect(Gender.F.name()).to.equal('F');
+        expect(Gender.M.value()).to.equal('M');
+        expect(Gender.F.value()).to.equal('F');
 
         expect(Gender.M.isM()).to.equal(true);
         expect(Gender.M.isF()).to.equal(false);
@@ -342,6 +344,50 @@ describe('Model' , function() {
 
         expect(person2.getGender().isM()).to.equal(true);
         expect(person2.getGender().isF()).to.equal(false);
+    });
+
+	it('should allow enum object values', function() {
+
+		var Color = Enum.create({
+			values: {
+				red: {
+					hex: '#FF0000',
+					name: 'Red'
+				},
+
+				green: {
+					hex: '#00FF00',
+					name: 'Green'
+				},
+
+				blue: {
+					hex: '#0000FF',
+					name: 'Blue'
+				}
+			}
+		});
+
+		expect(Color.RED.name()).to.equal('red');
+		expect(Color.GREEN.name()).to.equal('green');
+		expect(Color.BLUE.name()).to.equal('blue');
+
+		expect(Color.RED.value().hex).to.equal('#FF0000');
+		expect(Color.RED.value().name).to.equal('Red');
+
+		expect(Color.GREEN.value().hex).to.equal('#00FF00');
+		expect(Color.GREEN.value().name).to.equal('Green');
+
+		expect(Color.BLUE.value().hex).to.equal('#0000FF');
+		expect(Color.BLUE.value().name).to.equal('Blue');
+
+		expect(Color.red.value().hex).to.equal('#FF0000');
+		expect(Color.red.value().name).to.equal('Red');
+
+		expect(Color.green.value().hex).to.equal('#00FF00');
+		expect(Color.green.value().name).to.equal('Green');
+
+		expect(Color.blue.value().hex).to.equal('#0000FF');
+		expect(Color.blue.value().name).to.equal('Blue');
     });
 
     it('should allow opaque wrapper type', function() {

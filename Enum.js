@@ -63,24 +63,48 @@ Enum.create = function(config) {
 		normalize = NORMALIZE_LOWER_CASE;
 	}
 
-	var values = Type.values = config.values;
-
-	Type.prototype.value = Type.prototype.toString = function() {
+	Type.prototype.value = function() {
 		return this.data;
 	};
 
-	values.forEach(function(value, index) {
-		var name = Enum.toConstantName(value);
-		var enumValue = new Type(value);
+	Type.prototype.name = Type.prototype.toString = function() {
+		return this._name;
+	};
 
-		values[index] = enumValue;
+	var values = config.values;
+
+	Type.names = [];
+	Type.values = [];
+
+	function createEnumValue(name, value) {
+		Type.names.push(name);
+
+		var enumValue = new Type(value);
+		enumValue._name = name;
 
 		Type.prototype['is' + Enum.toTitleCase(name)] = function() {
 			return (this === enumValue);
 		};
 
-		Type[value] = Type[name] = enumValue;
-	});
+		Type[name] = Type[Enum.toConstantName(name)] = enumValue;
+
+		Type.values.push(enumValue);
+
+		return enumValue;
+	}
+
+	if (Array.isArray(values)) {
+		values.forEach(function(value, index) {
+			createEnumValue(value, value);
+		});
+	} else {
+		for (var name in values) {
+			if (values.hasOwnProperty(name)) {
+				createEnumValue(name, values[name]);
+			}
+		}
+	}
+
 
 	Type.preventConstruction();
 

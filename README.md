@@ -172,7 +172,7 @@ var Entity = Model.extend({
 ```javascript
 var Person = Entity.extend({
     properties: {
-	email: String
+        email: String
     }
 });
 ```
@@ -400,6 +400,7 @@ document.setDateCreated('2014-12-22T21:18:45.905Z');
 
 ### Enum Type
 
+**String enum values:**:
 ```javascript
 var Color = Enum.create({
 	values: ['red', 'green', 'blue']
@@ -407,8 +408,53 @@ var Color = Enum.create({
 
 // The following assertions will be true
 assert(Color.RED.isRed());
+assert(Color.RED.name() === 'red');
 assert(Color.RED.value() === 'red');
 assert(Color.RED.clean() === 'red');
+```
+
+**Object enum values:**
+```javascript
+var Color = Enum.create({
+	values: {
+		red: {
+			hex: '#FF0000',
+			name: 'Red'
+		},
+
+		green: {
+			hex: '#00FF00',
+			name: 'Green'
+		},
+
+		blue: {
+			hex: '#0000FF',
+			name: 'Blue'
+		}
+	}
+});
+
+// The following assertions will be true:
+assert(Color.red.name() === 'red');
+assert(Color.red.value().hex === '#FF0000');
+assert(Color.red.value().name === 'Red');
+assert(Color.RED.name() === 'red');
+assert(Color.RED.value().hex === '#FF0000');
+assert(Color.RED.value().name === 'Red');
+```
+
+**Loop over values:**
+```javascript
+Color.values.forEach(function(colorValue) {
+    console.log('Color ' + colorValue.name());
+});
+```
+
+**Loop over names:**
+```javascript
+Color.names.forEach(function(colorName) {
+    console.log('Color ' + colorName);
+});
 ```
 
 ### Array Type
