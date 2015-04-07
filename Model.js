@@ -1,12 +1,5 @@
-// var DateType;
-// var BooleanType;
-// var NumberType;
-// var IntegerType;
-// var StringType;
 var ArrayType;
 var primitives;
-
-//var TYPE_BY_NAME = {};
 
 var inherit = require('raptor-util/inherit');
 var Model;
