@@ -206,12 +206,16 @@ Model.isCompatibleWith = function(other) {
     return false;
 };
 
-Model.coercionError = function(value, options) {
+Model.coercionError = function(value, options, errorMessage) {
     var message = '';
     if (options && options.property && options.property.getName) {
         message += options.property.getName() + ': ';
     }
     message += 'Invalid value: ' + value;
+
+    if (errorMessage) {
+        message += ' - ' + errorMessage;
+    }
 
     if (options && options.errors) {
         options.errors.push(message);
