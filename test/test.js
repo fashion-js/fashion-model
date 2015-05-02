@@ -897,4 +897,48 @@ describe('Model' , function() {
 			]
 		});
 	});
+
+	it('should not wrap and unwrap Model instances if property type is declared as object', function() {
+		var Item = Model.extend({
+			properties: {
+				id: String
+			}
+		});
+
+		var Something = Model.extend({
+			properties: {
+				// Use Object as type
+				item: Object
+			}
+		});
+
+		var something = new Something();
+		something.setItem(new Item({
+			id: 'abc'
+		}));
+
+		expect(something.getItem().getId()).to.equal('abc');
+	});
+
+	it('should allow Function type', function() {
+		var Item = Model.extend({
+			properties: {
+				handler: Function
+			}
+		});
+
+		var item;
+
+		expect(function() {
+			item = new Item({
+				handler: 'abc'
+			});
+		}).to.throw();
+
+		item = new Item({
+			handler: function() {}
+		});
+
+		expect(item.getHandler().constructor).to.equal(Function);
+	});
 });

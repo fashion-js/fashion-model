@@ -16,14 +16,14 @@ function _get(model, property) {
         return value;
     }
 
-    var type = property.getType();
-    if (type.isWrapped()) {
-        if (type.isAutoUnwrapped()) {
+    var Type = property.getType();
+    if (Type.isWrapped()) {
+        if (Type.isAutoUnwrapped()) {
             // auto unwrap
             value = Model.unwrap(value);
         } else {
             // make sure we return an instance of the actual type and not the raw value
-            value = property.getType().wrap(value);
+            value = Type.wrap(value);
         }
     }
 
@@ -36,7 +36,7 @@ function _set(model, property, value, options) {
     if (Model.isModel(value) && (value instanceof Type)) {
         // value is expected type
         // store raw data in this model's data
-        value = value.data;
+        value = Model.unwrap(value);
     } else if (Type.coerce) {
 
         options = _toOptions(options);
@@ -55,9 +55,10 @@ function _set(model, property, value, options) {
     if ((value != null) && Type.isWrapped()) {
         // recursively call setters
         Type.wrap(value, options);
+        value = Model.unwrap(value);
     }
 
-    model.data[property.getProperty()] = Model.unwrap(value);
+    model.data[property.getProperty()] = value;
 }
 
 function _generateGetter(property) {
@@ -178,15 +179,17 @@ Model.getProperty = function(propertyName) {
 
 Model.forEachProperty = function(callback) {
     var proto = this.Properties.prototype;
+    var seen = {};
     do {
         for (var key in proto) {
-            if (proto.hasOwnProperty(key)) {
+            if (!seen[key] && proto.hasOwnProperty(key)) {
                 var property = proto[key];
                 if (property.constructor === Property) {
                     if (key === property.getName()) {
                         callback(property);
                     }
                 }
+                seen[key] = true;
             }
         }
     } while((proto = Object.getPrototypeOf(proto)) != null);
@@ -279,14 +282,39 @@ Model_proto.clean = function(errors) {
     }
 };
 
+function _getProperty(model, propertyName, errors) {
+    var Type = model.constructor;
+    var properties = Type.properties;
+    var property = properties[propertyName];
+    if (!property) {
+        if (!Type.additionalProperties) {
+            var err = new Error('Invalid property: ' + propertyName);
+            if (errors) {
+                errors.push(err);
+            } else {
+                throw err;
+            }
+        }
+    }
+    return property;
+}
+
 Model_proto.set = function(propertyName, value, errors) {
-    var properties = this.constructor.properties;
-    _set(this, properties[propertyName], value, errors);
+    var property = _getProperty(this, propertyName, errors);
+    if (property) {
+        _set(this, property, value, errors);
+    } else {
+        this.data[propertyName] = value;
+    }
 };
 
-Model_proto.get = function(propertyName) {
-    var properties = this.constructor.properties;
-    return _get(this, properties[propertyName]);
+Model_proto.get = function(propertyName, errors) {
+    var property = _getProperty(this, propertyName, errors);
+    if (property) {
+        return _get(this, property);
+    } else {
+        return this.data[propertyName];
+    }
 };
 
 Model_proto.stringify = function(pretty) {
@@ -366,6 +394,8 @@ function _parseType(type) {
         return primitives.string;
     case Object:
         return primitives.object;
+    case Function:
+        return primitives.function;
     case Array:
         return ArrayType;
     }

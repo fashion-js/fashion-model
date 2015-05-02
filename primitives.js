@@ -6,7 +6,8 @@ var ArrayType = require('./Array');
     require('./Integer'),
     require('./Number'),
     require('./String'),
-    require('./Object')
+    require('./Object'),
+    require('./Function')
 ].forEach(function(PrimitiveType) {
     exports[PrimitiveType.typeName] = PrimitiveType;
 });
