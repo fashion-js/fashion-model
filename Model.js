@@ -3,7 +3,32 @@ var primitives;
 
 var inherit = require('raptor-util/inherit');
 var Model;
-var EMPTY_ATTRIBUTES = {};
+var EMPTY_PROPERTIES = {};
+
+function _toModel(obj) {
+    if (obj == null) {
+        return obj;
+    }
+
+    return obj.$model || obj;
+}
+
+function _notifySet(model, propertyName, oldValue, newValue, property) {
+    var Type = model.constructor;
+    if (Type._onSet) {
+        var event = {
+            model: model,
+            propertyName: propertyName,
+            oldValue: _toModel(oldValue),
+            newValue: _toModel(newValue),
+            property: property
+        };
+
+        for (var i = 0; i < Type._onSet.length; i++) {
+            Type._onSet[i](model, event);
+        }
+    }
+}
 
 function _get(model, property) {
     var getter = property.getGetter();
@@ -58,7 +83,12 @@ function _set(model, property, value, options) {
         value = Model.unwrap(value);
     }
 
-    model.data[property.getProperty()] = value;
+    var propertyName = property.getProperty();
+    var oldValue = model.data[propertyName];
+    if (oldValue !== value) {
+        model.data[propertyName] = value;
+        _notifySet(model, propertyName, oldValue, value, property);
+    }
 }
 
 function _generateGetter(property) {
@@ -162,7 +192,7 @@ Model.clean = function(obj, errors) {
 };
 
 Model.hasProperties = function() {
-    return this.properties !== EMPTY_ATTRIBUTES;
+    return this.properties !== EMPTY_PROPERTIES;
 };
 
 Model.hasProperty = function(propertyName) {
@@ -206,6 +236,10 @@ Model.isCompatibleWith = function(other) {
             return true;
         }
     } while((cur = (cur.$super)));
+    return false;
+};
+
+Model.isPrimitive = function() {
     return false;
 };
 
@@ -304,7 +338,11 @@ Model_proto.set = function(propertyName, value, errors) {
     if (property) {
         _set(this, property, value, errors);
     } else {
-        this.data[propertyName] = value;
+        var oldValue = this.data[propertyName];
+        if (oldValue !== value) {
+            this.data[propertyName] = value;
+            _notifySet(this, propertyName, oldValue, value);
+        }
     }
 };
 
@@ -485,7 +523,8 @@ var SPECIAL_PROPERTIES = {
     autoUnwrap: 1,
     coerce: 1,
     properties: 1,
-    prototype: 1
+    prototype: 1,
+    mixins: 1
 };
 
 function _copyNonSpecialPropertiesToType(config, Type) {
@@ -510,6 +549,60 @@ function _toOptions(options) {
     return options;
 }
 
+function _walkHierarchyPost(Type, callback) {
+    if (Type.$super) {
+        _walkHierarchyPost(Type.$super, callback);
+    }
+    // invoke callback with derived type after invoking callback with parent type
+    callback(Type);
+}
+
+function _addToArray(obj, propertyName, value) {
+    if (!value) {
+        return;
+    }
+
+    var arr = obj[propertyName] || (obj[propertyName] = []);
+    arr.push(value);
+}
+
+function _concatToArray(obj, propertyName, otherArr) {
+    if (!otherArr) {
+        return;
+    }
+
+    var arr = obj[propertyName] || (obj[propertyName] = []);
+    for (var i = 0; i < otherArr.length; i++) {
+        arr.push(otherArr[i]);
+    }
+}
+
+function _installMixin(Type, mixin) {
+    var key;
+    if (mixin.id) {
+        key = '_mixin_' + mixin.id;
+        if (Type.properties[key]) {
+            // this mixin is already installed
+            return;
+        }
+
+        Type.Properties.prototype[key] = true;
+    }
+
+
+    var mixinPrototype = mixin.prototype;
+    if (mixinPrototype) {
+        for (key in mixinPrototype) {
+            if (mixinPrototype.hasOwnProperty(key)) {
+                Type.prototype[key] = mixinPrototype[key];
+            }
+        }
+    }
+
+    _addToArray(Type, '_onCreate', mixin.onCreate);
+    _addToArray(Type, '_onSet', mixin.onSet);
+}
+
 function _extend(Base, config, resolver) {
     config = config || {};
 
@@ -520,9 +613,18 @@ function _extend(Base, config, resolver) {
     var coerce = config.coerce;
     var properties = config.properties;
     var prototype = config.prototype;
+    var mixins = config.mixins;
 
     function Derived(data, options) {
         Derived.$super.call(this, data, options);
+
+        var onCreateArr = Derived._onCreate;
+        if (onCreateArr) {
+            for (var i = 0; i < onCreateArr.length; i++) {
+                onCreateArr[i](this);
+            }
+        }
+
         if (init) {
             init.call(this, data, options);
         }
@@ -540,9 +642,14 @@ function _extend(Base, config, resolver) {
         'unwrap',
         'coercionError',
         'forEachProperty',
-        'isCompatibleWith'
+        'isCompatibleWith',
+        'isPrimitive'
     ].forEach(function(property) {
         Derived[property] = Model[property];
+    });
+
+    _walkHierarchyPost(Base, function(Type) {
+        _concatToArray(Derived, '_onSet', Type._onSet);
     });
 
     // Store reference to Model
@@ -626,7 +733,7 @@ function _extend(Base, config, resolver) {
     }
 
     var propertyNames;
-    if (properties && (propertyNames = Object.keys(properties)).length > 0) {
+    if ((properties && (propertyNames = Object.keys(properties)).length > 0) || mixins) {
         // Use prototype chaining to create property map
         Derived.Properties = function() {};
 
@@ -666,12 +773,18 @@ function _extend(Base, config, resolver) {
 
     } else {
         Derived.Properties = Base.Properties;
-        Derived.properties = Base.properties || EMPTY_ATTRIBUTES;
+        Derived.properties = Base.properties || EMPTY_PROPERTIES;
     }
 
     if (prototype) {
         Object.keys(prototype).forEach(function(key) {
             classPrototype[key] = prototype[key];
+        });
+    }
+
+    if (mixins) {
+        mixins.forEach(function(mixin) {
+            _installMixin(Derived, mixin);
         });
     }
 

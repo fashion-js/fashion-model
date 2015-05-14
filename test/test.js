@@ -941,4 +941,140 @@ describe('Model' , function() {
 
 		expect(item.getHandler().constructor).to.equal(Function);
 	});
+
+	it('should implement isPrimitive', function() {
+		var Item = Model.extend({
+			properties: {
+				handler: Function
+			}
+		});
+
+		expect(Item.isPrimitive()).to.equal(false);
+
+		var primitives = require('../primitives');
+
+		Object.keys(primitives).forEach(function(name) {
+			var Type = primitives[name];
+			expect(Type.isPrimitive()).to.equal(true);
+		});
+	});
+
+	it('should support mixins for types with properties', function() {
+		var onCreateCallCount;
+		var onSetCallCount;
+
+		function resetCallCounts() {
+			onCreateCallCount = 0;
+			onSetCallCount = 0;
+		}
+
+		resetCallCounts();
+
+		var myMixin = {
+			id: 'myMixin',
+
+			onCreate: function(model) {
+				onCreateCallCount++;
+
+				var curCount = model.getCount();
+				if (curCount === undefined) {
+					model.setCount(0);
+				} else {
+					model.setCount(curCount + 1);
+				}
+			},
+
+			onSet: function(model, event) {
+				onSetCallCount++;
+			},
+
+			prototype: {
+				incrementCount: function() {
+					this.setCount(this.getCount() + 1);
+				}
+			}
+		};
+
+		var BaseItem = Model.extend({
+			properties: {
+				count: Number
+			},
+			mixins: [myMixin]
+		});
+
+		var DerivedItem = BaseItem.extend({
+			properties: {
+				count: Number
+			},
+			mixins: [myMixin]
+		});
+
+		expect(DerivedItem._onSet.length).to.equal(1);
+
+		var baseItem = new BaseItem();
+		expect(onCreateCallCount).to.equal(1);
+		expect(onSetCallCount).to.equal(1);
+		expect(baseItem.getCount()).to.equal(0);
+
+		resetCallCounts();
+
+		var derivedItem = new DerivedItem();
+		expect(onCreateCallCount).to.equal(1);
+		expect(onSetCallCount).to.equal(1);
+		expect(derivedItem.getCount()).to.equal(0);
+
+		derivedItem.incrementCount();
+
+		expect(onSetCallCount).to.equal(2);
+		expect(derivedItem.getCount()).to.equal(1);
+	});
+
+	it('should support mixins for types without properties', function() {
+		var onCreateCallCount;
+
+		function resetCallCounts() {
+			onCreateCallCount = 0;
+		}
+
+		resetCallCounts();
+
+		var myMixin = {
+			id: 'myMixin',
+
+			onCreate: function(model) {
+				onCreateCallCount++;
+
+				model.count = 0;
+			},
+
+			prototype: {
+				incrementCount: function() {
+					this.count++;
+				}
+			}
+		};
+
+		var BaseSimpleItem = Model.extend({
+		});
+
+		var DerivedSimpleItem = BaseSimpleItem.extend({
+			mixins: [myMixin]
+		});
+
+		var AnotherDerivedSimpleItem = BaseSimpleItem.extend({
+			mixins: [myMixin]
+		});
+
+		var baseSimpleItem = new BaseSimpleItem();
+		expect(baseSimpleItem.incrementCount).to.equal(undefined);
+		expect(baseSimpleItem.count).to.equal(undefined);
+
+		var derivedSimpleItem = new DerivedSimpleItem();
+		expect(derivedSimpleItem.incrementCount).to.not.equal(undefined);
+		expect(derivedSimpleItem.count).to.equal(0);
+
+		var anotherDerivedSimpleItem = new AnotherDerivedSimpleItem();
+		expect(anotherDerivedSimpleItem.incrementCount).to.not.equal(undefined);
+		expect(anotherDerivedSimpleItem.count).to.equal(0);
+	});
 });

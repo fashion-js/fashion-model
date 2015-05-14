@@ -25,6 +25,7 @@
     "z-schema": "^3.9.4"
   },
   "dependencies": {
+    "events": "^1.0.2",
     "raptor-util": "^1.0.9"
   },
   "version": "2.0.8"

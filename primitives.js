@@ -1,3 +1,7 @@
+function isPrimitive() {
+    return true;
+}
+
 var ArrayType = require('./Array');
 [
     ArrayType,
@@ -9,5 +13,6 @@ var ArrayType = require('./Array');
     require('./Object'),
     require('./Function')
 ].forEach(function(PrimitiveType) {
+    PrimitiveType.isPrimitive = isPrimitive;
     exports[PrimitiveType.typeName] = PrimitiveType;
 });
