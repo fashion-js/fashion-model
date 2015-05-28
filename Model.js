@@ -31,12 +31,13 @@ function _notifySet(model, propertyName, oldValue, newValue, property) {
 }
 
 function _get(model, property) {
+    var propertyName = property.getProperty();
     var getter = property.getGetter();
     if (getter) {
-        return getter.call(model, property);
+        return getter.call(model, propertyName, property);
     }
 
-    var value = model.data[property.getProperty()];
+    var value = model.data[propertyName];
     if (value == null) {
         return value;
     }
@@ -58,6 +59,9 @@ function _get(model, property) {
 function _set(model, property, value, options) {
     var Type = property.getType();
 
+    // this the value that we return (it may be the result of wrapping/coercing the original value)
+    var returnValue;
+
     if (Model.isModel(value) && (value instanceof Type)) {
         // value is expected type
         // store raw data in this model's data
@@ -72,23 +76,31 @@ function _set(model, property, value, options) {
         options.property = undefined;
     }
 
-    var setter = property.getSetter();
-    if (setter) {
-        return setter.call(model, property.getProperty(), value, property);
-    }
-
-    if ((value != null) && Type.isWrapped()) {
-        // recursively call setters
-        Type.wrap(value, options);
-        value = Model.unwrap(value);
-    }
-
     var propertyName = property.getProperty();
     var oldValue = model.data[propertyName];
+
+    var setter = property.getSetter();
+    if (setter) {
+        // setter will do all of the work
+        setter.call(model, propertyName, value, property);
+
+        // get the new value
+        value = model.data[propertyName];
+        returnValue = Type.wrap(value, options);
+    } else if ((value != null) && Type.isWrapped()) {
+        // recursively call setters
+        returnValue = Type.wrap(value, options);
+        value = Model.unwrap(returnValue);
+    } else {
+        returnValue = value;
+    }
+
     if (oldValue !== value) {
         model.data[propertyName] = value;
         _notifySet(model, propertyName, oldValue, value, property);
     }
+
+    return returnValue;
 }
 
 function _generateGetter(property) {
@@ -149,6 +161,8 @@ module.exports = Model = function Model(data, options) {
         this.data = data;
     }
 };
+
+Model.typeName = 'Model';
 
 Model.isModel = function(obj) {
     return obj && obj.Model;
@@ -549,14 +563,6 @@ function _toOptions(options) {
     return options;
 }
 
-function _walkHierarchyPost(Type, callback) {
-    if (Type.$super) {
-        _walkHierarchyPost(Type.$super, callback);
-    }
-    // invoke callback with derived type after invoking callback with parent type
-    callback(Type);
-}
-
 function _addToArray(obj, propertyName, value) {
     if (!value) {
         return;
@@ -648,9 +654,7 @@ function _extend(Base, config, resolver) {
         Derived[property] = Model[property];
     });
 
-    _walkHierarchyPost(Base, function(Type) {
-        _concatToArray(Derived, '_onSet', Type._onSet);
-    });
+    _concatToArray(Derived, '_onSet', Base._onSet);
 
     // Store reference to Model
     Derived.Model = Model;

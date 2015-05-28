@@ -6,6 +6,7 @@ var expect = require('chai').expect;
 var Model = require('../Model');
 var Enum = require('../Enum');
 var DateType = require('../Date');
+var ObservableModel = require('../ObservableModel');
 
 var Gender = Enum.create({
 	values: ['M', 'F'],
@@ -996,6 +997,7 @@ describe('Model' , function() {
 		};
 
 		var BaseItem = Model.extend({
+			typeName: 'BaseItem',
 			properties: {
 				count: Number
 			},
@@ -1003,6 +1005,7 @@ describe('Model' , function() {
 		});
 
 		var DerivedItem = BaseItem.extend({
+			typeName: 'DerivedItem',
 			properties: {
 				count: Number
 			},
@@ -1076,5 +1079,90 @@ describe('Model' , function() {
 		var anotherDerivedSimpleItem = new AnotherDerivedSimpleItem();
 		expect(anotherDerivedSimpleItem.incrementCount).to.not.equal(undefined);
 		expect(anotherDerivedSimpleItem.count).to.equal(0);
+	});
+
+	it('should provide an ObservableModel that emits change event', function() {
+		var Test = ObservableModel.extend({
+			typeName: 'Test',
+
+			properties: {
+				value: Number
+			}
+		});
+
+		var DerivedTest = Test.extend({
+			typeName: 'DerivedTest',
+
+			properties: {
+				anotherValue: Number
+			}
+		});
+
+		var emitCount = 0;
+
+		var test = new Test();
+
+		test.on('change', function() {
+			emitCount++;
+		});
+
+		test.setValue(1);
+
+		expect(test.getValue()).to.equal(1);
+		expect(emitCount).to.equal(1);
+
+		// reset emit count
+		emitCount = 0;
+
+		var derivedTest = new DerivedTest();
+
+
+		derivedTest.on('change', function() {
+			emitCount++;
+		});
+
+		derivedTest.setAnotherValue(2);
+
+		expect(derivedTest.getAnotherValue()).to.equal(2);
+		expect(emitCount).to.equal(1);
+	});
+
+	it('should support getters and setters', function() {
+		var getCallCount = 0;
+		var setCallCount = 0;
+
+		var Test = Model.extend({
+			properties: {
+				name: {
+					type: String,
+					get: function(name, property) {
+						getCallCount++;
+						expect(name).to.equal('name');
+						expect(property.getName()).to.equal('name');
+						return this.data[name] + '!!!';
+					},
+
+					set: function(name, value, property) {
+						setCallCount++;
+						expect(name).to.equal('name');
+						expect(value).to.equal('TEST');
+						expect(property.getName()).to.equal('name');
+						this.data[name] = value.toLowerCase();
+					}
+				}
+			}
+		});
+
+		var test = new Test();
+
+		test.setName('TEST');
+
+		expect(setCallCount).to.equal(1);
+		expect(getCallCount).to.equal(0);
+
+		expect(test.getName()).to.equal('test!!!');
+
+		expect(setCallCount).to.equal(1);
+		expect(getCallCount).to.equal(1);
 	});
 });

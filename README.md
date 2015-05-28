@@ -186,7 +186,7 @@ person.setId('john-doe');
 person.setEmail('john.doe@example.com');
 ```
 
-You can also create getters for "computed" properties.
+You can also create getters for computed/derived properties.
 
 **For example:**
 ```javascript
@@ -196,7 +196,7 @@ var Person = Entity.extend({
     	lastName: String,
     	displayName: {
     		type: String
-    		get: function(property) {
+    		get: function(name, property) {
     			return this.getFirstName() + ' ' + this.getLastName();
     		}
     	}
@@ -221,21 +221,24 @@ var Person = Entity.extend({
     properties: {
     	firstName: {
     		type: String,
-    		set: function(property, value) {
-    			this.data[property] = value;
+    		set: function(name, value, property) {
+    			this.data[name] = value;
     			_updateDisplayName(this);
     		}
     	},
     	lastName: {
     		type: String,
-    		set: function(property, value) {
-    			this.data[property] = value;
+    		set: function(name, value, property) {
+    			this.data[name] = value;
     			_updateDisplayName(this);
     		}
     	},
     	// displayName is updated whenever firstName or lastName change
     	displayName: {
     		type: String,
+
+            // do not persist displayName when clean() is called since it is
+            // a derived value
     		persist: false
     	}
     }
