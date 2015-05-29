@@ -108,6 +108,54 @@ address = Address.wrap({
 });
 ```
 
+### Self-type References in Properties
+
+In some use cases, the type of a property is the
+same type as the complex object for which the
+property is declared. For exampled, to build
+a linked list, each node has a pointer to the next
+node.
+
+**Here are some examples of self-type references:**
+
+```javascript
+// Declare a linked list node type that has a pointer
+// to the next node
+var LinkedListNode = Model.extend({
+    properties: {
+        next: 'self',
+        value: Object
+    }
+});
+
+// Here is another functionally equivalent variation of LinkedListNode
+var LinkedListNode = Model.extend({
+    properties: {
+        next: {
+            type: 'self'
+        },
+        value: Object
+    }
+});
+
+// An example of self-type reference within an array
+var TreeNode = Model.extend({
+    properties: {
+        children: ['self'],
+        value: Object
+    }
+});
+
+// Here is another functionally equivalent variation of TreeNode
+var TreeNode = Model.extend({
+    properties: {
+        // Brackets at end of type name are used to denote arrays
+        children: 'self[]',
+        value: Object
+    }
+});
+```
+
 ### Getters and Setters
 A getter and setter will be generated on the prototype,
 for each property defined in the model.
