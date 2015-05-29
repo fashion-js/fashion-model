@@ -110,8 +110,8 @@ function _generateGetter(property) {
 }
 
 function _generateSetter(property) {
-    return function(value) {
-        return _set(this, property, value);
+    return function(value, options) {
+        return _set(this, property, value, options);
     };
 }
 
@@ -347,10 +347,10 @@ function _getProperty(model, propertyName, errors) {
     return property;
 }
 
-Model_proto.set = function(propertyName, value, errors) {
-    var property = _getProperty(this, propertyName, errors);
+Model_proto.set = function(propertyName, value, options) {
+    var property = _getProperty(this, propertyName, options);
     if (property) {
-        _set(this, property, value, errors);
+        _set(this, property, value, options);
     } else {
         var oldValue = this.data[propertyName];
         if (oldValue !== value) {
@@ -455,22 +455,26 @@ function _parseType(type) {
     throw new Error('Unrecognized type. Expected type derived from Model or primitive type.');
 }
 
-function _parseTypeStr(typeStr, propertyConfig, resolver) {
+function _parseTypeStr(typeStr, propertyConfig, resolver, Type) {
     var len = typeStr.length;
     if ((typeStr.charAt(len - 2) === '[') && (typeStr.charAt(len - 1) === ']')) {
         // array type
         propertyConfig.type = ArrayType;
         propertyConfig.items = {};
-        _parseTypeStr(typeStr.substring(0, len - 2), propertyConfig.items, resolver);
+        _parseTypeStr(typeStr.substring(0, len - 2), propertyConfig.items, resolver, Type);
     } else {
-        propertyConfig.type = _resolve(typeStr, resolver);
+        propertyConfig.type = _resolve(typeStr, resolver, Type);
     }
 }
 
-function _resolve(typeName, resolver) {
+function _resolve(typeName, resolver, Type) {
     var type = primitives[typeName];
     if (type) {
         return type;
+    }
+
+    if (typeName === 'self') {
+        return Type;
     }
 
     if (resolver) {
@@ -482,7 +486,7 @@ function _resolve(typeName, resolver) {
     throw new Error('Invalid type: ' + typeName);
 }
 
-function _parseTypeConfig(propertyConfig, resolver) {
+function _parseTypeConfig(propertyConfig, resolver, Type) {
     if (Array.isArray(propertyConfig)) {
         propertyConfig = {
             type: propertyConfig
@@ -501,18 +505,18 @@ function _parseTypeConfig(propertyConfig, resolver) {
             if (type.length) {
                 var items = type[0];
                 if (items != null) {
-                    propertyConfig.items = _parseTypeConfig(items, resolver);
+                    propertyConfig.items = _parseTypeConfig(items, resolver, Type);
                 }
             }
         } else if (type.constructor === String) {
-            _parseTypeStr(type, propertyConfig, resolver);
+            _parseTypeStr(type, propertyConfig, resolver, Type);
         } else {
             // handle normal notation for types
             propertyConfig.type = _parseType(type);
 
             // Convert the subtype to special type if necessary
             if (propertyConfig.items) {
-                propertyConfig.items = _parseTypeConfig(propertyConfig.items, resolver);
+                propertyConfig.items = _parseTypeConfig(propertyConfig.items, resolver, Type);
             }
         }
     } else {
@@ -522,8 +526,8 @@ function _parseTypeConfig(propertyConfig, resolver) {
     return propertyConfig;
 }
 
-function _toProperty(name, propertyConfig, resolver) {
-    propertyConfig = _parseTypeConfig(propertyConfig, resolver);
+function _toProperty(name, propertyConfig, resolver, Type) {
+    propertyConfig = _parseTypeConfig(propertyConfig, resolver, Type);
     propertyConfig.name = name;
     propertyConfig.property = propertyConfig.property || name;
 
@@ -748,7 +752,7 @@ function _extend(Base, config, resolver) {
         if (properties) {
             var propertiesPrototype = Derived.Properties.prototype;
             propertyNames.forEach(function(name) {
-                var property = _toProperty(name, properties[name], resolver);
+                var property = _toProperty(name, properties[name], resolver, Derived);
                 var propertyName = property.getProperty();
 
                 // Put the properties in the prototype by name and property

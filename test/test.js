@@ -1165,4 +1165,122 @@ describe('Model' , function() {
 		expect(setCallCount).to.equal(1);
 		expect(getCallCount).to.equal(1);
 	});
+
+	it('should allow self type references in property type', function() {
+		var getCallCount = 0;
+		var setCallCount = 0;
+
+		var NodeValue = Enum.create({
+			values: ['a', 'b', 'c']
+		});
+
+		var Node = Model.extend({
+			properties: {
+				next: 'self',
+				value: NodeValue
+			}
+		});
+
+		var errors = [];
+
+		var node = new Node();
+		node.setNext({
+			// invalid value
+			value: 'd'
+		}, errors);
+
+		expect(errors.length).to.equal(1);
+		expect(node.getNext().getValue()).to.equal(undefined);
+
+		node.setNext({
+			value: 'a'
+		}, errors);
+
+		errors = [];
+
+		expect(errors.length).to.equal(0);
+		expect(node.getNext().getValue().toString()).to.equal('a');
+	});
+
+	it('should allow self array type references in property type (version 1)', function() {
+		var getCallCount = 0;
+		var setCallCount = 0;
+
+		var TreeNodeValue = Enum.create({
+			values: ['a', 'b', 'c']
+		});
+
+		var TreeNode = Model.extend({
+			properties: {
+				children: 'self[]',
+				value: TreeNodeValue
+			}
+		});
+
+		var errors = [];
+
+		var node = new TreeNode();
+		node.setChildren([
+			{
+				value: 'a'
+			},
+			{
+				value: 'b'
+			},
+			{
+				value: 'c'
+			},
+			{
+				// invalid value
+				value: 'd'
+			}
+		], errors);
+
+		expect(errors.length).to.equal(1);
+		expect(TreeNode.wrap(node.getChildren()[0]).getValue().toString()).to.equal('a');
+		expect(TreeNode.wrap(node.getChildren()[1]).getValue().toString()).to.equal('b');
+		expect(TreeNode.wrap(node.getChildren()[2]).getValue().toString()).to.equal('c');
+		expect(TreeNode.wrap(node.getChildren()[3]).getValue()).to.equal(undefined);
+	});
+
+	it('should allow self array type references in property type (version 2)', function() {
+		var getCallCount = 0;
+		var setCallCount = 0;
+
+		var TreeNodeValue = Enum.create({
+			values: ['a', 'b', 'c']
+		});
+
+		var TreeNode = Model.extend({
+			properties: {
+				children: ['self'],
+				value: TreeNodeValue
+			}
+		});
+
+		var errors = [];
+
+		var node = new TreeNode();
+		node.setChildren([
+			{
+				value: 'a'
+			},
+			{
+				value: 'b'
+			},
+			{
+				value: 'c'
+			},
+			{
+				// invalid value
+				value: 'd'
+			}
+		], errors);
+
+		expect(errors.length).to.equal(1);
+		expect(TreeNode.wrap(node.getChildren()[0]).getValue().toString()).to.equal('a');
+		expect(TreeNode.wrap(node.getChildren()[1]).getValue().toString()).to.equal('b');
+		expect(TreeNode.wrap(node.getChildren()[2]).getValue().toString()).to.equal('c');
+		expect(TreeNode.wrap(node.getChildren()[3]).getValue()).to.equal(undefined);
+	});
 });
