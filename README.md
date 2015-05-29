@@ -418,14 +418,6 @@ var address = new Address({
 db.save(address.clean(), callback);
 ```
 
-### toJSON
-
-The JavaScript language allows overriding the default behavior for
-creating the intermediate object that is stringified via `JSON.stringify(obj)`.
-Instances of `Model` implement `toJSON()` such that a cleaned copy
-of the model is created. That is, `model.toJSON()` is equivalent to
-`model.clean()`.
-
 ### Stringify
 
 Model instances have a `stringify` function that can be used to
@@ -834,5 +826,3 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
    }
 }
 ```
-
-
