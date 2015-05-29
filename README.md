@@ -108,6 +108,57 @@ address = Address.wrap({
 });
 ```
 
+### Types that Implement EventEmitter
+
+Types that extend `Model` will not implement the `EventEmitter` interface.
+If your type should be an `EventEmitter` then your type should either extend
+`require('typed-model/ObservableModel')` or add the `EventEmitter` mixin.
+Types that implement EventEmitter will emit `change` and `change:someProperty`
+events
+
+**Example using ObservableModel:**
+
+```javascript
+var Something = require('typed-model/ObservableModel').extend({
+    properties: {
+        value: String
+    }
+});
+```
+
+**Example using mixin:**
+
+```javascript
+var Something = require('typed-model/Model').extend({
+    properties: {
+        value: String
+    },
+    mixins: [require('typed-model/mixins/EventEmitter')]
+});
+```
+
+
+**Listening for property value changes:**
+
+```javascript
+var something = new Something();
+
+something.on('change:value', function(event) {
+    // The "value" property changed
+    console.log(
+        'Old value: ' + event.oldValue,
+        'New value: ' + event.newValue);
+});
+
+something.on('change', function(event) {
+    // Some property changed
+    console.log(
+        'Property: ' + event.propertyName,
+        'Old value: ' + event.oldValue,
+        'New value: ' + event.newValue);
+});
+```
+
 ### Self-type References in Properties
 
 In some use cases, the type of a property is the
