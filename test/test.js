@@ -214,11 +214,11 @@ describe('Model' , function() {
     });
 
     it('should properly stringify an array of models', function() {
-		var Person = Model.extend({
-			properties: {
-				name: String
-			}
-		});
+        var Person = Model.extend({
+            properties: {
+                name: String
+            }
+        });
 
         var people = [
             Person.wrap({
@@ -239,21 +239,21 @@ describe('Model' , function() {
         ]));
     });
 
-	it('should not allow for native stringify', function() {
-		var Person = Model.extend({
-			properties: {
-				name: String
-			}
-		});
+    it('should not allow for native stringify', function() {
+        var Person = Model.extend({
+            properties: {
+                name: String
+            }
+        });
 
-		var person = new Person({
-			name: 'test'
-		});
+        var person = new Person({
+            name: 'test'
+        });
 
-		expect(function() {
-			return JSON.stringify(person);
-		}).to.throw();
-	});
+        expect(function() {
+            return JSON.stringify(person);
+        }).to.throw();
+    });
 
     it('should allow efficient wrapping and unwrapping', function() {
         var Person = Model.extend({
