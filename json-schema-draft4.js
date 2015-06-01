@@ -143,8 +143,6 @@ exports.fromModel = function(Type, options) {
 
                     if (items) {
                         _configure(jsonSchemaProperty.items, items.type, options);
-                    } else {
-                        jsonSchemaProperty.items.type = 'object';
                     }
                 } else {
                     _configure(jsonSchemaProperty, PropertyType, options);

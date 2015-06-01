@@ -184,7 +184,8 @@ describe('typed-model json-schema support', function() {
                         }
 					},
 					anything: {
-						type: 'array'
+						type: 'array',
+						items: {}
 					},
 					blob: {
 						type: 'object'
