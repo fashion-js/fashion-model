@@ -139,9 +139,12 @@ exports.fromModel = function(Type, options) {
                     jsonSchemaProperty.type = 'array';
 
                     var items = declaredProperty.items;
+                    jsonSchemaProperty.items = {};
+
                     if (items) {
-                        jsonSchemaProperty.items = {};
                         _configure(jsonSchemaProperty.items, items.type, options);
+                    } else {
+                        jsonSchemaProperty.items.type = 'object';
                     }
                 } else {
                     _configure(jsonSchemaProperty, PropertyType, options);
