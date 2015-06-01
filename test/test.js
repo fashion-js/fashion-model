@@ -1167,9 +1167,6 @@ describe('Model' , function() {
 	});
 
 	it('should allow self type references in property type', function() {
-		var getCallCount = 0;
-		var setCallCount = 0;
-
 		var NodeValue = Enum.create({
 			values: ['a', 'b', 'c']
 		});
@@ -1203,9 +1200,6 @@ describe('Model' , function() {
 	});
 
 	it('should allow self array type references in property type (version 1)', function() {
-		var getCallCount = 0;
-		var setCallCount = 0;
-
 		var TreeNodeValue = Enum.create({
 			values: ['a', 'b', 'c']
 		});
@@ -1244,9 +1238,6 @@ describe('Model' , function() {
 	});
 
 	it('should allow self array type references in property type (version 2)', function() {
-		var getCallCount = 0;
-		var setCallCount = 0;
-
 		var TreeNodeValue = Enum.create({
 			values: ['a', 'b', 'c']
 		});
