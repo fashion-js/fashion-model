@@ -373,10 +373,6 @@ Model_proto.stringify = function(pretty) {
     return Model.stringify(this.data, pretty);
 };
 
-Model_proto.toJSON = function() {
-    return this.clean();
-};
-
 function Property(config) {
     for (var key in config) {
         if (config.hasOwnProperty(key)) {
