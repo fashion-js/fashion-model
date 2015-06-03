@@ -41,7 +41,7 @@ Enum.create = function(config) {
 			if ((value == null) || (value.constructor === Type)) {
 				return value;
 			}
-			
+
 			if (value.$model && value.$model.constructor === Type) {
 				return value.$model;
 			}
@@ -67,11 +67,17 @@ Enum.create = function(config) {
 		normalize = NORMALIZE_LOWER_CASE;
 	}
 
-	Type.prototype.value = function() {
+	var proto = Type.prototype;
+
+	proto.value = function() {
 		return this.data;
 	};
 
-	Type.prototype.name = Type.prototype.toString = function() {
+	proto.name = proto.toString = function() {
+		return this._name;
+	};
+
+	proto.clean = function() {
 		return this._name;
 	};
 
@@ -87,7 +93,7 @@ Enum.create = function(config) {
 		enumValue._name = name;
 		enumValue.data.$model = enumValue;
 
-		Type.prototype['is' + Enum.toTitleCase(name)] = function() {
+		proto['is' + Enum.toTitleCase(name)] = function() {
 			return (this === enumValue);
 		};
 
