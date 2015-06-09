@@ -93,13 +93,21 @@ exports.fromModel = function(Type, options) {
         }
     });
 
-    var SuperType = Type.$super;
-    if (SuperType && (SuperType !== Model) && !SuperType.isCompatibleWith(Enum)) {
-        schema.allOf = [
-            {
-                $ref: options.toRef(SuperType)
-            }
-        ];
+    var useAllOf = (options.useAllOf !== false);
+    if (useAllOf) {
+        // "allOf" is used to express composition.
+        // However, swagger-ui currently doesn't handle composition very well
+        // so we provide an option for disabling its usage.
+        // When "allOf" is disabled, the inherited properties are automatically
+        // put into the derived type definitions
+        var SuperType = Type.$super;
+        if (SuperType && (SuperType !== Model) && !SuperType.isCompatibleWith(Enum)) {
+            schema.allOf = [
+                {
+                    $ref: options.toRef(SuperType)
+                }
+            ];
+        }
     }
 
     if (Type.isCompatibleWith(Enum)) {
@@ -108,6 +116,38 @@ exports.fromModel = function(Type, options) {
     } else if (Type.hasProperties()) {
         schema.type = 'object';
         var properties = schema.properties = {};
+
+        Type.forEachProperty({
+            inherited: !useAllOf
+        }, function(declaredProperty) {
+            var key = declaredProperty.getProperty();
+            if (!IGNORED_PROPERTIES[key] && !options.isIgnoredProperty(key, declaredProperty)) {
+                var jsonSchemaProperty = properties[key] = {};
+
+                /*jshint loopfunc: true */
+                ['title', 'description'].forEach(function(attr) {
+                    var value = declaredProperty[attr];
+                    if (value !== undefined) {
+                        jsonSchemaProperty[attr] = value;
+                    }
+                });
+
+                var PropertyType = declaredProperty.type;
+
+                if (declaredProperty.type.typeName === 'array') {
+                    jsonSchemaProperty.type = 'array';
+
+                    var items = declaredProperty.items;
+                    jsonSchemaProperty.items = {};
+
+                    if (items) {
+                        _configure(jsonSchemaProperty.items, items.type, options);
+                    }
+                } else {
+                    _configure(jsonSchemaProperty, PropertyType, options);
+                }
+            }
+        });
 
         var declaredProperties = Type.Properties.prototype;
         for (var key in declaredProperties) {

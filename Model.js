@@ -221,7 +221,15 @@ Model.getProperty = function(propertyName) {
     return this.properties[propertyName];
 };
 
-Model.forEachProperty = function(callback) {
+
+Model.forEachProperty = function(options, callback) {
+    if (arguments.length === 1) {
+        callback = arguments[0];
+        options = {};
+    }
+
+    var inherited = (options.inherited !== false);
+
     var proto = this.Properties.prototype;
     var seen = {};
     do {
@@ -236,7 +244,7 @@ Model.forEachProperty = function(callback) {
                 seen[key] = true;
             }
         }
-    } while((proto = Object.getPrototypeOf(proto)) != null);
+    } while(inherited && ((proto = Object.getPrototypeOf(proto)) != null));
 };
 
 Model.preventConstruction = function() {
