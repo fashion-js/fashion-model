@@ -6,118 +6,119 @@ var Model = require('./Model');
 var Enum = module.exports = Model.extend({});
 
 Enum.toConstantName = function(str) {
-	return str.replace(constantRenameRegex, function(match, lowerCh, upperCh, specialCh) {
-		if (lowerCh) {
-			return lowerCh + '_' + upperCh;
-		} else {
-			return '_';
-		}
+    return str.replace(constantRenameRegex, function(match, lowerCh, upperCh, specialCh) {
+        if (lowerCh) {
+            return lowerCh + '_' + upperCh;
+        } else {
+            return '_';
+        }
 
-	}).toUpperCase();
+    }).toUpperCase();
 };
 
 Enum.toCamelCase = function(str) {
-	return str.toLowerCase().replace(toCamelCaseRegex, function(match, ch1, ch2) {
-		return ch1 + ch2.toUpperCase();
-	});
+    return str.toLowerCase().replace(toCamelCaseRegex, function(match, ch1, ch2) {
+        return ch1 + ch2.toUpperCase();
+    });
 };
 
 Enum.toTitleCase = function(str) {
-	var title = Enum.toCamelCase(str);
-	return title.charAt(0).toUpperCase() + title.substring(1);
+    var title = Enum.toCamelCase(str);
+    return title.charAt(0).toUpperCase() + title.substring(1);
 };
 
 var NORMALIZE_LOWER_CASE = function(str) {
-	return str.toLowerCase();
+    return str.toLowerCase();
 };
 
 var NORMALIZE_UPPER_CASE = function(str) {
-	return str.toUpperCase();
+    return str.toUpperCase();
 };
 
 Enum.create = function(config) {
-	if (!config.coerce) {
-		config.coerce = function(value, options) {
-			if ((value == null) || (value.constructor === Type)) {
-				return value;
-			}
+    var normalize;
 
-			if (value.$model && value.$model.constructor === Type) {
-				return value.$model;
-			}
+    if (!config.coerce) {
+        config.coerce = function(value, options) {
+            if ((value == null) || (value.constructor === Type)) {
+                return value;
+            }
 
-			if (normalize !== undefined) {
-				value = normalize(value);
-			}
+            if (value.$model && value.$model.constructor === Type) {
+                return value.$model;
+            }
 
-			var enumValue = Type[value];
-			if (enumValue === undefined) {
-				this.coercionError(value, options);
-			}
-			return enumValue;
-		};
-	}
+            if (normalize !== undefined) {
+                value = normalize(value);
+            }
 
-	var Type = Enum.extend(config);
+            var enumValue = Type[value];
+            if (enumValue === undefined) {
+                this.coercionError(value, options);
+            }
+            return enumValue;
+        };
+    }
 
-	var normalize;
-	if (config.autoUpperCase) {
-		normalize = NORMALIZE_UPPER_CASE;
-	} else if (config.autoLowerCase) {
-		normalize = NORMALIZE_LOWER_CASE;
-	}
+    var Type = Enum.extend(config);
 
-	var proto = Type.prototype;
+    if (config.autoUpperCase) {
+        normalize = NORMALIZE_UPPER_CASE;
+    } else if (config.autoLowerCase) {
+        normalize = NORMALIZE_LOWER_CASE;
+    }
 
-	proto.value = function() {
-		return this.data;
-	};
+    var proto = Type.prototype;
 
-	proto.name = proto.toString = function() {
-		return this._name;
-	};
+    proto.value = function() {
+        return this.data;
+    };
 
-	proto.clean = function() {
-		return this._name;
-	};
+    proto.name = proto.toString = function() {
+        return this._name;
+    };
 
-	var values = config.values;
+    proto.clean = function() {
+        return this._name;
+    };
 
-	Type.names = [];
-	Type.values = [];
+    var values = config.values;
 
-	function createEnumValue(name, value) {
-		Type.names.push(name);
+    Type.names = [];
+    Type.values = [];
 
-		var enumValue = new Type(value);
-		enumValue._name = name;
-		enumValue.data.$model = enumValue;
+    function createEnumValue(name, value) {
+        Type.names.push(name);
 
-		proto['is' + Enum.toTitleCase(name)] = function() {
-			return (this === enumValue);
-		};
+        var enumValue = new Type(value);
+        enumValue._name = name;
+        enumValue.data.$model = enumValue;
 
-		Type[name] = Type[Enum.toConstantName(name)] = enumValue;
+        proto['is' + Enum.toTitleCase(name)] = function() {
+            return (this === enumValue);
+        };
 
-		Type.values.push(enumValue);
+        Type[name] = Type[Enum.toConstantName(name)] = enumValue;
 
-		return enumValue;
-	}
+        Type.values.push(enumValue);
 
-	if (Array.isArray(values)) {
-		values.forEach(function(value, index) {
-			createEnumValue(value, value);
-		});
-	} else {
-		for (var name in values) {
-			if (values.hasOwnProperty(name)) {
-				createEnumValue(name, values[name]);
-			}
-		}
-	}
+        return enumValue;
+    }
+
+    if (Array.isArray(values)) {
+        values.forEach(function(value, index) {
+            createEnumValue(value, value);
+        });
+    } else {
+        for (var name in values) {
+            if (values.hasOwnProperty(name)) {
+                createEnumValue(name, values[name]);
+            }
+        }
+    }
 
 
-	Type.preventConstruction();
+    Type.preventConstruction();
 
-	return Type;
+    return Type;
 };

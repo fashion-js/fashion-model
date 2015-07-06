@@ -7,6 +7,10 @@ var Model = require('../Model');
 var Enum = require('../Enum');
 var DateType = require('../Date');
 var ObservableModel = require('../ObservableModel');
+var ArrayType = require('../Array');
+var IntegerType = require('../Integer');
+var BooleanType = require('../Boolean');
+var ObjectType = require('../Object');
 
 var Gender = Enum.create({
     values: ['M', 'F'],
@@ -81,8 +85,8 @@ describe('Model' , function() {
     });
 
     it('should handle Date type', function() {
-        var date = DateType.coerce('1980-02-01T05:00:00.000Z');
-        expect(date).to.deep.equal(new Date(1980, 1, 1));
+        var date = DateType.coerce('1980-02-01T00:00:00.000Z');
+        expect(date.getTime()).to.deep.equal(new Date(Date.UTC(1980, 1, 1, 0, 0, 0)).getTime());
 
         expect(function() {
             DateType.coerce(true);
@@ -547,7 +551,7 @@ describe('Model' , function() {
         });
     });
 
-    it('should support simplified array type', function() {
+    it('should support simplified enum array type', function() {
 
         var Color = Enum.create({
             values: ['red', 'green', 'blue']
@@ -696,9 +700,6 @@ describe('Model' , function() {
         person.setMessage('Hello');
         expect(person.getMessage()).to.equal('Hello');
 
-        person.setMessage(new Date(0));
-        expect(person.getMessage()).to.equal('Wed Dec 31 1969 19:00:00 GMT-0500 (EST)');
-
         person.setMessage(42);
         expect(person.getMessage()).to.equal('42');
 
@@ -747,9 +748,9 @@ describe('Model' , function() {
         });
 
         var favoriteColors = person.getFavoriteColors();
-        expect(favoriteColors[0]).to.equal('red');
-        expect(favoriteColors[1]).to.equal('green');
-        expect(favoriteColors[2]).to.equal('blue');
+        expect(favoriteColors[0]).to.equal(Color.RED);
+        expect(favoriteColors[1]).to.equal(Color.GREEN);
+        expect(favoriteColors[2]).to.equal(Color.BLUE);
 
         expect(function() {
             person = Person.wrap({
@@ -797,10 +798,10 @@ describe('Model' , function() {
         });
 
         var people = something.getPeople();
-        expect(people[0].happy).to.equal(false);
-        expect(people[1].happy).to.equal(false);
-        expect(people[2].happy).to.equal(true);
-        expect(people[3].happy).to.equal(true);
+        expect(people[0].getHappy()).to.equal(false);
+        expect(people[1].getHappy()).to.equal(false);
+        expect(people[2].getHappy()).to.equal(true);
+        expect(people[3].getHappy()).to.equal(true);
 
 
         expect(Person.wrap(something.getPeople()[0]).getHappy()).to.equal(false);
@@ -936,12 +937,14 @@ describe('Model' , function() {
     it('should support array of array type', function() {
         var IntegerType = require('../Integer');
         var Item = Model.extend({
+            typeName: 'Item',
             properties: {
                 id: IntegerType
             }
         });
 
         var Something = Model.extend({
+            typeName: 'Something',
             properties: {
                 // short-hand for defining an Array of Array
                 stuff: [[Item]],
@@ -1352,5 +1355,270 @@ describe('Model' , function() {
         expect(TreeNode.wrap(node.getChildren()[1]).getValue().toString()).to.equal('b');
         expect(TreeNode.wrap(node.getChildren()[2]).getValue().toString()).to.equal('c');
         expect(TreeNode.wrap(node.getChildren()[3]).getValue()).to.equal(undefined);
+    });
+
+    it('should handle wrapping array values', function() {
+        var Color = Enum.create({
+            values: ['red', 'green', 'blue', 'yellow']
+        });
+
+        // original array
+        var colors = ['red', 'GREEN', 'blue'];
+        var newColors = Color.convertArray(colors);
+
+        // values in original array are coerced
+        expect(colors[0]).to.equal('red');
+        expect(colors[1]).to.equal('green');
+        expect(colors[2]).to.equal('blue');
+
+        // values in new array are model instances
+        expect(newColors[0]).to.equal(Color.RED);
+        expect(newColors[1]).to.equal(Color.GREEN);
+        expect(newColors[2]).to.equal(Color.BLUE);
+    });
+
+    it('should handle converting simple type array values', function() {
+        var values = [0, 1];
+        var newValues = BooleanType.convertArray(values);
+
+        expect(values === newValues);
+
+        // values in original array are coerced
+        expect(values[0]).to.equal(false);
+        expect(values[1]).to.equal(true);
+    });
+
+    it('should handle converting Object type array values', function() {
+        var v0 = {a: 1};
+        var v1 = {a: 2};
+
+        var values = [v0, v1];
+        var newValues = ObjectType.convertArray(values);
+
+        expect(values === newValues);
+
+        // values in original array are coerced
+        expect(values[0]).to.equal(v0);
+        expect(values[1]).to.equal(v1);
+    });
+
+    it('should handle wrapping/unwrapping array properties', function() {
+        var Color = Enum.create({
+            values: ['red', 'green', 'blue', 'yellow']
+        });
+
+        var Palette = Model.extend({
+            properties: {
+                colors: [Color]
+            }
+        });
+
+        // original array
+        var colors = ['red', 'GREEN', 'blue'];
+        var palette = new Palette({
+            colors: colors
+        });
+
+        // values in original array are coerced
+        expect(colors[0]).to.equal('red');
+        expect(colors[1]).to.equal('green');
+        expect(colors[2]).to.equal('blue');
+
+        expect(palette.data.colors.$model.Model).to.equal(ArrayType);
+        expect(palette.data.colors[0]).to.equal('red');
+        expect(palette.data.colors[1]).to.equal('green');
+        expect(palette.data.colors[2]).to.equal('blue');
+
+        expect(palette.getColors()).to.equal(palette.getColors());
+
+        expect(palette.getColors()[0]).to.equal(Color.RED);
+        expect(palette.getColors()[1]).to.equal(Color.GREEN);
+        expect(palette.getColors()[2]).to.equal(Color.BLUE);
+
+        colors.push('yellow');
+
+        palette.setColors(colors);
+
+        expect(palette.getColors()[3]).to.equal(Color.YELLOW);
+    });
+
+    it('should handle cleaning model with arrays', function() {
+        var Color = Enum.create({
+            values: ['red', 'green', 'blue', 'yellow']
+        });
+
+        var Palette = Model.extend({
+            properties: {
+                colors: [Color]
+            }
+        });
+
+        // original array
+        var colors = ['red', 'green', 'blue'];
+        var palette = new Palette({
+            colors: colors
+        });
+
+        palette.getColors().push(Color.YELLOW);
+
+        expect(palette.stringify()).to.equal('{\"colors\":[\"red\",\"green\",\"blue\",\"yellow\"]}');
+
+        expect(palette.getColors().length).to.equal(4);
+        expect(palette.getColors()[0]).to.equal(Color.RED);
+        expect(palette.getColors()[1]).to.equal(Color.GREEN);
+        expect(palette.getColors()[2]).to.equal(Color.BLUE);
+        expect(palette.getColors()[3]).to.equal(Color.YELLOW);
+
+        expect(palette.clean()).to.deep.equal({
+            colors: ['red', 'green', 'blue', 'yellow']
+        });
+    });
+
+    it('should handle stringifying models with array of Enum values', function() {
+        var Color = Enum.create({
+            values: ['red', 'green', 'blue', 'yellow']
+        });
+
+        var Palette = Model.extend({
+            properties: {
+                colors: [Color]
+            }
+        });
+
+        // original array
+        var colors = ['red', 'green', 'blue'];
+        var palette = new Palette({
+            colors: colors
+        });
+
+        palette.getColors().push(Color.YELLOW);
+
+        expect(palette.stringify()).to.equal('{\"colors\":[\"red\",\"green\",\"blue\",\"yellow\"]}');
+    });
+
+    it('should handle stringifying models with array of object values', function() {
+        var Person = Model.extend({
+            properties: {
+                name: String,
+                age: IntegerType
+            }
+        });
+
+        var Group = Model.extend({
+            properties: {
+                people: [Person]
+            }
+        });
+
+        // original array
+        var people = [
+            {
+                name: 'John',
+                age: 10
+            },
+            {
+                name: 'Alice',
+                age: 12
+            }
+        ];
+        var group = new Group({
+            people: people
+        });
+
+        group.getPeople().push(new Person({
+            name: 'Bob',
+            age: 14
+        }));
+
+        expect(group.stringify()).to.equal('{\"people\":[{\"name\":\"John\",\"age\":10},{\"name\":\"Alice\",\"age\":12},{\"name\":\"Bob\",\"age\":14}]}');
+    });
+
+    it('should addToProperty method for modifying arrays of primitive types', function() {
+        var Collection = Model.extend({
+            properties: {
+                items: [Object]
+            }
+        });
+
+        // original array
+        var items = [
+            'abc',
+            'def'
+        ];
+        var collection = new Collection({
+            items: items
+        });
+
+        expect(collection.getItems().length).to.equal(2);
+
+        expect(collection.stringify()).to.equal('{\"items\":[\"abc\",\"def\"]}');
+
+        collection.addToItems('123');
+
+        expect(collection.getItems().length).to.equal(3);
+
+        expect(collection.stringify()).to.equal('{\"items\":[\"abc\",\"def\",\"123\"]}');
+
+        expect(collection.clean()).to.deep.equal({
+            items: [
+                'abc',
+                'def',
+                '123'
+            ]
+        });
+    });
+
+    it('should addToProperty method for modifying arrays of models', function() {
+        var Person = Model.extend({
+            properties: {
+                name: String,
+                age: IntegerType
+            }
+        });
+
+        var Group = Model.extend({
+            properties: {
+                people: [Person]
+            }
+        });
+
+        // original array
+        var people = [
+            {
+                name: 'John',
+                age: 10
+            },
+            {
+                name: 'Alice',
+                age: 12
+            }
+        ];
+        var group = new Group({
+            people: people
+        });
+
+        group.addToPeople({
+            name: 'Bob',
+            age: 14
+        });
+
+        expect(group.stringify()).to.equal('{\"people\":[{\"name\":\"John\",\"age\":10},{\"name\":\"Alice\",\"age\":12},{\"name\":\"Bob\",\"age\":14}]}');
+
+        expect(group.clean()).to.deep.equal({
+            people: [
+                {
+                    name: 'John',
+                    age: 10
+                },
+                {
+                    name: 'Alice',
+                    age: 12
+                },
+                {
+                    name: 'Bob',
+                    age: 14
+                }
+            ]
+        });
     });
 });
