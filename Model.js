@@ -195,7 +195,7 @@ module.exports = Model = function Model(data, options) {
 
             // use setters to make sure values get properly coerced
             for (var key in data) {
-                if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
+                if (data.hasOwnProperty(key) && (key !== '$model')) {
                     var property = properties[key];
                     if (property) {
                         _set(this, property, data[key], options);
@@ -344,7 +344,7 @@ function _syncArrays(rawArray, modelArray) {
 }
 
 function _jsonStringifyReplacer(key, value) {
-    if (key.charAt(0) === '$') {
+    if (key === '$model') {
         return undefined;
     }
 
@@ -386,7 +386,7 @@ Model_proto.clean = function(errors) {
     if (Derived.hasProperties()) {
         var clone = {};
         for (var key in data) {
-            if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
+            if (data.hasOwnProperty(key) && (key !== '$model')) {
                 var property = properties[key];
                 var value = data[key];
                 if (property && (property.isPersisted())) {
@@ -420,7 +420,11 @@ function _getProperty(model, propertyName, errors) {
 }
 
 /**
- * Set value of property with given propertyName to given value
+ * Set value of property with given propertyName to given value.
+ * @param {String} propertyName the property name
+ * @param {Object} value the new value
+ * @param {Object|Array} options an optional object that specifies options
+ *      or an array which will have any errors added to it
  */
 Model_proto.set = function(propertyName, value, options) {
     var property = _getProperty(this, propertyName, options);
@@ -435,6 +439,12 @@ Model_proto.set = function(propertyName, value, options) {
     }
 };
 
+/**
+ * Get value of property with given propertyName.
+ * @param {String} propertyName the property name
+ * @param {Object|Array} options an optional object that specifies options
+ *      or an array which will have any errors added to it
+ */
 Model_proto.get = function(propertyName, options) {
     var property = _getProperty(this, propertyName, options);
     if (property) {
@@ -766,8 +776,7 @@ function _extend(Base, config, resolver) {
             }
 
             if (coerce) {
-                options = _toOptions(options);
-                data = coerce.call(Derived, data, options);
+                data = coerce.call(Derived, data, (options = _toOptions(options)));
             }
 
             if (data == null) {
@@ -839,17 +848,19 @@ function _extend(Base, config, resolver) {
                 var funcName;
                 var funcSuffix = _initialUpperCase(name);
 
-
+                // generate getter
                 if (property.getGetter() !== null) {
                     funcName = 'get' + funcSuffix;
                     classPrototype[funcName] = _generateGetter(property);
                 }
 
+                // generate setter
                 if (property.getSetter() !== null) {
                     funcName = 'set' + funcSuffix;
                     classPrototype[funcName] = _generateSetter(property);
                 }
 
+                // generate addTo<Property> if property is Array type
                 if (property.getType() === ArrayType) {
                     funcName = 'addTo' + funcSuffix;
                     classPrototype[funcName] = _generateAddValueTo(property);

@@ -243,6 +243,36 @@ describe('Model' , function() {
         ]));
     });
 
+    it('should properly stringify an array of models within a simple object', function() {
+        var Person = Model.extend({
+            properties: {
+                name: String
+            }
+        });
+
+        var people = Person.convertArray([
+            {
+                name: 'John'
+            },
+            {
+                name: 'Sally'
+            }
+        ]);
+
+        expect(Model.stringify({
+            people: people
+        })).to.equal(JSON.stringify({
+            people: [
+                {
+                    name: 'John'
+                },
+                {
+                    name: 'Sally'
+                }
+            ]
+        }));
+    });
+
     it('should not allow for native stringify', function() {
         var Person = Model.extend({
             properties: {
