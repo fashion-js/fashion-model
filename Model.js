@@ -6,11 +6,16 @@ var Model;
 var EMPTY_PROPERTIES = {};
 
 function _toModel(obj) {
-    if (obj == null) {
-        return obj;
-    }
+    return (obj == null) ? obj : (obj.$model || obj);
+}
 
-    return obj.$model || obj;
+function _forProperty(property, options, work) {
+    options = _toOptions(options);
+    var origProperty = options.property;
+    options.property = property;
+    work(options);
+    options.property = origProperty;
+    return options;
 }
 
 function _notifySet(model, propertyName, oldValue, newValue, property) {
@@ -24,7 +29,8 @@ function _notifySet(model, propertyName, oldValue, newValue, property) {
             property: property
         };
 
-        for (var i = 0; i < Type._onSet.length; i++) {
+        var len = Type._onSet.length;
+        for (var i = 0; i < len; i++) {
             Type._onSet[i](model, event);
         }
     }
@@ -34,26 +40,18 @@ function _get(model, property) {
     var propertyName = property.getProperty();
     var getter = property.getGetter();
     if (getter) {
+        // the getter provided for the property needs to do all of
+        // the work...
         return getter.call(model, propertyName, property);
     }
 
+    // pull out the raw value...
     var value = model.data[propertyName];
-    if (value == null) {
-        return value;
-    }
 
     var Type = property.getType();
-    if (Type.isWrapped()) {
-        if (Type.isAutoUnwrapped()) {
-            // auto unwrap
-            value = Model.unwrap(value);
-        } else {
-            // make sure we return an instance of the actual type and not the raw value
-            value = Type.wrap(value);
-        }
-    }
 
-    return value;
+    // If type is wrapped make sure we return an instance of the actual type and not the raw value
+    return ((value != null) && Type.isWrapped()) ? Type.wrap(value) : value;
 }
 
 function _set(model, property, value, options) {
@@ -61,19 +59,20 @@ function _set(model, property, value, options) {
 
     // this the value that we return (it may be the result of wrapping/coercing the original value)
     var returnValue;
+    var wrapped = Type.isWrapped();
 
-    if (Model.isModel(value) && (value instanceof Type)) {
+    if (Model.isModel(value) && Type.isInstance(value)) {
         // value is expected type
         // store raw data in this model's data
         value = Model.unwrap(value);
-    } else if (Type.coerce) {
+    } else if (!wrapped && Type.coerce) {
+        // Only call coerce if this type is not wrapped
+        // (otherwise we'd call coerce twice which is wasteful)
 
-        options = _toOptions(options);
-        options.property = property;
-
-        value = Type.coerce.call(Type, value, options);
-
-        options.property = undefined;
+        // The coerce function needs some context in the options
+        options = _forProperty(property, options, function(options) {
+            value = Type.coerce.call(Type, value, options);
+        });
     }
 
     var propertyName = property.getProperty();
@@ -87,11 +86,17 @@ function _set(model, property, value, options) {
         // get the new value
         value = model.data[propertyName];
         returnValue = Type.wrap(value, options);
-    } else if ((value != null) && Type.isWrapped()) {
-        // recursively call setters
-        returnValue = Type.wrap(value, options);
-        value = Model.unwrap(returnValue);
+    } else if ((value != null) && wrapped) {
+        options = _forProperty(property, options, function(options) {
+            // recursively call setters
+            // The return value is the wrapped value
+            returnValue = Type.wrap(value, options);
+
+            // the value that gets stored in data is the unwrapped value
+            value = Model.unwrap(returnValue);
+        });
     } else {
+        // value is not wrapped so simply return the raw value
         returnValue = value;
     }
 
@@ -115,10 +120,55 @@ function _generateSetter(property) {
     };
 }
 
+// This function will be used to make sure an array value
+// exists for the given property
+function _ensureArray(property, wrapped) {
+    var propertyName = property.getProperty();
+    var array = this.data[propertyName];
+    if (!array) {
+        this.data[propertyName] = array = [];
+    }
+
+    // initialize the model array if it doesn't already exist
+    if (!array.$model) {
+        ArrayType._initModelArray(array, wrapped);
+    }
+
+    return array;
+}
+
+function _generateAddValueTo(property) {
+    var items = property.items;
+    var ItemType = items && items.type;
+    if (ItemType && ItemType.isWrapped()) {
+        // the addTo<Property> function will need to wrap each item
+        // when adding it to the array
+        return function(value, options) {
+            var array = _ensureArray.call(this, property, true);
+            var model = ItemType.wrap(value, options);
+            array.push(Model.unwrap(model));
+            array.$model.push(model);
+        };
+    } else {
+        // the addTo<Property> function should add raw value to array
+        // (call the type coercion function if it exists)
+        return function(value, options) {
+            var array = _ensureArray.call(this, property, false);
+            array.push((ItemType && ItemType.coerce) ? ItemType.coerce(value, options) : value);
+        };
+    }
+}
+
 function _initialUpperCase(str) {
     return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
+function _convertArray(array, options) {
+    return ArrayType._convertArrayItems(array, this, options);
+}
+
+// This is the constructor that gets called when ever a Model (or derived type)
+// is created
 module.exports = Model = function Model(data, options) {
     var Derived = this.constructor;
 
@@ -146,7 +196,6 @@ module.exports = Model = function Model(data, options) {
             // use setters to make sure values get properly coerced
             for (var key in data) {
                 if ((key.charAt(0) !== '$') && data.hasOwnProperty(key)) {
-
                     var property = properties[key];
                     if (property) {
                         _set(this, property, data[key], options);
@@ -164,44 +213,42 @@ module.exports = Model = function Model(data, options) {
 
 Model.typeName = 'Model';
 
+// This is a internal helper function that will do some work in the context
+// of a property. The options.property value will be temporarily updated to
+// reflect the given property and then options.property will be restored
+// to its original value after the work is executed.
+Model._forProperty = _forProperty;
+
 Model.isModel = function(obj) {
     return obj && obj.Model;
 };
 
 Model.unwrap = function(obj) {
-    if (obj == null) {
-        return obj;
-    }
-
-    if (obj.Model) {
-        return obj.data;
-    }
-
-    return obj;
+    // if obj is Model instance then return raw data, otherwise, return obj
+    return Model.isModel(obj) ? obj.data : obj;
 };
-
-function _clean(obj, errors) {
-    if ((obj = Model.unwrap(obj)) == null) {
-        return obj;
-    }
-
-    if (obj.$model) {
-        return obj.$model.clean(errors);
-    }
-
-    return obj;
-}
 
 Model.clean = function(obj, errors) {
     if (Array.isArray(obj)) {
-        var result = new Array(obj.length);
-        var i = obj.length;
+        // use the model array if it is available, otherwise,
+        // use the raw array
+        var array = obj.$model || obj;
+        var i = array.length;
+        var result = new Array(i);
         while(--i >= 0) {
-            result[i] = Model.clean(obj[i], errors);
+            result[i] = Model.clean(array[i], errors);
         }
         return result;
     } else {
-        return _clean(obj, errors);
+        if ((obj = Model.unwrap(obj)) == null) {
+            return obj;
+        }
+
+        if (obj.$model) {
+            return obj.$model.clean(errors);
+        }
+
+        return obj;
     }
 };
 
@@ -220,7 +267,6 @@ Model.getProperties = function() {
 Model.getProperty = function(propertyName) {
     return this.properties[propertyName];
 };
-
 
 Model.forEachProperty = function(options, callback) {
     if (arguments.length === 1) {
@@ -261,6 +307,10 @@ Model.isCompatibleWith = function(other) {
     return false;
 };
 
+Model.isInstance = function(value) {
+    return (value instanceof this);
+};
+
 Model.isPrimitive = function() {
     return false;
 };
@@ -285,6 +335,14 @@ Model.coercionError = function(value, options, errorMessage) {
     }
 };
 
+function _syncArrays(rawArray, modelArray) {
+    var len = rawArray.length = modelArray.length;
+    var i = len;
+    while(--i >= 0) {
+        rawArray[i] = Model.unwrap(modelArray[i]);
+    }
+}
+
 function _jsonStringifyReplacer(key, value) {
     if (key.charAt(0) === '$') {
         return undefined;
@@ -292,7 +350,13 @@ function _jsonStringifyReplacer(key, value) {
 
     if (value != null) {
         if (Model.isModel(value)) {
-            return Model.unwrap(value);
+            var rawValue = Model.unwrap(value);
+            if (value.Model === ArrayType) {
+                _syncArrays(rawValue, value);
+            }
+            value = rawValue;
+        } else if (value.$model && value.$model.Model === ArrayType) {
+            _syncArrays(value, value.$model);
         }
     }
 
@@ -355,6 +419,9 @@ function _getProperty(model, propertyName, errors) {
     return property;
 }
 
+/**
+ * Set value of property with given propertyName to given value
+ */
 Model_proto.set = function(propertyName, value, options) {
     var property = _getProperty(this, propertyName, options);
     if (property) {
@@ -368,8 +435,8 @@ Model_proto.set = function(propertyName, value, options) {
     }
 };
 
-Model_proto.get = function(propertyName, errors) {
-    var property = _getProperty(this, propertyName, errors);
+Model_proto.get = function(propertyName, options) {
+    var property = _getProperty(this, propertyName, options);
     if (property) {
         return _get(this, property);
     } else {
@@ -542,7 +609,6 @@ var SPECIAL_PROPERTIES = {
     init: 1,
     wrap: 1,
     unwrap: 1,
-    autoUnwrap: 1,
     coerce: 1,
     properties: 1,
     prototype: 1,
@@ -623,7 +689,6 @@ function _extend(Base, config, resolver) {
     var init = config.init;
     var wrap = config.wrap;
     var unwrap = config.unwrap;
-    var autoUnwrap = !!config.autoUnwrap;
     var coerce = config.coerce;
     var properties = config.properties;
     var prototype = config.prototype;
@@ -644,8 +709,6 @@ function _extend(Base, config, resolver) {
         }
     }
 
-    _copyNonSpecialPropertiesToType(config, Derived);
-
     // Selectively copy properties from Model to Derived
     [
         'getProperty',
@@ -657,10 +720,17 @@ function _extend(Base, config, resolver) {
         'coercionError',
         'forEachProperty',
         'isCompatibleWith',
+        'isInstance',
         'isPrimitive'
     ].forEach(function(property) {
         Derived[property] = Model[property];
     });
+
+    Derived.convertArray = _convertArray;
+
+    // Now copy any properties from config to Derived that might
+    // override any of the special prpoerties that were copied above
+    _copyNonSpecialPropertiesToType(config, Derived);
 
     _concatToArray(Derived, '_onSet', Base._onSet);
 
@@ -682,10 +752,6 @@ function _extend(Base, config, resolver) {
         return (wrap !== false);
     };
 
-    Derived.isAutoUnwrapped = function() {
-        return autoUnwrap;
-    };
-
     var factory;
     if (wrap && wrap.constructor === Function) {
         factory = wrap;
@@ -695,7 +761,7 @@ function _extend(Base, config, resolver) {
                 return new Derived();
             }
 
-            if (data instanceof Derived) {
+            if (Derived.isInstance(data)) {
                 return data;
             }
 
@@ -709,9 +775,12 @@ function _extend(Base, config, resolver) {
             }
 
             if (Model.isModel(data)) {
-                if (data instanceof Derived) {
+                if (Derived.isInstance(data)) {
+                    // is already of correct type
                     return data;
                 } else {
+                    // the data is a model but it is not the right type
+                    // so dissociate the raw data with the old model
                     data = Model.unwrap(data);
                     delete data.$model;
                 }
@@ -721,15 +790,17 @@ function _extend(Base, config, resolver) {
                 return data;
             }
 
+            if (data.$model) {
+                return data.$model;
+            }
+
             if (Array.isArray(data)) {
-                // TODO: Handle wrapping Array?
-                // If so, replace items or return new Array?
-                throw new Error('Wrapping Array object is not allowed.');
+                return Derived.convertArray(data, options);
             }
 
             // return existing model or create a new model
             // NOTE: Model constructor will store $model in data
-            return (data && data.$model) || new Derived(data, options);
+            return new Derived(data, options);
         };
     }
 
@@ -777,6 +848,11 @@ function _extend(Base, config, resolver) {
                 if (property.getSetter() !== null) {
                     funcName = 'set' + funcSuffix;
                     classPrototype[funcName] = _generateSetter(property);
+                }
+
+                if (property.getType() === ArrayType) {
+                    funcName = 'addTo' + funcSuffix;
+                    classPrototype[funcName] = _generateAddValueTo(property);
                 }
             });
         }
