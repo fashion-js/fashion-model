@@ -770,7 +770,8 @@ describe('Model' , function() {
     it('should coerce array of primitives', function() {
         var Something = Model.extend({
             properties: {
-                arrayOfBooleans: [Boolean]
+                arrayOfBooleans: [Boolean],
+                arrayOfAnything: []
             }
         });
 
@@ -784,6 +785,35 @@ describe('Model' , function() {
         expect(arrayOfBooleans[2]).to.equal(false);
         expect(arrayOfBooleans[3]).to.equal(true);
         expect(arrayOfBooleans[4]).to.equal(true);
+
+        something.setArrayOfAnything([123, 'abc', true]);
+        expect(something.getArrayOfAnything()[0]).to.equal(123);
+        expect(something.getArrayOfAnything()[1]).to.equal('abc');
+        expect(something.getArrayOfAnything()[2]).to.equal(true);
+    });
+
+    it('should allow array as argument to wrap', function() {
+        var Something = Model.extend({
+            properties: {
+                anything: Object
+            }
+        });
+
+        var somethingList = Something.wrap([
+            {
+                anything: 123
+            },
+            {
+                anything: 'abc'
+            },
+            {
+                anything: true
+            }
+        ]);
+
+        expect(somethingList[0].getAnything()).to.equal(123);
+        expect(somethingList[1].getAnything()).to.equal('abc');
+        expect(somethingList[2].getAnything()).to.equal(true);
     });
 
     it('should coerce array of enums', function() {

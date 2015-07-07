@@ -82,6 +82,8 @@ var ArrayType = module.exports = Model.extend({
             Model._forProperty(items, options, function(options) {
                 array = ArrayType._convertArrayItems(array, items.type, options);
             });
+        } else {
+            ArrayType._initModelArray(array, false);
         }
 
         return array;
