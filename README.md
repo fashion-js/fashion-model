@@ -86,8 +86,8 @@ address.setState('CA');
 ```javascript
 // Create via constructor with initial data
 var address = new Address({
-	city: 'San Francisco',
-	state: 'CA'
+    city: 'San Francisco',
+    state: 'CA'
 });
 ```
 
@@ -103,8 +103,8 @@ address.setState('CA');
 ```javascript
 // Create via "wrap" function
 address = Address.wrap({
-	city: 'San Francisco',
-	state: 'CA'
+    city: 'San Francisco',
+    state: 'CA'
 });
 ```
 
@@ -245,14 +245,14 @@ configuration.
 ```javascript
 var Person = Entity.extend({
     properties: {
-		firstName: String,
-		lastName: String
-	},
-	prototype: {
-		getDisplayName: function() {
-			return this.getFirstName() + ' ' + this.getLastName();
-		}
-	}
+        firstName: String,
+        lastName: String
+    },
+    prototype: {
+        getDisplayName: function() {
+            return this.getFirstName() + ' ' + this.getLastName();
+        }
+    }
 });
 ```
 
@@ -292,13 +292,13 @@ You can also create getters for computed/derived properties.
 var Person = Entity.extend({
     properties: {
         firstName: String,
-    	lastName: String,
-    	displayName: {
-    		type: String
-    		get: function(name, property) {
-    			return this.getFirstName() + ' ' + this.getLastName();
-    		}
-    	}
+        lastName: String,
+        displayName: {
+            type: String
+            get: function(name, property) {
+                return this.getFirstName() + ' ' + this.getLastName();
+            }
+        }
     }
 });
 ```
@@ -313,39 +313,39 @@ then you might want to mark an property as non-persisted.
 update `displayName` whenever `firstName` or `lastName` is changed:**
 ```javascript
 function _updateDisplayName(person) {
-	person.setDisplayName(person.getFirstName() + ' ' + person.getLastName());
+    person.setDisplayName(person.getFirstName() + ' ' + person.getLastName());
 }
 
 var Person = Entity.extend({
     properties: {
-    	firstName: {
-    		type: String,
-    		set: function(name, value, property) {
-    			this.data[name] = value;
-    			_updateDisplayName(this);
-    		}
-    	},
-    	lastName: {
-    		type: String,
-    		set: function(name, value, property) {
-    			this.data[name] = value;
-    			_updateDisplayName(this);
-    		}
-    	},
-    	// displayName is updated whenever firstName or lastName change
-    	displayName: {
-    		type: String,
+        firstName: {
+            type: String,
+            set: function(name, value, property) {
+                this.data[name] = value;
+                _updateDisplayName(this);
+            }
+        },
+        lastName: {
+            type: String,
+            set: function(name, value, property) {
+                this.data[name] = value;
+                _updateDisplayName(this);
+            }
+        },
+        // displayName is updated whenever firstName or lastName change
+        displayName: {
+            type: String,
 
             // do not persist displayName when clean() is called since it is
             // a derived value
-    		persist: false
-    	}
+            persist: false
+        }
     }
 });
 
 var person = new Person({
-	firstName: 'John',
-	lastName: 'Doe'
+    firstName: 'John',
+    lastName: 'Doe'
 });
 
 assert(person.getDisplayName() === 'John Doe');
@@ -385,8 +385,8 @@ var Address = Model.extend({
 });
 
 var address = new Address({
-	city: 'San Francisco',
-	state: 'CA'
+    city: 'San Francisco',
+    state: 'CA'
 });
 
 // Create an instance of Address
@@ -409,8 +409,8 @@ all non-persisted properties and metadata have been removed.
 
 ```javascript
 var address = new Address({
-	city: 'San Francisco',
-	state: 'CA'
+    city: 'San Francisco',
+    state: 'CA'
 });
 
 // When saving a model object to disk or storage, use clean to remove
@@ -443,35 +443,35 @@ automatically coerces Strings to actual instances of `require('mongodb').ObjectI
 var MongoDbObjectID = require('mongodb').ObjectID;
 
 var ObjectId = Model.extend({
-	// Don't wrap object ID.
-	// This means that the getters for properties of this type
-	// will return the raw MongoDB ObjectID type
+    // Don't wrap object ID.
+    // This means that the getters for properties of this type
+    // will return the raw MongoDB ObjectID type
     wrap: false,
 
-	// We provide a "coerce" function to convert a value to the proper
-	// MongoDB ObjectID type
+    // We provide a "coerce" function to convert a value to the proper
+    // MongoDB ObjectID type
     coerce: function(data) {
         if (data == null) {
             return data;
         } else {
-			// Use the MongoDB ObjectID constructor to coerce our
-			// value (for example, it will handle String instances)
+            // Use the MongoDB ObjectID constructor to coerce our
+            // value (for example, it will handle String instances)
             return new MongoDbObjectID(data);
         }
     }
 });
 
 var Entity = Model.extend({
-	id: {
-		// ObjectId is a type that we use just to make sure that the value
-		// is automatically converted to the type that we need for storage
-		type: ObjectId,
+    id: {
+        // ObjectId is a type that we use just to make sure that the value
+        // is automatically converted to the type that we need for storage
+        type: ObjectId,
 
-		// MongoDB data storage expects a document to store its
-		// identifier in the "_id" property but we still want to
-		// access it via "getId" and "setId" (and not "get_id" and "set_id")
-		property: '_id'
-	}
+        // MongoDB data storage expects a document to store its
+        // identifier in the "_id" property but we still want to
+        // access it via "getId" and "setId" (and not "get_id" and "set_id")
+        property: '_id'
+    }
 })
 ```
 Models that use the primitive `Date` type also benefit from type coercion.
@@ -483,7 +483,7 @@ to Strings using the standard ISO format.
 **For example:**
 ```javascript
 var Document = Model.extend({
-	dateCreated: Date
+    dateCreated: Date
 });
 
 var document = new Document();
@@ -497,7 +497,7 @@ document.setDateCreated('2014-12-22T21:18:45.905Z');
 **String enum values:**:
 ```javascript
 var Color = Enum.create({
-	values: ['red', 'green', 'blue']
+    values: ['red', 'green', 'blue']
 });
 
 // The following assertions will be true
@@ -510,22 +510,22 @@ assert(Color.RED.clean() === 'red');
 **Object enum values:**
 ```javascript
 var Color = Enum.create({
-	values: {
-		red: {
-			hex: '#FF0000',
-			name: 'Red'
-		},
+    values: {
+        red: {
+            hex: '#FF0000',
+            name: 'Red'
+        },
 
-		green: {
-			hex: '#00FF00',
-			name: 'Green'
-		},
+        green: {
+            hex: '#00FF00',
+            name: 'Green'
+        },
 
-		blue: {
-			hex: '#0000FF',
-			name: 'Blue'
-		}
-	}
+        blue: {
+            hex: '#0000FF',
+            name: 'Blue'
+        }
+    }
 });
 
 // The following assertions will be true:
@@ -556,47 +556,44 @@ Color.names.forEach(function(colorName) {
 **Syntax:**
 ```javascript
 var Color = Enum.create({
-	values: ['red', 'green', 'blue']
+    values: ['red', 'green', 'blue']
 });
 
 var ColorPalette = Model.extend({
-	properties: {
-		colors: {
+    properties: {
+        colors: {
             // colors has type array
-			type: Array,
+            type: Array,
 
             // each item in the array is a Color
-			items: Color
-		}
-	}
+            items: Color
+        }
+    }
 });
 ```
 
 **Short-hand syntax:**
 ```javascript
 var ColorPalette = Model.extend({
-	properties: {
-		// Using an Array instance is short-hand for specifying
-		// that the property is of type array. The first item
-		// in this array indicates the type of each item.
-		colors: [Color]
-	}
+    properties: {
+        // Using an Array instance is short-hand for specifying
+        // that the property is of type array. The first item
+        // in this array indicates the type of each item.
+        colors: [Color]
+    }
 });
 ```
 
 **Accessing an array property:**
 ```javascript
 var colorPalette = new ColorPalette({
-	colors: ['red', 'green', 'blue']
+    colors: ['red', 'green', 'blue']
 });
 
-var colors = [];
-
 // getColors() will return an Array and we can use the "forEach" function.
-// Each item in the array must be wrapped with the correct type.
+// Each item in the returned Array will be an instance of Color.
 colorPalette.getColors().forEach(function(color, index) {
-    color = Color.wrap(color);
-	colors[index] = color;
+    assert(color.constructor === Color);
 });
 ```
 
@@ -662,47 +659,47 @@ var Enum = require('typed-model/Enum');
 
 var Entity = Model.extend({
     typeName: 'Entity',
-	properties: {
-		id: String
-	}
+    properties: {
+        id: String
+    }
 });
 
 var Gender = Enum.create({
     typeName: 'Gender',
-	title: 'Gender',
-	description: 'A person\'s gender',
-	values: ['M', 'F']
+    title: 'Gender',
+    description: 'A person\'s gender',
+    values: ['M', 'F']
 });
 
 var Species = Enum.create({
     typeName: 'Species',
-	title: 'Species',
-	description: 'A species',
-	values: ['dog', 'cat']
+    title: 'Species',
+    description: 'A species',
+    values: ['dog', 'cat']
 });
 
 var Pet = Model.extend({
     typeName: 'Pet',
-	properties: {
-		name: String,
-		species: Species
-	}
+    properties: {
+        name: String,
+        species: Species
+    }
 });
 
 var Person = Entity.extend({
     typeName: 'Person',
-	title: 'Person',
-	description: 'A person',
-	properties: {
-		name: String,
-		dateOfBirth: Date,
-		gender: Gender,
-		age: 'integer',
-		pets: [Pet],
-		favoriteNumbers: ['integer'],
-		anything: [],
-		blob: Object
-	}
+    title: 'Person',
+    description: 'A person',
+    properties: {
+        name: String,
+        dateOfBirth: Date,
+        gender: Gender,
+        age: 'integer',
+        pets: [Pet],
+        favoriteNumbers: ['integer'],
+        anything: [],
+        blob: Object
+    }
 });
 ```
 

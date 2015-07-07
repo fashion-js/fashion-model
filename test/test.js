@@ -628,7 +628,6 @@ describe('Model' , function() {
 
         var colors = [];
         colorPalette.getColors().forEach(function(color, index) {
-            color = Color.wrap(color);
             expect(color.constructor).to.equal(Color);
             colors[index] = color;
         });
