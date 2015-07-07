@@ -11,6 +11,9 @@ var ArrayType = require('../Array');
 var IntegerType = require('../Integer');
 var BooleanType = require('../Boolean');
 var ObjectType = require('../Object');
+var StringType = require('../String');
+var NumberType = require('../Number');
+var FunctionType = require('../Function');
 
 var Gender = Enum.create({
     values: ['M', 'F'],
@@ -241,6 +244,28 @@ describe('Model' , function() {
                 name: 'Sally'
             }
         ]));
+    });
+
+    it('should allow setting of array of strings when custom "set" function is provided', function() {
+        var Person = Model.extend({
+            properties: {
+                permissions: {
+                    type: [String],
+                    set: function(name, value) {
+                        this.data[name] = value;
+                    }
+                }
+            }
+        });
+
+        var person = new Person();
+        person.setPermissions(['a', 'b', 'c']);
+
+        expect(person.getPermissions().length).to.equal(3);
+
+        expect(Model.stringify(person)).to.equal(JSON.stringify({
+            permissions: ['a', 'b', 'c']
+        }));
     });
 
     it('should properly stringify an array of models within a simple object', function() {
@@ -1432,6 +1457,23 @@ describe('Model' , function() {
         expect(values[1]).to.equal(v1);
     });
 
+    it('should handle null/undefined when wrapping primitives', function() {
+        expect(BooleanType.wrap(null)).to.equal(null);
+        expect(BooleanType.wrap(undefined)).to.equal(undefined);
+        expect(IntegerType.wrap(null)).to.equal(null);
+        expect(IntegerType.wrap(undefined)).to.equal(undefined);
+        expect(StringType.wrap(null)).to.equal(null);
+        expect(StringType.wrap(undefined)).to.equal(undefined);
+        expect(NumberType.wrap(null)).to.equal(null);
+        expect(NumberType.wrap(undefined)).to.equal(undefined);
+        expect(ArrayType.wrap(null)).to.equal(null);
+        expect(ArrayType.wrap(undefined)).to.equal(undefined);
+        expect(DateType.wrap(null)).to.equal(null);
+        expect(DateType.wrap(undefined)).to.equal(undefined);
+        expect(FunctionType.wrap(null)).to.equal(null);
+        expect(FunctionType.wrap(undefined)).to.equal(undefined);
+    });
+
     it('should handle wrapping/unwrapping array properties', function() {
         var Color = Enum.create({
             values: ['red', 'green', 'blue', 'yellow']
@@ -1449,6 +1491,8 @@ describe('Model' , function() {
             colors: colors
         });
 
+        expect(colors.$model).to.equal(palette.getColors());
+
         // values in original array are coerced
         expect(colors[0]).to.equal('red');
         expect(colors[1]).to.equal('green');
@@ -1465,9 +1509,7 @@ describe('Model' , function() {
         expect(palette.getColors()[1]).to.equal(Color.GREEN);
         expect(palette.getColors()[2]).to.equal(Color.BLUE);
 
-        colors.push('yellow');
-
-        palette.setColors(colors);
+        palette.addToColors('yellow');
 
         expect(palette.getColors()[3]).to.equal(Color.YELLOW);
     });

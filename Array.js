@@ -5,6 +5,8 @@ var ArrayType = module.exports = Model.extend({
 
     wrap: true,
 
+    constructable: false,
+
     // the instanceof check for Array type values is a little different
     isInstance: function(value) {
         return value && (value.Model === ArrayType);

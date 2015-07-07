@@ -1,5 +1,6 @@
 var ArrayType;
 var primitives;
+var NOT_INSTANCE = {};
 
 var inherit = require('raptor-util/inherit');
 var Model;
@@ -36,7 +37,7 @@ function _notifySet(model, propertyName, oldValue, newValue, property) {
     }
 }
 
-function _get(model, property) {
+function _get(model, property, options) {
     var propertyName = property.getProperty();
     var getter = property.getGetter();
     if (getter) {
@@ -50,8 +51,17 @@ function _get(model, property) {
 
     var Type = property.getType();
 
-    // If type is wrapped make sure we return an instance of the actual type and not the raw value
-    return ((value != null) && Type.isWrapped()) ? Type.wrap(value) : value;
+    if ((value != null) && Type.isWrapped()) {
+        // Type is wrapped. Make sure we return an instance of the actual
+        // type and not the raw value
+        var returnValue;
+        _forProperty(property, options, function(options) {
+            returnValue = Type.wrap(value, options);
+        });
+        return returnValue;
+    } else {
+        return value;
+    }
 }
 
 function _set(model, property, value, options) {
@@ -85,8 +95,9 @@ function _set(model, property, value, options) {
 
         // get the new value
         value = model.data[propertyName];
-        returnValue = Type.wrap(value, options);
-    } else if ((value != null) && wrapped) {
+    }
+
+    if ((value != null) && wrapped) {
         options = _forProperty(property, options, function(options) {
             // recursively call setters
             // The return value is the wrapped value
@@ -109,8 +120,8 @@ function _set(model, property, value, options) {
 }
 
 function _generateGetter(property) {
-    return function () {
-        return _get(this, property);
+    return function(options) {
+        return _get(this, property, options);
     };
 }
 
@@ -748,6 +759,8 @@ function _extend(Base, config, resolver) {
     Derived.Model = Model;
 
     if (coerce) {
+        // Create a proxy coerce function that guarantees that options
+        // argument will be provided.
         Derived.coerce = function(value, options) {
             return coerce.call(Derived, value, _toOptions(options));
         };
@@ -766,42 +779,48 @@ function _extend(Base, config, resolver) {
     if (wrap && wrap.constructor === Function) {
         factory = wrap;
     } else {
+        wrap = (wrap !== false);
+
+        var checkInstance = function(data) {
+            if (data == null) {
+                // null/undefined qualify as instances
+                return data;
+            }
+
+            var model = data.$model || data;
+            return wrap && Derived.isInstance(model) ? model : NOT_INSTANCE;
+        };
+
         factory = function(data, options) {
-            if (arguments.length === 0) {
+            if (wrap && (arguments.length === 0)) {
                 return new Derived();
             }
 
-            if (Derived.isInstance(data)) {
-                return data;
+            var instance;
+
+            // see if the data is already an instance
+            if ((instance = checkInstance(data)) !== NOT_INSTANCE) {
+                return instance;
             }
 
             if (coerce) {
                 data = coerce.call(Derived, data, (options = _toOptions(options)));
-            }
 
-            if (data == null) {
-                return data;
-            }
-
-            if (Model.isModel(data)) {
-                if (Derived.isInstance(data)) {
-                    // is already of correct type
-                    return data;
-                } else {
-                    // the data is a model but it is not the right type
-                    // so dissociate the raw data with the old model
-                    data = Model.unwrap(data);
-                    delete data.$model;
+                // Do we have the correct type after coercion?
+                if ((instance = checkInstance(data)) !== NOT_INSTANCE) {
+                    return instance;
                 }
             }
 
-            if (wrap === false) {
+            if (!wrap) {
+                // if we're not wrapping then simply return the raw value
                 return data;
             }
 
-            if (data.$model) {
-                return data.$model;
-            }
+            // We might have data associated with a Model instance of
+            // the wrong type so dissociate the data with the Model instance
+            data = Model.unwrap(data);
+            delete data.$model;
 
             if (Array.isArray(data)) {
                 return Derived.convertArray(data, options);
