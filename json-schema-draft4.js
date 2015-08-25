@@ -132,6 +132,10 @@ exports.fromModel = function(Type, options) {
                     }
                 });
 
+                if (options.handleProperty) {
+                    options.handleProperty(key, declaredProperty, jsonSchemaProperty);
+                }
+
                 var PropertyType = declaredProperty.type;
 
                 if (declaredProperty.type.typeName === 'array') {
@@ -148,47 +152,6 @@ exports.fromModel = function(Type, options) {
                 }
             }
         });
-
-        var declaredProperties = Type.Properties.prototype;
-        for (var key in declaredProperties) {
-            if (!IGNORED_PROPERTIES[key] && declaredProperties.hasOwnProperty(key)) {
-
-                var declaredProperty = declaredProperties[key];
-
-                if ((options.isIgnoredProperty(key, declaredProperty)) ||
-                    (declaredProperty.getProperty() !== key)) {
-                    // One of these conditions is true:
-                    // - property is ignored
-                    // - current key is an alias for another property
-                    continue;
-                }
-
-                var jsonSchemaProperty = properties[key] = {};
-
-                /*jshint loopfunc: true */
-                ['title', 'description'].forEach(function(attr) {
-                    var value = declaredProperty[attr];
-                    if (value !== undefined) {
-                        jsonSchemaProperty[attr] = value;
-                    }
-                });
-
-                var PropertyType = declaredProperty.type;
-
-                if (declaredProperty.type.typeName === 'array') {
-                    jsonSchemaProperty.type = 'array';
-
-                    var items = declaredProperty.items;
-                    jsonSchemaProperty.items = {};
-
-                    if (items) {
-                        _configure(jsonSchemaProperty.items, items.type, options);
-                    }
-                } else {
-                    _configure(jsonSchemaProperty, PropertyType, options);
-                }
-            }
-        }
     } else if (Type.jsonSchemaType) {
         schema.type = Type.jsonSchemaType;
     } else {

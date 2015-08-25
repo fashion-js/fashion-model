@@ -280,5 +280,26 @@ describe('typed-model json-schema support', function() {
                 done();
             });
         });
+
+        it('should handle copying extra property metadata', function(done) {
+            var MyType = Model.extend({
+                properties: {
+                    something: {
+                        type: Object,
+                        extra: 'abc'
+                    }
+                }
+            });
+
+            var schema = jsonSchema.fromModel(MyType, {
+                handleProperty: function(propertyName, src, dest) {
+                    dest.extra = src.extra;
+                }
+            });
+
+            expect(schema.properties.something.extra).to.equal('abc');
+
+            done();
+        });
     });
 });
