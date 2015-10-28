@@ -107,6 +107,24 @@ describe('Model' , function() {
         expect(person.getDateOfBirth()).to.deep.equal(new Date(1980, 1, 1));
     });
 
+    it('should serialize and deserialize date properly', function() {
+        var date = new Date();
+
+        var Ping = Model.extend({
+            properties: {
+                timestamp: Date
+            }
+        });
+
+        var ping = new Ping({
+            timestamp: date
+        });
+
+        var pong = Ping.wrap(JSON.parse(JSON.stringify(ping.clean())));
+
+        expect(pong.getTimestamp().getTime()).to.equal(ping.getTimestamp().getTime());
+    });
+
     it('should provide setters', function() {
         var Person = Model.extend({
             properties: {
@@ -1721,5 +1739,77 @@ describe('Model' , function() {
                 }
             ]
         });
+    });
+
+    it('should support init method of normal Model which will be called during construction', function() {
+        var Person = Model.extend({
+            init: function(data, options) {
+                var name = this.getName();
+                var age = this.getAge();
+
+                if (name === undefined) {
+                    this.setName('Anonymous');
+                }
+
+                if (age === undefined) {
+                    this.setAge(-1);
+                }
+
+                expect(!!Model.isModel(this.constructor)).to.equal(true);
+            },
+
+            properties: {
+                name: String,
+                age: IntegerType
+            }
+        });
+
+        var person = new Person();
+        expect(person.getName()).to.equal('Anonymous');
+        expect(person.getAge()).to.equal(-1);
+
+        var person2 = new Person({
+            name: 'John',
+            age: 30
+        });
+
+        expect(person2.getName()).to.equal('John');
+        expect(person2.getAge()).to.equal(30);
+    });
+
+    it('should support init method of ObservableModel which will be called during construction', function() {
+        var Person = ObservableModel.extend({
+            init: function(data, options) {
+                var name = this.getName();
+                var age = this.getAge();
+
+                if (name === undefined) {
+                    this.setName('Anonymous');
+                }
+
+                if (age === undefined) {
+                    this.setAge(-1);
+                }
+
+                expect(!!Model.isModel(this.constructor)).to.equal(true);
+            },
+
+            properties: {
+                name: String,
+                age: IntegerType
+            }
+        });
+
+        var person = new Person();
+        expect(person.getName()).to.equal('Anonymous');
+        expect(person.getAge()).to.equal(-1);
+
+        var person2 = new Person({
+            name: 'John',
+            age: 30
+        });
+
+        expect(person2.getName()).to.equal('John');
+        expect(person2.getAge()).to.equal(30);
     });
 });
