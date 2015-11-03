@@ -257,9 +257,18 @@ Model.clean = function(obj, errors) {
 
         if (obj.$model) {
             return obj.$model.clean(errors);
+        } else if ((obj.constructor !== Date) && typeof obj === 'object'){
+            var clean = {};
+            for (var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    var value = obj[key];
+                    clean[key] = Model.clean(value);
+                }
+            }
+            return clean;
+        } else {
+            return obj;
         }
-
-        return obj;
     }
 };
 

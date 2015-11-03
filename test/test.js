@@ -1812,4 +1812,80 @@ describe('Model' , function() {
         expect(person2.getName()).to.equal('John');
         expect(person2.getAge()).to.equal(30);
     });
+
+    it('should deep clean', function() {
+        var Gender = Enum.create({
+            values: {
+                MALE: {
+                    code: 'M'
+                },
+                FEMALE: {
+                    code: 'F'
+                }
+            }
+        });
+
+        var Person = Model.extend({
+            properties: {
+                displayName: String,
+                gender: Gender
+            }
+        });
+
+
+
+        var wrapper = {
+            something: {
+                person: new Person({
+                    displayName: 'John Doe',
+                    gender: Gender.MALE
+                }),
+                anotherPerson: Person.unwrap(new Person({
+                    displayName: 'Jane Doe',
+                    gender: Gender.FEMALE
+                }))
+            },
+            array: [1, 2, 3],
+            female: Gender.FEMALE
+        };
+
+        var cleaned = Model.clean(wrapper);
+
+        expect(wrapper.something.person.getDisplayName()).to.equal('John Doe');
+
+        expect(cleaned).to.deep.equal({
+            something: {
+                person: {
+                    displayName: 'John Doe',
+                    gender: 'MALE'
+                },
+                anotherPerson: {
+                    displayName: 'Jane Doe',
+                    gender: 'FEMALE'
+                }
+            },
+            array: [1, 2, 3],
+            female: 'FEMALE'
+        });
+    });
+
+    it('should support prototype', function() {
+        var Person = Model.extend({
+            properties: {
+                displayName: String
+            },
+
+            prototype: {
+                sayHello: function() {
+                    return 'Hello ' + this.getDisplayName();
+                }
+            }
+        });
+
+        var person = new Person({
+            displayName: 'John Doe'
+        });
+
+        expect(person.sayHello()).to.equal('Hello ' + person.getDisplayName());
+    });
 });
