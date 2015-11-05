@@ -985,26 +985,42 @@ describe('Model' , function() {
         expect(errors.length).to.equal(1);
     });
 
-    it('should support additionalProperties', function() {
-        var IntegerType = require('../Integer');
+    describe('Additional Properties', function() {
+        it('should support additionalProperties', function() {
+            var IntegerType = require('../Integer');
 
-        var Something = Model.extend({
-            properties: {
-                name: String,
-                age: IntegerType
-            },
-            additionalProperties: true
+            var Something = Model.extend({
+                properties: {
+                    name: String,
+                    age: IntegerType
+                },
+                additionalProperties: true
+            });
+
+            var errors;
+            var something;
+
+            errors = [];
+            something = Something.wrap({
+                blah: 'Blah',
+            }, errors);
+            expect(errors.length).to.equal(0);
         });
 
-        var errors;
-        var something;
+        it('should recognize that a type has additionalProperties if extending type that has additionalProperties', function() {
+            var Something = Model.extend({
+                additionalProperties: true
+            });
 
-        errors = [];
-        something = Something.wrap({
-            blah: 'Blah',
-        }, errors);
-        expect(errors.length).to.equal(0);
+            var SomethingElse = Something.extend({
+
+            });
+
+            expect(SomethingElse.hasProperties()).to.equal(true);
+            expect(SomethingElse.additionalProperties).to.equal(true);
+        });
     });
+
 
     it('should support strict validation', function() {
         var IntegerType = require('../Integer');
@@ -1887,5 +1903,182 @@ describe('Model' , function() {
         });
 
         expect(person.sayHello()).to.equal('Hello ' + person.getDisplayName());
+    });
+
+    describe('Cleaning', function() {
+        it('should not clean property values associated with types that are not wrapped', function() {
+            var Binary = Model.extend({
+                wrap: false,
+                coerce: function(value, options) {
+                    if (value == null) {
+                        return value;
+                    }
+
+                    if (value.constructor === Buffer) {
+                        return value;
+                    }
+
+                    if (value.constructor === String) {
+                        return new Buffer(value, 'utf8');
+                    }
+
+                    this.coercionError(value, options, 'Invalid binary data.');
+                }
+            });
+
+            var Image = Model.extend({
+                properties: {
+                    data: Binary
+                }
+            });
+
+            var image = new Image({
+                data: 'abc'
+            });
+
+            expect(image.getData()).to.be.an.instanceof(Buffer);
+
+            var str = image.getData().toString('utf8');
+
+            expect(str).to.equal('abc');
+
+            var cleanedImage = image.clean();
+            expect(cleanedImage.data).to.be.an.instanceof(Buffer);
+            expect(cleanedImage.data.toString('utf8')).to.equal('abc');
+        });
+
+        it('should allow unwrapped type to control how its value is cleaned via "clean: function"', function() {
+            var Binary = Model.extend({
+                wrap: false,
+                clean: function(value) {
+                    // clean will convert to base64
+                    return value.toString('base64');
+                },
+                coerce: function(value, options) {
+                    if (value == null) {
+                        return value;
+                    }
+
+                    if (value.constructor === Buffer) {
+                        return value;
+                    }
+
+                    // Buffers can be of type array. We assume that if an array is passed,
+                    // that it is in fact an array buffer
+                    if (Array.isArray(value)) {
+                        return new Buffer(value);
+                    }
+
+                    if (value.constructor === String) {
+                        // assume a binary string is something that was base64 encoded
+                        return new Buffer(value, 'base64');
+                    }
+
+                    this.coercionError(value, options, 'Invalid binary data.');
+                }
+            });
+
+            var Data = Model.extend({
+                properties: {
+                    binary: Binary
+                }
+            });
+
+            var data = new Data({
+                // binary data will be single byte with value 0
+                binary: [0]
+            });
+
+            expect(data.getBinary()).to.be.an.instanceof(Buffer);
+            expect(data.getBinary().length).to.equal(1);
+            expect(data.getBinary().readInt8(0)).to.equal(0);
+
+            var cleanedData = data.clean();
+            expect(cleanedData.binary.constructor).to.equal(String);
+            expect(cleanedData.binary).to.equal('AA==');
+
+
+            var modelData = Data.wrap(cleanedData);
+            expect(modelData.getBinary().constructor).to.equal(Buffer);
+            expect(modelData.getBinary().length).to.equal(1);
+            expect(modelData.getBinary().readInt8(0)).to.equal(0);
+        });
+
+        it('should allow wrapped type to control how its value is cleaned', function() {
+            var LatLng = Model.extend({
+                properties: {
+                    lat: Number,
+                    lng: Number
+                },
+
+                clean: function(value) {
+                    // clean function will convert the object back to its array form
+                    return [value.getLat(), value.getLng()];
+                },
+
+                // The coerce function will handle Array or Object as input
+                // and validate that the resultant Object has lat and lng
+                // non-null properties
+                coerce: function(value, options) {
+                    if (value == null) {
+                        return value;
+                    }
+
+                    if (Array.isArray(value)) {
+                        // assume array contains [lat, lng] and convert to
+                        // object representation
+                        value = {
+                            lat: value[0],
+                            lng: value[1]
+                        };
+                    }
+
+                    if ((value.lat == null) || (value.lng == null)) {
+                        // do a little validation
+                        this.coercionError(value, options, 'Invalid latitude/longitude.');
+                    }
+
+                    return value;
+                }
+            });
+
+            var Location = Model.extend({
+                properties: {
+                    coord: LatLng
+                }
+            });
+
+            var location = new Location({
+                coord: [35.994033, -78.898619]
+            });
+
+            expect(location.getCoord().getLat()).to.equal(35.994033);
+            expect(location.getCoord().getLng()).to.equal(-78.898619);
+
+            var cleaned = location.clean();
+            expect(cleaned.coord[0]).to.equal(35.994033);
+            expect(cleaned.coord[1]).to.equal(-78.898619);
+        });
+
+        it('should copy additional properties as-is when cleaning', function() {
+
+            var Something = Model.extend({
+                properties: {},
+                additionalProperties: true
+            });
+
+            expect(Something.additionalProperties).to.equal(true);
+
+            var something = new Something({
+                abc: new Buffer('abc'),
+                def: new Buffer('def')
+            });
+
+            var cleaned = Model.clean(something);
+            expect(cleaned.abc).to.be.instanceof(Buffer);
+            expect(cleaned.def).to.be.instanceof(Buffer);
+            expect(cleaned.abc.toString()).to.equal('abc');
+            expect(cleaned.def.toString()).to.equal('def');
+        });
     });
 });

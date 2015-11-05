@@ -405,7 +405,9 @@ assert(addressWrapped === address);
 ### Clean
 
 `Model.clean(obj)` should be used to return a clone of an object in which
-all non-persisted properties and metadata have been removed.
+all non-persisted properties and metadata have been removed. The clean
+function will always return a deep clone of the given object if the
+given argument is non-null and not a primitive.
 
 ```javascript
 var address = new Address({
@@ -416,6 +418,81 @@ var address = new Address({
 // When saving a model object to disk or storage, use clean to remove
 // unnecessary fields.
 db.save(address.clean(), callback);
+```
+
+A `Model` can also control how its data is cleaned by providing a `clean`
+property. For example, this might be helpful for working with binary data
+by automatically encoding the binary data as a base64 string.
+
+A `Model` type that is not wrapped (that is, when `wrap: false` flag is provided),
+its value will not be cleaned unless a `function` is provided for the clean
+property.
+
+Here's an example how to use the `clean` function to convert a `Buffer`
+to a Base64 encoded string:
+
+```javascript
+var Binary = Model.extend({
+    // Don't wrap binary data because we want to use the raw Buffer type
+    // provided by Node.js runtime environment
+    wrap: false,
+
+    // Provide a clean function that will be used to clean values
+    // associated with properties whose type is Binary
+    clean: function(value) {
+        // clean will convert to base64
+        return value.toString('base64');
+    },
+
+    coerce: function(value, options) {
+        if (value == null) {
+            return value;
+        }
+
+        if (value.constructor === Buffer) {
+            // no conversion needed
+            return value;
+        }
+
+        // Buffers can be of type array. We assume that if an array is provided,
+        // that it is an array of bytes.
+        if (Array.isArray(value)) {
+            return new Buffer(value);
+        }
+
+        if (value.constructor === String) {
+            // assume that a string represents base64 encoded data
+            return new Buffer(value, 'base64');
+        }
+
+        this.coercionError(value, options, 'Invalid binary data.');
+    }
+});
+
+var Image = Model.extend({
+    properties: {
+        data: Binary
+    }
+});
+
+var image = new Image({
+    // data can be provided as Array of bytes, base64 encoded string, or Buffer
+    // because Binary.coerce function handles each of these.
+    data: someData
+});
+
+// the data will be converted to Buffer object via Binary.coerce function
+assert(image.getData() instanceof Buffer);
+
+// Calling clean on the image model instance will cause the contained data
+// to be converted to base64 string via Binary.clean function.
+var cleanedImage = image.clean();
+
+// the data will be converted to String via Binary.clean function
+assert(typeof cleanedImage.data.constructor === 'string');
+
+// log the Base64 encoded string
+console.log(cleanedImage.data);
 ```
 
 ### Stringify

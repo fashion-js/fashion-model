@@ -262,7 +262,7 @@ Model.clean = function(obj, errors) {
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     var value = obj[key];
-                    clean[key] = Model.clean(value);
+                    clean[key] = Model.clean(value, errors);
                 }
             }
             return clean;
@@ -273,7 +273,7 @@ Model.clean = function(obj, errors) {
 };
 
 Model.hasProperties = function() {
-    return this.properties !== EMPTY_PROPERTIES;
+    return (this.properties !== EMPTY_PROPERTIES) || (this.additionalProperties === true);
 };
 
 Model.hasProperty = function(propertyName) {
@@ -410,8 +410,25 @@ Model_proto.clean = function(errors) {
                 var property = properties[key];
                 var value = data[key];
                 if (property && (property.isPersisted())) {
-                    clone[key] = Model.clean(value, errors);
-                } else if (!Derived.additionalProperties && errors) {
+                    // no need to clean null/undefined values
+                    if (value != null) {
+                        var propertyType = property.type;
+                        var clean = propertyType.clean;
+                        if (clean) {
+                            // call the clean function provided by model
+                            value = propertyType.clean(value.$model || value, errors);
+                        } else if (propertyType.isWrapped()) {
+                            // use the default clean function
+                            value = Model.clean(value, errors);
+                        }
+                    }
+
+                    // put the cleaned value into the clone
+                    clone[key] = value;
+                } else if (Derived.additionalProperties) {
+                    // simply copy the additional property
+                    clone[key] = value;
+                } else if (errors) {
                     errors.push('Unrecognized property: ' + key);
                 }
             }
@@ -761,6 +778,11 @@ function _extend(Base, config, resolver) {
     // Now copy any properties from config to Derived that might
     // override any of the special prpoerties that were copied above
     _copyNonSpecialPropertiesToType(config, Derived);
+
+    if (Base.additionalProperties) {
+        // the additionalProperties flag should trickle down if true
+        Derived.additionalProperties = true;
+    }
 
     _concatToArray(Derived, '_onSet', Base._onSet);
 
