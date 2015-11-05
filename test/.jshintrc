@@ -39,5 +39,6 @@
 	"latedef": true,
 	"unused": "vars",
 	"eqnull": true,
-	"sub": true
+	"sub": true,
+	"expr": true
 }

@@ -355,115 +355,6 @@ describe('Model' , function() {
         expect(Person.wrap(rawPerson)).to.equal(person);
     });
 
-    it('should allow cleaning of "hidden" model properties from raw data', function() {
-        var Entity = Model.extend({
-            properties: {
-                id: {
-                    type: String,
-                    property: '_id'
-                }
-            }
-        });
-
-        var AddressType = Enum.create({
-            values: {
-                'home': {
-                    title: 'Home'
-                },
-
-                'work': {
-                    title: 'work'
-                }
-            }
-        });
-
-        var Address = Model.extend({
-            properties: {
-                city: String,
-                state: String,
-                type: AddressType
-            }
-        });
-
-        var Person = Entity.extend({
-            properties: {
-                name: String,
-                dateOfBirth: Date,
-                address: Address
-            }
-        });
-
-        var person = new Person({
-            _id: 'test',
-            name: 'John Doe',
-            dateOfBirth: new Date(1980, 1, 1),
-            address: new Address({
-                city: 'Durham',
-                state: 'NC',
-                type: 'work'
-            })
-        });
-
-        expect(Model.clean(person)).to.deep.equal({
-            _id: 'test',
-            name: 'John Doe',
-            dateOfBirth: new Date(1980, 1, 1),
-            address: {
-                city: 'Durham',
-                state: 'NC',
-                type: 'work'
-            }
-        });
-    });
-
-    it('should allow cleaning enum types', function() {
-        var AddressType = Enum.create({
-            values: {
-                'home': {
-                    title: 'Home'
-                },
-
-                'work': {
-                    title: 'Work'
-                }
-            }
-        });
-
-        var Region = Enum.create({
-            values: ['southeast']
-        });
-
-        var Climate = Enum.create({
-            values: ['hot', 'humid']
-        });
-
-        var Address = Model.extend({
-            properties: {
-                city: String,
-                state: String,
-                type: AddressType,
-                region: Region,
-                climate: [Climate]
-            }
-        });
-
-        var address = new Address({
-            city: 'Durham',
-            state: 'NC',
-            type: AddressType.WORK,
-            region: Region.SOUTHEAST,
-            climate: [Climate.HOT, Climate.HUMID]
-        });
-
-        expect(Model.clean(address)).to.deep.equal({
-            city: 'Durham',
-            state: 'NC',
-            type: 'work',
-            region: 'southeast',
-            climate: ['hot', 'humid']
-        });
-    });
-
     it('should allow enum type models', function() {
         expect(Gender.wrap('F').isF()).to.equal(true);
 
@@ -1906,6 +1797,115 @@ describe('Model' , function() {
     });
 
     describe('Cleaning', function() {
+        it('should allow cleaning of "hidden" model properties from raw data', function() {
+            var Entity = Model.extend({
+                properties: {
+                    id: {
+                        type: String,
+                        property: '_id'
+                    }
+                }
+            });
+
+            var AddressType = Enum.create({
+                values: {
+                    'home': {
+                        title: 'Home'
+                    },
+
+                    'work': {
+                        title: 'work'
+                    }
+                }
+            });
+
+            var Address = Model.extend({
+                properties: {
+                    city: String,
+                    state: String,
+                    type: AddressType
+                }
+            });
+
+            var Person = Entity.extend({
+                properties: {
+                    name: String,
+                    dateOfBirth: Date,
+                    address: Address
+                }
+            });
+
+            var person = new Person({
+                _id: 'test',
+                name: 'John Doe',
+                dateOfBirth: new Date(1980, 1, 1),
+                address: new Address({
+                    city: 'Durham',
+                    state: 'NC',
+                    type: 'work'
+                })
+            });
+
+            expect(Model.clean(person)).to.deep.equal({
+                _id: 'test',
+                name: 'John Doe',
+                dateOfBirth: new Date(1980, 1, 1),
+                address: {
+                    city: 'Durham',
+                    state: 'NC',
+                    type: 'work'
+                }
+            });
+        });
+
+        it('should allow cleaning enum types', function() {
+            var AddressType = Enum.create({
+                values: {
+                    'home': {
+                        title: 'Home'
+                    },
+
+                    'work': {
+                        title: 'Work'
+                    }
+                }
+            });
+
+            var Region = Enum.create({
+                values: ['southeast']
+            });
+
+            var Climate = Enum.create({
+                values: ['hot', 'humid']
+            });
+
+            var Address = Model.extend({
+                properties: {
+                    city: String,
+                    state: String,
+                    type: AddressType,
+                    region: Region,
+                    climate: [Climate]
+                }
+            });
+
+            var address = new Address({
+                city: 'Durham',
+                state: 'NC',
+                type: AddressType.WORK,
+                region: Region.SOUTHEAST,
+                climate: [Climate.HOT, Climate.HUMID]
+            });
+
+            expect(Model.clean(address)).to.deep.equal({
+                city: 'Durham',
+                state: 'NC',
+                type: 'work',
+                region: 'southeast',
+                climate: ['hot', 'humid']
+            });
+        });
+
         it('should not clean property values associated with types that are not wrapped', function() {
             var Binary = Model.extend({
                 wrap: false,
@@ -2079,6 +2079,186 @@ describe('Model' , function() {
             expect(cleaned.def).to.be.instanceof(Buffer);
             expect(cleaned.abc.toString()).to.equal('abc');
             expect(cleaned.def.toString()).to.equal('def');
+        });
+
+        it('should always remove $model properties within Object property', function() {
+            var Something = Model.extend({
+                properties: {
+                    data: Object
+                }
+            });
+
+            var Person = Model.extend({
+                properties: {
+                    name: String
+                }
+            });
+
+            var something = new Something();
+
+            something.setData(new Person({
+                name: 'John Doe'
+            }));
+
+            var errors = [];
+            var cleaned = Model.clean(something, errors);
+
+            expect(errors).to.deep.equal([]);
+
+            expect(cleaned).to.deep.equal({
+                data: {
+                    name: 'John Doe'
+                }
+            });
+
+            something.setData(Model.unwrap(new Person({
+                name: 'John Doe'
+            })));
+
+            errors = [];
+            cleaned = Model.clean(something, errors);
+
+            expect(errors).to.deep.equal([]);
+
+            expect(cleaned).to.deep.equal({
+                data: {
+                    name: 'John Doe'
+                }
+            });
+        });
+
+        it('should clean $model from object even if there is property with Object type whose value is Model instance', function() {
+            var Something = Model.extend({
+                properties: {
+                    config: Object
+                }
+            });
+
+            var Filter = Model.extend({
+                properties: {
+                    id: Number
+                }
+            });
+
+            var Mapping = Model.extend({
+                properties: {
+                    id: Number,
+                    filters: [Filter]
+                }
+            });
+
+            var Config = Model.extend({
+                properties: {
+                    mappings: [Mapping]
+                }
+            });
+
+            var something = new Something();
+            something.setConfig(new Config({
+                mappings: [
+                    {
+                        id: 1,
+                        filters: [{id: 1}]
+                    },
+                    {
+                        id: 2,
+                        filters: [{id: 2}]
+                    },
+                    {
+                        id: 3,
+                        filters: [{id: 3}]
+                    }
+                ]
+            }));
+
+            var errors = [];
+
+            var cleaned = Model.clean(something, errors);
+
+            expect(errors).to.deep.equal([]);
+            expect(something.getConfig().getMappings().Model).to.equal(ArrayType);
+
+            expect(cleaned).to.deep.equal({
+                config: {
+                    mappings: [
+                        {
+                            id: 1,
+                            filters: [{id: 1}]
+                        },
+                        {
+                            id: 2,
+                            filters: [{id: 2}]
+                        },
+                        {
+                            id: 3,
+                            filters: [{id: 3}]
+                        }
+                    ]
+                }
+            });
+        });
+
+        it('should clean $model from object that has property with type that extends Array', function() {
+            var Filters = ArrayType.extend({
+                wrap: false,
+                coerce: function(value, options) {
+                    if (value == null) {
+                        return null;
+                    }
+
+                    if (!Array.isArray(value)) {
+                        var filterObj = value;
+                        value = [];
+                        for (var key in filterObj) {
+                            if (filterObj.hasOwnProperty(key)) {
+                                var filter = new Filter({
+                                    property: key,
+                                    value: filterObj[key]
+                                });
+                                value.push(filter.unwrap());
+                            }
+                        }
+                    }
+
+                    return ArrayType.coerce(value, options);
+                }
+            });
+
+            var Filter = Model.extend({
+                properties: {
+                    property: String,
+                    value: Object
+                }
+            });
+
+            var Config = Model.extend({
+                properties: {
+                    filters: {
+                        type: Filters,
+                        items: Filter
+                    }
+                }
+            });
+
+            var errors = [];
+
+            var config = new Config({
+                filters: {
+                    job: 'test'
+                }
+            }, errors);
+
+            expect(config.getFilters().Model).to.exist;
+
+            expect(errors).to.deep.equal([]);
+
+            var cleaned = Model.clean(config, errors);
+
+            expect(errors).to.deep.equal([]);
+
+            expect(cleaned).to.deep.equal({
+                filters: [{property: 'job', value: 'test'}]
+            });
         });
     });
 });

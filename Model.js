@@ -257,7 +257,7 @@ Model.clean = function(obj, errors) {
 
         if (obj.$model) {
             return obj.$model.clean(errors);
-        } else if ((obj.constructor !== Date) && typeof obj === 'object'){
+        } else if ((obj.constructor !== Date) && (typeof obj === 'object')) {
             var clean = {};
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
@@ -406,6 +406,7 @@ Model_proto.clean = function(errors) {
     if (Derived.hasProperties()) {
         var clone = {};
         for (var key in data) {
+
             if (data.hasOwnProperty(key) && (key !== '$model')) {
                 var property = properties[key];
                 var value = data[key];
@@ -417,7 +418,8 @@ Model_proto.clean = function(errors) {
                         if (clean) {
                             // call the clean function provided by model
                             value = propertyType.clean(value.$model || value, errors);
-                        } else if (propertyType.isWrapped()) {
+                        } else if (value.Model || value.$model || propertyType.isWrapped()) {
+                            // value is a Model instance or it is data with a $model or it is something that could be wrapped
                             // use the default clean function
                             value = Model.clean(value, errors);
                         }
@@ -426,6 +428,9 @@ Model_proto.clean = function(errors) {
                     // put the cleaned value into the clone
                     clone[key] = value;
                 } else if (Derived.additionalProperties) {
+                    if (value.Model || value.$model) {
+                        value = Model.clean(value, errors);
+                    }
                     // simply copy the additional property
                     clone[key] = value;
                 } else if (errors) {
