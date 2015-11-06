@@ -8,16 +8,16 @@
         "data-modeling",
         "modeling"
     ],
-    "homepage": "https://github.com/philidem/typed-model",
+    "homepage": "https://github.com/philidem/fashion-model",
     "repository": {
         "type": "git",
-        "url": "https://github.com/philidem/typed-model.git"
+        "url": "https://github.com/philidem/fashion-model.git"
     },
     "author": "Phil Gates-Idem <phillip.idem@gmail.com",
     "scripts": {
         "test": "node_modules/.bin/mocha --ui bdd --reporter spec ./test"
     },
-    "main": "./index.js",
+    "main": "./Model.js",
     "devDependencies": {
         "chai": "^3.4.0",
         "jayschema": "^0.3.1",

@@ -61,7 +61,7 @@ function _dateToString(date) {
     return str.substring(1, len - 1);
 }
 
-describe('typed-model json-schema support', function() {
+describe('fashion-model json-schema support', function() {
     describe('draft4', function() {
         var jsonSchema = require('../json-schema-draft4');
         var schemasByNameMap = {};

@@ -1,16 +1,17 @@
-typed-model
-===========
+fashion-model
+=============
 JavaScript library for defining types and their properties with support for wrapping/unwrapping and serialization/deserialization.
 
 ## Installation
 ```bash
-npm install typed-model --save
+npm install fashion-model --save
 ```
 
 ## Overview
-The `typed-model` module provides utility code for defining data model types.
+The `fashion-model` module provides utility code for defining data model types.
 These data model types provide helpful accessor methods (getters and setters)
-for the properties defined for the model type.
+for the properties defined for the model type. This module is compatible
+with both web browser and Node.js runtime environments.
 
 These models can be thought of as a "schema" that provide extra safeguards
 for working with objects. These model types are not tied to a specific
@@ -41,26 +42,29 @@ information.
 ### Requiring
 ```javascript
 // Requiring the base Model type
-var Model = require('typed-model/Model');
+var Model = require('fashion-model');
+
+// Variation on requiring the Model type
+var Model = require('fashion-model/Model');
 
 // Requiring the Enum type factory
-var Enum = require('typed-model/Enum');
+var Enum = require('fashion-model/Enum');
 
-// Convenience function to create new Model
-var NewModel = require('typed-model').create({/* config */});
+// Create new model type
+var NewModel = Model.extend({/* config */});
 
-// Convenience function to create new Enum type
-var NewEnum = require('typed-model').createEnum({/* config */});
+// Create new enum type
+var NewEnum = Enum.create({/* config */});
 ```
 
 ### Primitive Types
 The following primitive types are supported:
-- **Date Type:** `Date` / `"date"` / `require("typed-model/Date")`
-- **Boolean Type:** `Boolean` / `"boolean"` / `require("typed-model/Boolean")`
-- **Number Type:** `Number` / `"number"` / `require("typed-model/Number")`
-- **Integer Type:** `"integer"` / `require("typed-model/Integer")`
-- **String Type:** `String` / `"string"` / `require("typed-model/String")`
-- **Array Type:** `Array` / `[]` / `"array"` / `require("typed-model/Array")`
+- **Date Type:** `Date` / `"date"` / `require("fashion-model/Date")`
+- **Boolean Type:** `Boolean` / `"boolean"` / `require("fashion-model/Boolean")`
+- **Number Type:** `Number` / `"number"` / `require("fashion-model/Number")`
+- **Integer Type:** `"integer"` / `require("fashion-model/Integer")`
+- **String Type:** `String` / `"string"` / `require("fashion-model/String")`
+- **Array Type:** `Array` / `[]` / `"array"` / `require("fashion-model/Array")`
 
 ### Complex Object Type
 
@@ -112,14 +116,14 @@ address = Address.wrap({
 
 Types that extend `Model` will not implement the `EventEmitter` interface.
 If your type should be an `EventEmitter` then your type should either extend
-`require('typed-model/ObservableModel')` or add the `EventEmitter` mixin.
+`require('fashion-model/ObservableModel')` or add the `EventEmitter` mixin.
 Types that implement EventEmitter will emit `change` and `change:someProperty`
 events
 
 **Example using ObservableModel:**
 
 ```javascript
-var Something = require('typed-model/ObservableModel').extend({
+var Something = require('fashion-model/ObservableModel').extend({
     properties: {
         value: String
     }
@@ -129,11 +133,11 @@ var Something = require('typed-model/ObservableModel').extend({
 **Example using mixin:**
 
 ```javascript
-var Something = require('typed-model/Model').extend({
+var Something = require('fashion-model/Model').extend({
     properties: {
         value: String
     },
-    mixins: [require('typed-model/mixins/EventEmitter')]
+    mixins: [require('fashion-model/mixins/EventEmitter')]
 });
 ```
 
@@ -552,7 +556,7 @@ var Entity = Model.extend({
 })
 ```
 Models that use the primitive `Date` type also benefit from type coercion.
-The `Date` coerce function provided by `typed-model` automatically convert
+The `Date` coerce function provided by `fashion-model` automatically convert
 strings in ISO date format to `Date` instances. You will probably find this helpful because,
 by default, `JSON.stringify(obj)` will automatically convert `Date` objects
 to Strings using the standard ISO format.
@@ -717,7 +721,7 @@ var person = new Person({
 A `Model` type can be easily converted to an equivalent JSON schema
 with the following module:
 ```javascript
-var jsonSchema = require('typed-model/json-schema-draft4');
+var jsonSchema = require('fashion-model/json-schema-draft4');
 var someModelSchema = jsonSchema.fromModel(SomeModel, options);
 ```
 
@@ -731,8 +735,8 @@ var someModelSchema = jsonSchema.fromModel(SomeModel, options);
 
 **Define your models:**
 ```javascript
-var Model = require('typed-model/Model');
-var Enum = require('typed-model/Enum');
+var Model = require('fashion-model/Model');
+var Enum = require('fashion-model/Enum');
 
 var Entity = Model.extend({
     typeName: 'Entity',
@@ -782,7 +786,7 @@ var Person = Entity.extend({
 
 **Convert your model to JSON schema:**
 ```javascript
-var jsonSchema = require('typed-model/json-schema-draft4');
+var jsonSchema = require('fashion-model/json-schema-draft4');
 var jsonSchemaOptions = {
     toRef: function(Model) {
         return Model.typeName;
