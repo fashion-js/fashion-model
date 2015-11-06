@@ -709,30 +709,43 @@ function _concatToArray(obj, propertyName, otherArr) {
     }
 }
 
-function _installMixin(Type, mixin) {
+function _installMixin(mixin, Derived, Base, properties) {
+
+    if (mixin.initType) {
+        mixin.initType(Derived);
+    }
+
     var key;
     if (mixin.id) {
         key = '_mixin_' + mixin.id;
-        if (Type.properties[key]) {
+        if (Base.properties && Base.properties[key]) {
             // this mixin is already installed
             return;
         }
 
-        Type.Properties.prototype[key] = true;
+        Derived.Properties.prototype[key] = true;
     }
-
 
     var mixinPrototype = mixin.prototype;
     if (mixinPrototype) {
         for (key in mixinPrototype) {
             if (mixinPrototype.hasOwnProperty(key)) {
-                Type.prototype[key] = mixinPrototype[key];
+                Derived.prototype[key] = mixinPrototype[key];
             }
         }
     }
 
-    _addToArray(Type, '_onCreate', mixin.onCreate);
-    _addToArray(Type, '_onSet', mixin.onSet);
+    var mixinProperties;
+    if ((mixinProperties = mixin.properties)) {
+        for (key in mixinProperties) {
+            if (mixinProperties.hasOwnProperty(key) && !properties.hasOwnProperty(key)) {
+                properties[key] = mixinProperties[key];
+            }
+        }
+    }
+
+    _addToArray(Derived, '_init', mixin.init);
+    _addToArray(Derived, '_onSet', mixin.onSet);
 }
 
 function _extend(Base, config, resolver) {
@@ -749,10 +762,10 @@ function _extend(Base, config, resolver) {
     function Derived(data, options) {
         Derived.$super.call(this, data, options);
 
-        var onCreateArr = Derived._onCreate;
-        if (onCreateArr) {
-            for (var i = 0; i < onCreateArr.length; i++) {
-                onCreateArr[i](this);
+        var initArr = Derived._init;
+        if (initArr) {
+            for (var i = 0; i < initArr.length; i++) {
+                initArr[i].call(this, data, options);
             }
         }
 
@@ -888,6 +901,36 @@ function _extend(Base, config, resolver) {
             inherit(Derived.Properties, Base.Properties);
         }
 
+
+        var installedMixinIds;
+        if (mixins) {
+            installedMixinIds = {};
+            var mixinProperties = {};
+            mixins.forEach(function(mixin) {
+                _installMixin(mixin, Derived, Base, mixinProperties);
+            });
+
+            var mixinPropertyNames = Object.keys(mixinProperties);
+
+            if (mixinPropertyNames.length) {
+                if (properties) {
+                    // combine mixin properties with properties provided for Derived
+                    // but give precedence to the Derived properties.
+                    for (var i = 0; i < mixinPropertyNames.length; i++) {
+                        var propertyName = mixinPropertyNames[i];
+                        if (!properties.hasOwnProperty(propertyName)) {
+                            properties[propertyName] = mixinProperties[propertyName];
+                            propertyNames.push(propertyName);
+                        }
+                    }
+                } else {
+                    // use properties from mixin
+                    properties = mixinProperties;
+                    propertyNames = mixinPropertyNames;
+                }
+            }
+        }
+
         if (properties) {
             var propertiesPrototype = Derived.Properties.prototype;
             propertyNames.forEach(function(name) {
@@ -933,12 +976,6 @@ function _extend(Base, config, resolver) {
     if (prototype) {
         Object.keys(prototype).forEach(function(key) {
             classPrototype[key] = prototype[key];
-        });
-    }
-
-    if (mixins) {
-        mixins.forEach(function(mixin) {
-            _installMixin(Derived, mixin);
         });
     }
 
