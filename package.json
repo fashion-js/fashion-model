@@ -1,5 +1,5 @@
 {
-    "name": "typed-model",
+    "name": "fashion-model",
     "description": "JavaScript library for defining types and their properties with support for wrapping/unwrapping and serialization/deserialization.",
     "keywords": [
         "data",
