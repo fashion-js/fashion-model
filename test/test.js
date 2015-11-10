@@ -520,6 +520,13 @@ describe('Model' , function() {
 
             expect(person.unwrap().favoriteColor.hex).to.equal('#0000FF');
         });
+
+        it('should allow short-hand syntax for defining enum', function() {
+            var Color = Enum.create(['red', 'green', 'blue']);
+            expect(Color.red.isRed()).to.equal(true);
+            expect(Color.green.isGreen()).to.equal(true);
+            expect(Color.blue.isBlue()).to.equal(true);
+        });
     });
 
     it('should allow opaque wrapper type', function() {
@@ -2397,6 +2404,7 @@ describe('Model' , function() {
             });
 
 
+
             var Entity = Model.extend({
                 properties: {
                     id: EntityId
@@ -2429,6 +2437,47 @@ describe('Model' , function() {
             });
 
             expect(errors.length).to.equal(1);
+        });
+
+        it('should allow customizing cleaning values within array via options', function() {
+            var CleanFor = Enum.create({
+                values: ['DATABASE']
+            });
+
+            var EntityId = Model.extend({
+                wrap: false,
+                clean: function(value, options) {
+                    if (options.target === CleanFor.DATABASE) {
+                        if ((value.constructor !== String) && (value.constructor !== Number)) {
+                            this.coercionError('Invalid ID', options);
+                            return null;
+                        }
+
+                        // convert string to number if saving for database
+                        return Number(value);
+                    } else {
+                        return value;
+                    }
+                }
+            });
+
+            var EntityList = Model.extend({
+                properties: {
+                    idList: [EntityId]
+                }
+            });
+
+            var entityList = new EntityList();
+            entityList.setIdList(['123', '456']);
+
+            var errors = [];
+            var cleaned = entityList.clean({
+                errors: errors,
+                target: CleanFor.DATABASE
+            });
+
+            expect(cleaned.idList[0]).to.equal(123);
+            expect(cleaned.idList[1]).to.equal(456);
         });
     });
 });

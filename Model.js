@@ -239,21 +239,25 @@ Model.unwrap = function(obj) {
     return Model.isModel(obj) ? obj.data : obj;
 };
 
+Model.cleanArray = function(obj, options) {
+    // use the model array if it is available, otherwise,
+    // use the raw array
+    var array = obj.$model || obj;
+    var i = array.length;
+    var result = new Array(i);
+    while(--i >= 0) {
+        result[i] = Model.clean(array[i], options);
+    }
+    return result;
+};
+
 Model.clean = function(obj, options) {
     options = _toOptions(options);
 
     if (obj == null) {
         return obj;
     } else if (Array.isArray(obj)) {
-        // use the model array if it is available, otherwise,
-        // use the raw array
-        var array = obj.$model || obj;
-        var i = array.length;
-        var result = new Array(i);
-        while(--i >= 0) {
-            result[i] = Model.clean(array[i], options);
-        }
-        return result;
+        return Model.cleanArray(obj, options);
     } else if (obj.$model) {
         // object is raw data that is associated with Model instance
         // so ask the Model instance to return a cleaned copy
@@ -420,13 +424,16 @@ Model_proto.clean = function(options) {
         var clone = {};
         for (var key in data) {
             if (data.hasOwnProperty(key) && (key !== '$model')) {
-                var property = properties[key];
+                var property = options.property = properties[key];
                 var value = data[key];
                 if (property && (property.isPersisted())) {
                     // no need to clean null/undefined values
                     if (value != null) {
                         var propertyType = property.type;
                         var clean = propertyType.clean;
+                        var oldProperty = options.property;
+                        options.property = property;
+
                         if (clean) {
                             // call the clean function provided by model
                             value = propertyType.clean(value.$model || value, options);
@@ -435,6 +442,9 @@ Model_proto.clean = function(options) {
                             // use the default clean function
                             value = Model.clean(value, options);
                         }
+
+                        // restore the old property
+                        options.property = oldProperty;
                     }
 
                     // put the cleaned value into the clone

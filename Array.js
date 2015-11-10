@@ -53,6 +53,30 @@ var ArrayType = module.exports = Model.extend({
         return newArray;
     },
 
+    clean: function(value, options) {
+        var property;
+        var items;
+
+        // The property that we're currently coercing is passed in via
+        // options. We use the property to get information about the types
+        // of each item
+        if ((property = options.property) && (items = property.items)) {
+            options.property = items;
+            var itemType = items.type;
+            if (itemType.clean) {
+                var i = value.length;
+                var clone = new Array(i);
+                while(--i >= 0) {
+                    clone[i] = itemType.clean(value[i], options);
+                }
+                return clone;
+            }
+            options.property = property;
+        }
+
+        return Model.cleanArray(value, options);
+    },
+
     coerce: function(value, options) {
         if (value == null) {
             return value;

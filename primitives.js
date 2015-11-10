@@ -2,9 +2,8 @@ function isPrimitive() {
     return true;
 }
 
-var ArrayType = require('./Array');
 [
-    ArrayType,
+    require('./Array'),
     require('./Boolean'),
     require('./Date'),
     require('./Integer'),

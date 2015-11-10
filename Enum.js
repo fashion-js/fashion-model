@@ -38,6 +38,12 @@ var NORMALIZE_UPPER_CASE = function(str) {
 Enum.create = function(config) {
     var normalize;
 
+    if (Array.isArray(config)) {
+        config = {
+            values: config
+        };
+    }
+
     var origCoerce = config.coerce;
 
     config.coerce = function(value, options) {

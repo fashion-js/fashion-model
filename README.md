@@ -1,6 +1,7 @@
 fashion-model
 =============
-JavaScript library for defining types and their properties with support for wrapping/unwrapping and serialization/deserialization.
+JavaScript library for defining types and their properties with support for
+wrapping/unwrapping, serialization/deserialization, validation, and JSON schema.
 
 ## Installation
 ```bash
@@ -51,10 +52,10 @@ var Model = require('fashion-model/Model');
 var Enum = require('fashion-model/Enum');
 
 // Create new model type
-var NewModel = Model.extend({/* config */});
+var NewModel = Model.extend(config);
 
 // Create new enum type
-var NewEnum = Enum.create({/* config */});
+var NewEnum = Enum.create(config);
 ```
 
 ### Primitive Types
@@ -575,16 +576,42 @@ document.setDateCreated('2014-12-22T21:18:45.905Z');
 
 ### Enum Type
 
-**String enum values:**:
+**Short-hand syntax for declaring an enum type:**
+
+```javascript
+var Color = Enum.create(['red', 'green', 'blue']);
+```
+
+**Alternate syntax for declaring an enum type:**
+
 ```javascript
 var Color = Enum.create({
     values: ['red', 'green', 'blue']
 });
+```
 
+**Enum type access patterns:**
+
+Based on the `Color` enum type declared in examples above,
+the constant enum values will be accessible from the new
+`Color` type. Each `Color` enum value will have some helper
+functions as shown shown in the examples below.
+
+```javascript
 // The following assertions will be true
-assert(Color.RED.isRed());
+// test to see
+
+// Check to see if given color is the RED enum value
+var color = Color.RED;
+assert(color.isRed());
+
+// Get the name of the enum
 assert(Color.RED.name() === 'red');
+
+// Get the value associated with the enum
 assert(Color.RED.value() === 'red');
+
+// Clean the enum value which will return its name
 assert(Color.RED.clean() === 'red');
 ```
 
@@ -681,6 +708,7 @@ colorPalette.getColors().forEach(function(color, index) {
 ### Object Validation
 
 **Using array to capture errors:**
+
 ```javascript
 // array that will collect errors
 var errors = [];
@@ -699,6 +727,7 @@ var person2 = new Person({
 ```
 
 **Using extended options:**
+
 ```javascript
 var options = {
     // array that will collect errors
@@ -734,6 +763,7 @@ var someModelSchema = jsonSchema.fromModel(SomeModel, options);
 #### Convert Model to JSON Schema
 
 **Define your models:**
+
 ```javascript
 var Model = require('fashion-model/Model');
 var Enum = require('fashion-model/Enum');
@@ -785,6 +815,7 @@ var Person = Entity.extend({
 ```
 
 **Convert your model to JSON schema:**
+
 ```javascript
 var jsonSchema = require('fashion-model/json-schema-draft4');
 var jsonSchemaOptions = {
@@ -801,6 +832,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 ```
 
 **Entity JSON Schema:**
+
 ```json
 {
    "id": "Entity",
@@ -814,6 +846,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 ```
 
 **Gender JSON Schema:**
+
 ```json
 {
    "id": "Gender",
@@ -828,6 +861,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 ```
 
 **Species JSON Schema:**
+
 ```json
 {
    "id": "Species",
@@ -842,6 +876,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 ```
 
 **Pet JSON Schema:**
+
 ```json
 {
    "id": "Pet",
@@ -858,6 +893,7 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 ```
 
 **Person JSON Schema:**
+
 ```json
 {
    "id": "Person",
