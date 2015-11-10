@@ -2373,5 +2373,62 @@ describe('Model' , function() {
                 filters: [{property: 'job', value: 'test'}]
             });
         });
+
+        it('should allow customizing clean via options', function() {
+            var CleanFor = Enum.create({
+                values: ['DATABASE']
+            });
+
+            var EntityId = Model.extend({
+                wrap: false,
+                clean: function(value, options) {
+                    if (options.target === CleanFor.DATABASE) {
+                        if ((value.constructor !== String) && (value.constructor !== Number)) {
+                            this.coercionError('Invalid ID', options);
+                            return null;
+                        }
+
+                        // convert string to number if saving for database
+                        return Number(value);
+                    } else {
+                        return value;
+                    }
+                }
+            });
+
+
+            var Entity = Model.extend({
+                properties: {
+                    id: EntityId
+                }
+            });
+
+            var entity = new Entity();
+            entity.setId('123');
+
+            var cleanedForDb = entity.clean({
+                target: CleanFor.DATABASE
+            });
+
+            var cleanedForOther = entity.clean();
+
+            expect(cleanedForDb.id).to.equal(123);
+            expect(cleanedForOther.id).to.equal('123');
+
+            var invalidEntityForDb = new Entity();
+            invalidEntityForDb.setId(true);
+
+            var errors = [];
+            var cleaned = invalidEntityForDb.clean({
+                target: CleanFor.DATABASE,
+                errors: errors
+            });
+
+            expect(cleaned).to.deep.equal({
+                id: null
+            });
+
+            expect(errors.length).to.equal(1);
+        });
     });
 });

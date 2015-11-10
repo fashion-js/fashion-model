@@ -239,8 +239,10 @@ Model.unwrap = function(obj) {
     return Model.isModel(obj) ? obj.data : obj;
 };
 
-Model.clean = function(obj, errors) {
-     if (obj == null) {
+Model.clean = function(obj, options) {
+    options = _toOptions(options);
+
+    if (obj == null) {
         return obj;
     } else if (Array.isArray(obj)) {
         // use the model array if it is available, otherwise,
@@ -249,16 +251,16 @@ Model.clean = function(obj, errors) {
         var i = array.length;
         var result = new Array(i);
         while(--i >= 0) {
-            result[i] = Model.clean(array[i], errors);
+            result[i] = Model.clean(array[i], options);
         }
         return result;
     } else if (obj.$model) {
         // object is raw data that is associated with Model instance
         // so ask the Model instance to return a cleaned copy
-        return obj.$model.clean(errors);
+        return obj.$model.clean(options);
     } else if (obj.Model) {
         // object appears to be instance of Model so it will have clean function
-        return obj.clean(errors);
+        return obj.clean(options);
     } else {
         // obj is not associated with a model instance...
 
@@ -271,7 +273,7 @@ Model.clean = function(obj, errors) {
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     var value = obj[key];
-                    clean[key] = Model.clean(value, errors);
+                    clean[key] = Model.clean(value, options);
                 }
             }
             return clean;
@@ -406,7 +408,9 @@ Model_proto.unwrap = function() {
  * Creates a deep clone of the data stored in this object with all temporary
  * and non-persisted values removed.
  */
-Model_proto.clean = function(errors) {
+Model_proto.clean = function(options) {
+    options = _toOptions(options);
+
     var data = this.data;
 
     var Derived = this.constructor;
@@ -415,7 +419,6 @@ Model_proto.clean = function(errors) {
     if (Derived.hasProperties()) {
         var clone = {};
         for (var key in data) {
-
             if (data.hasOwnProperty(key) && (key !== '$model')) {
                 var property = properties[key];
                 var value = data[key];
@@ -426,11 +429,11 @@ Model_proto.clean = function(errors) {
                         var clean = propertyType.clean;
                         if (clean) {
                             // call the clean function provided by model
-                            value = propertyType.clean(value.$model || value, errors);
+                            value = propertyType.clean(value.$model || value, options);
                         } else if (value.Model || value.$model || propertyType.isWrapped()) {
                             // value is a Model instance or it is data with a $model or it is something that could be wrapped
                             // use the default clean function
-                            value = Model.clean(value, errors);
+                            value = Model.clean(value, options);
                         }
                     }
 
@@ -438,12 +441,12 @@ Model_proto.clean = function(errors) {
                     clone[key] = value;
                 } else if (Derived.additionalProperties) {
                     if (value.Model || value.$model) {
-                        value = Model.clean(value, errors);
+                        value = Model.clean(value, options);
                     }
                     // simply copy the additional property
                     clone[key] = value;
-                } else if (errors) {
-                    errors.push('Unrecognized property: ' + key);
+                } else if (options.errors) {
+                    options.errors.push('Unrecognized property: ' + key);
                 }
             }
         }
