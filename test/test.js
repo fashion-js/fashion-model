@@ -194,28 +194,57 @@ describe('Model' , function() {
         expect(person.getId()).to.equal('test');
     });
 
-    it('should support type coercion', function() {
-        var NumericId = Model.extend({
-            wrap: false,
-            coerce: function(value) {
-                if (value != null && value.constructor !== Number) {
-                    value = Number(value.toString());
+    describe('Type Coercion', function() {
+        it('should support type coercion', function() {
+            var NumericId = Model.extend({
+                wrap: false,
+                coerce: function(value) {
+                    if (value != null && value.constructor !== Number) {
+                        value = Number(value.toString());
+                    }
+                    return value;
                 }
-                return value;
-            }
+            });
+
+            var Product = Model.extend({
+                properties: {
+                    id: NumericId
+                }
+            });
+
+            var product = new Product({
+                id: '123'
+            });
+
+            expect(product.getId()).to.equal(123);
         });
 
-        var Product = Model.extend({
-            properties: {
-                id: NumericId
-            }
-        });
+        it('should allow allow type coercion when setting null value for enum', function() {
+            var Visibility = Enum.create({
+                values: ['private', 'public'],
 
-        var product = new Product({
-            id: '123'
-        });
+                coerce: function(value, options) {
+                    if (value == null) {
+                        // default to private visibility
+                        return this.private;
+                    }
 
-        expect(product.getId()).to.equal(123);
+                    // Do nothing if we want to rely on default Enum coercion
+                    return value;
+                }
+            });
+
+            var File = Model.extend({
+                properties: {
+                    visibility: Visibility
+                }
+            });
+
+            var file = new File();
+            file.setVisibility(null);
+
+            expect(file.getVisibility()).to.equal(Visibility.private);
+        });
     });
 
     it('should allow stringify', function() {
@@ -355,140 +384,142 @@ describe('Model' , function() {
         expect(Person.wrap(rawPerson)).to.equal(person);
     });
 
-    it('should allow enum type models', function() {
-        expect(Gender.wrap('F').isF()).to.equal(true);
+    describe('Enum', function() {
+        it('should allow enum type models', function() {
+            expect(Gender.wrap('F').isF()).to.equal(true);
 
-        var Person = Model.extend({
-            properties: {
-                gender: Gender
-            }
-        });
-
-        expect(function() {
-            (new Gender('X')).toString();
-        }).to.throw(Error);
-
-        expect(Gender.M.name()).to.equal('M');
-        expect(Gender.F.name()).to.equal('F');
-        expect(Gender.M.value()).to.equal('M');
-        expect(Gender.F.value()).to.equal('F');
-
-        expect(Gender.M.isM()).to.equal(true);
-        expect(Gender.M.isF()).to.equal(false);
-
-        expect(Gender.F.isM()).to.equal(false);
-        expect(Gender.F.isF()).to.equal(true);
-
-        var person1 = new Person({
-            gender: 'F'
-        });
-
-        //expect(person1.data.gender).to.equal
-
-        expect(person1.getGender().isF()).to.equal(true);
-
-        var person2 = new Person();
-        person2.setGender('M');
-
-        expect(person2.getGender().isM()).to.equal(true);
-        expect(person2.getGender().isF()).to.equal(false);
-    });
-
-    it('should allow enum object values', function() {
-
-        var Color = Enum.create({
-            values: {
-                red: {
-                    hex: '#FF0000',
-                    name: 'Red'
-                },
-
-                green: {
-                    hex: '#00FF00',
-                    name: 'Green'
-                },
-
-                blue: {
-                    hex: '#0000FF',
-                    name: 'Blue'
+            var Person = Model.extend({
+                properties: {
+                    gender: Gender
                 }
-            }
+            });
+
+            expect(function() {
+                (new Gender('X')).toString();
+            }).to.throw(Error);
+
+            expect(Gender.M.name()).to.equal('M');
+            expect(Gender.F.name()).to.equal('F');
+            expect(Gender.M.value()).to.equal('M');
+            expect(Gender.F.value()).to.equal('F');
+
+            expect(Gender.M.isM()).to.equal(true);
+            expect(Gender.M.isF()).to.equal(false);
+
+            expect(Gender.F.isM()).to.equal(false);
+            expect(Gender.F.isF()).to.equal(true);
+
+            var person1 = new Person({
+                gender: 'F'
+            });
+
+            //expect(person1.data.gender).to.equal
+
+            expect(person1.getGender().isF()).to.equal(true);
+
+            var person2 = new Person();
+            person2.setGender('M');
+
+            expect(person2.getGender().isM()).to.equal(true);
+            expect(person2.getGender().isF()).to.equal(false);
         });
 
-        expect(Color.RED.name()).to.equal('red');
-        expect(Color.GREEN.name()).to.equal('green');
-        expect(Color.BLUE.name()).to.equal('blue');
+        it('should allow enum object values', function() {
 
-        expect(Color.RED.value().hex).to.equal('#FF0000');
-        expect(Color.RED.value().name).to.equal('Red');
+            var Color = Enum.create({
+                values: {
+                    red: {
+                        hex: '#FF0000',
+                        name: 'Red'
+                    },
 
-        expect(Color.GREEN.value().hex).to.equal('#00FF00');
-        expect(Color.GREEN.value().name).to.equal('Green');
+                    green: {
+                        hex: '#00FF00',
+                        name: 'Green'
+                    },
 
-        expect(Color.BLUE.value().hex).to.equal('#0000FF');
-        expect(Color.BLUE.value().name).to.equal('Blue');
-
-        expect(Color.red.value().hex).to.equal('#FF0000');
-        expect(Color.red.value().name).to.equal('Red');
-
-        expect(Color.green.value().hex).to.equal('#00FF00');
-        expect(Color.green.value().name).to.equal('Green');
-
-        expect(Color.blue.value().hex).to.equal('#0000FF');
-        expect(Color.blue.value().name).to.equal('Blue');
-    });
-
-    it('should allow unwrapping an enum', function() {
-
-        var Color = Enum.create({
-            values: ['red', 'green', 'blue']
-        });
-
-        var Person = Model.extend({
-            properties: {
-                favoriteColor: Color
-            }
-        });
-
-
-        var person = new Person();
-        person.setFavoriteColor(Color.BLUE);
-
-        expect(person.unwrap().favoriteColor).to.equal('blue');
-    });
-
-    it('should allow setting an enum object value', function() {
-
-        var Color = Enum.create({
-            values: {
-                red: {
-                    hex: '#FF0000',
-                    name: 'Red'
-                },
-
-                green: {
-                    hex: '#00FF00',
-                    name: 'Green'
-                },
-
-                blue: {
-                    hex: '#0000FF',
-                    name: 'Blue'
+                    blue: {
+                        hex: '#0000FF',
+                        name: 'Blue'
+                    }
                 }
-            }
+            });
+
+            expect(Color.RED.name()).to.equal('red');
+            expect(Color.GREEN.name()).to.equal('green');
+            expect(Color.BLUE.name()).to.equal('blue');
+
+            expect(Color.RED.value().hex).to.equal('#FF0000');
+            expect(Color.RED.value().name).to.equal('Red');
+
+            expect(Color.GREEN.value().hex).to.equal('#00FF00');
+            expect(Color.GREEN.value().name).to.equal('Green');
+
+            expect(Color.BLUE.value().hex).to.equal('#0000FF');
+            expect(Color.BLUE.value().name).to.equal('Blue');
+
+            expect(Color.red.value().hex).to.equal('#FF0000');
+            expect(Color.red.value().name).to.equal('Red');
+
+            expect(Color.green.value().hex).to.equal('#00FF00');
+            expect(Color.green.value().name).to.equal('Green');
+
+            expect(Color.blue.value().hex).to.equal('#0000FF');
+            expect(Color.blue.value().name).to.equal('Blue');
         });
 
-        var Person = Model.extend({
-            properties: {
-                favoriteColor: Color
-            }
+        it('should allow unwrapping an enum', function() {
+
+            var Color = Enum.create({
+                values: ['red', 'green', 'blue']
+            });
+
+            var Person = Model.extend({
+                properties: {
+                    favoriteColor: Color
+                }
+            });
+
+
+            var person = new Person();
+            person.setFavoriteColor(Color.BLUE);
+
+            expect(person.unwrap().favoriteColor).to.equal('blue');
         });
 
+        it('should allow setting an enum object value', function() {
 
-        var person = new Person();
-        person.setFavoriteColor(Color.BLUE);
+            var Color = Enum.create({
+                values: {
+                    red: {
+                        hex: '#FF0000',
+                        name: 'Red'
+                    },
 
-        expect(person.unwrap().favoriteColor.hex).to.equal('#0000FF');
+                    green: {
+                        hex: '#00FF00',
+                        name: 'Green'
+                    },
+
+                    blue: {
+                        hex: '#0000FF',
+                        name: 'Blue'
+                    }
+                }
+            });
+
+            var Person = Model.extend({
+                properties: {
+                    favoriteColor: Color
+                }
+            });
+
+
+            var person = new Person();
+            person.setFavoriteColor(Color.BLUE);
+
+            expect(person.unwrap().favoriteColor.hex).to.equal('#0000FF');
+        });
     });
 
     it('should allow opaque wrapper type', function() {
@@ -1691,155 +1722,159 @@ describe('Model' , function() {
         });
     });
 
-    it('should support init method of normal Model which will be called during construction', function() {
-        var Person = Model.extend({
-            init: function(data, options) {
-                var name = this.getName();
-                var age = this.getAge();
+    describe('init/constructor function', function() {
+        it('should support init method of normal Model which will be called during construction', function() {
+            var Person = Model.extend({
+                init: function(data, options) {
+                    var name = this.getName();
+                    var age = this.getAge();
 
-                if (name === undefined) {
-                    this.setName('Anonymous');
-                }
+                    if (name === undefined) {
+                        this.setName('Anonymous');
+                    }
 
-                if (age === undefined) {
-                    this.setAge(-1);
-                }
+                    if (age === undefined) {
+                        this.setAge(-1);
+                    }
 
-                expect(!!Model.isModel(this.constructor)).to.equal(true);
-            },
-
-            properties: {
-                name: String,
-                age: IntegerType
-            }
-        });
-
-        var person = new Person();
-        expect(person.getName()).to.equal('Anonymous');
-        expect(person.getAge()).to.equal(-1);
-
-        var person2 = new Person({
-            name: 'John',
-            age: 30
-        });
-
-        expect(person2.getName()).to.equal('John');
-        expect(person2.getAge()).to.equal(30);
-    });
-
-    it('should support init method of ObservableModel which will be called during construction', function() {
-        var Person = ObservableModel.extend({
-            init: function(data, options) {
-                var name = this.getName();
-                var age = this.getAge();
-
-                if (name === undefined) {
-                    this.setName('Anonymous');
-                }
-
-                if (age === undefined) {
-                    this.setAge(-1);
-                }
-
-                expect(!!Model.isModel(this.constructor)).to.equal(true);
-            },
-
-            properties: {
-                name: String,
-                age: IntegerType
-            }
-        });
-
-        var person = new Person();
-        expect(person.getName()).to.equal('Anonymous');
-        expect(person.getAge()).to.equal(-1);
-
-        var person2 = new Person({
-            name: 'John',
-            age: 30
-        });
-
-        expect(person2.getName()).to.equal('John');
-        expect(person2.getAge()).to.equal(30);
-    });
-
-    it('should deep clean', function() {
-        var Gender = Enum.create({
-            values: {
-                MALE: {
-                    code: 'M'
+                    expect(!!Model.isModel(this.constructor)).to.equal(true);
                 },
-                FEMALE: {
-                    code: 'F'
+
+                properties: {
+                    name: String,
+                    age: IntegerType
                 }
-            }
+            });
+
+            var person = new Person();
+            expect(person.getName()).to.equal('Anonymous');
+            expect(person.getAge()).to.equal(-1);
+
+            var person2 = new Person({
+                name: 'John',
+                age: 30
+            });
+
+            expect(person2.getName()).to.equal('John');
+            expect(person2.getAge()).to.equal(30);
         });
 
-        var Person = Model.extend({
-            properties: {
-                displayName: String,
-                gender: Gender
-            }
-        });
+        it('should support init method of ObservableModel which will be called during construction', function() {
+            var Person = ObservableModel.extend({
+                init: function(data, options) {
+                    var name = this.getName();
+                    var age = this.getAge();
 
+                    if (name === undefined) {
+                        this.setName('Anonymous');
+                    }
 
+                    if (age === undefined) {
+                        this.setAge(-1);
+                    }
 
-        var wrapper = {
-            something: {
-                person: new Person({
-                    displayName: 'John Doe',
-                    gender: Gender.MALE
-                }),
-                anotherPerson: Person.unwrap(new Person({
-                    displayName: 'Jane Doe',
-                    gender: Gender.FEMALE
-                }))
-            },
-            array: [1, 2, 3],
-            female: Gender.FEMALE
-        };
-
-        var cleaned = Model.clean(wrapper);
-
-        expect(wrapper.something.person.getDisplayName()).to.equal('John Doe');
-
-        expect(cleaned).to.deep.equal({
-            something: {
-                person: {
-                    displayName: 'John Doe',
-                    gender: 'MALE'
+                    expect(!!Model.isModel(this.constructor)).to.equal(true);
                 },
-                anotherPerson: {
-                    displayName: 'Jane Doe',
-                    gender: 'FEMALE'
+
+                properties: {
+                    name: String,
+                    age: IntegerType
                 }
-            },
-            array: [1, 2, 3],
-            female: 'FEMALE'
+            });
+
+            var person = new Person();
+            expect(person.getName()).to.equal('Anonymous');
+            expect(person.getAge()).to.equal(-1);
+
+            var person2 = new Person({
+                name: 'John',
+                age: 30
+            });
+
+            expect(person2.getName()).to.equal('John');
+            expect(person2.getAge()).to.equal(30);
         });
     });
 
-    it('should support prototype', function() {
-        var Person = Model.extend({
-            properties: {
-                displayName: String
-            },
+    describe('Model config prototype', function() {
+        it('should support prototype', function() {
+            var Person = Model.extend({
+                properties: {
+                    displayName: String
+                },
 
-            prototype: {
-                sayHello: function() {
-                    return 'Hello ' + this.getDisplayName();
+                prototype: {
+                    sayHello: function() {
+                        return 'Hello ' + this.getDisplayName();
+                    }
                 }
-            }
-        });
+            });
 
-        var person = new Person({
-            displayName: 'John Doe'
-        });
+            var person = new Person({
+                displayName: 'John Doe'
+            });
 
-        expect(person.sayHello()).to.equal('Hello ' + person.getDisplayName());
+            expect(person.sayHello()).to.equal('Hello ' + person.getDisplayName());
+        });
     });
 
     describe('Cleaning', function() {
+        it('should deep clean', function() {
+            var Gender = Enum.create({
+                values: {
+                    MALE: {
+                        code: 'M'
+                    },
+                    FEMALE: {
+                        code: 'F'
+                    }
+                }
+            });
+
+            var Person = Model.extend({
+                properties: {
+                    displayName: String,
+                    gender: Gender
+                }
+            });
+
+
+
+            var wrapper = {
+                something: {
+                    person: new Person({
+                        displayName: 'John Doe',
+                        gender: Gender.MALE
+                    }),
+                    anotherPerson: Person.unwrap(new Person({
+                        displayName: 'Jane Doe',
+                        gender: Gender.FEMALE
+                    }))
+                },
+                array: [1, 2, 3],
+                female: Gender.FEMALE
+            };
+
+            var cleaned = Model.clean(wrapper);
+
+            expect(wrapper.something.person.getDisplayName()).to.equal('John Doe');
+
+            expect(cleaned).to.deep.equal({
+                something: {
+                    person: {
+                        displayName: 'John Doe',
+                        gender: 'MALE'
+                    },
+                    anotherPerson: {
+                        displayName: 'Jane Doe',
+                        gender: 'FEMALE'
+                    }
+                },
+                array: [1, 2, 3],
+                female: 'FEMALE'
+            });
+        });
+
         it('should allow cleaning of "hidden" model properties from raw data', function() {
             var Entity = Model.extend({
                 properties: {
@@ -1946,6 +1981,41 @@ describe('Model' , function() {
                 type: 'work',
                 region: 'southeast',
                 climate: ['hot', 'humid']
+            });
+        });
+
+        it('should allow cleaning enum types whose value is another type', function() {
+            var Something = Model.extend({
+                typeName: 'Something',
+                properties: {
+                    name: String
+                }
+            });
+
+            var MessageType = Enum.create({
+                values: {
+                    abc: Something
+                }
+            });
+
+            var Message = Model.extend({
+                properties: {
+                    type: MessageType
+                }
+            });
+
+            var message = new Message();
+            message.setType(MessageType.abc);
+            expect(message.getType()).to.equal(MessageType.abc);
+            expect(message.getType().value()).to.equal(Something);
+
+            expect(MessageType.abc.clean()).to.equal('abc');
+            expect(Model.clean(MessageType.abc)).to.equal('abc');
+            expect(message.data.type.$model).to.equal(MessageType.abc);
+            expect(message.data.type).to.equal(MessageType.abc.data);
+
+            expect(Model.clean(message)).to.deep.equal({
+                type: 'abc'
             });
         });
 

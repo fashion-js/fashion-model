@@ -55,7 +55,7 @@ var ArrayType = module.exports = Model.extend({
 
     coerce: function(value, options) {
         if (value == null) {
-            return null;
+            return value;
         }
 
         if (ArrayType.isInstance(value)) {

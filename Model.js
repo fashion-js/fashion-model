@@ -97,7 +97,7 @@ function _set(model, property, value, options) {
         value = model.data[propertyName];
     }
 
-    if ((value != null) && wrapped) {
+    if (wrapped) {
         options = _forProperty(property, options, function(options) {
             // recursively call setters
             // The return value is the wrapped value
@@ -240,7 +240,9 @@ Model.unwrap = function(obj) {
 };
 
 Model.clean = function(obj, errors) {
-    if (Array.isArray(obj)) {
+     if (obj == null) {
+        return obj;
+    } else if (Array.isArray(obj)) {
         // use the model array if it is available, otherwise,
         // use the raw array
         var array = obj.$model || obj;
@@ -250,14 +252,21 @@ Model.clean = function(obj, errors) {
             result[i] = Model.clean(array[i], errors);
         }
         return result;
+    } else if (obj.$model) {
+        // object is raw data that is associated with Model instance
+        // so ask the Model instance to return a cleaned copy
+        return obj.$model.clean(errors);
+    } else if (obj.Model) {
+        // object appears to be instance of Model so it will have clean function
+        return obj.clean(errors);
     } else {
-        if ((obj = Model.unwrap(obj)) == null) {
-            return obj;
-        }
+        // obj is not associated with a model instance...
 
-        if (obj.$model) {
-            return obj.$model.clean(errors);
-        } else if ((obj.constructor !== Date) && (typeof obj === 'object')) {
+        // If the obj we were given is a complex object then return a
+        // deep clone...
+        // NOTE: Don't clone Date object to clean it since we assume it
+        // is already clean.
+        if ((obj.constructor !== Date) && (typeof obj === 'object')) {
             var clean = {};
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
@@ -748,6 +757,11 @@ function _installMixin(mixin, Derived, Base, properties) {
     _addToArray(Derived, '_onSet', mixin.onSet);
 }
 
+function _checkInstance(data, wrap, Derived) {
+    var model = data.$model || data;
+    return wrap && Derived.isInstance(model) ? model : NOT_INSTANCE;
+}
+
 function _extend(Base, config, resolver) {
     config = config || {};
 
@@ -830,16 +844,6 @@ function _extend(Base, config, resolver) {
     } else {
         wrap = (wrap !== false);
 
-        var checkInstance = function(data) {
-            if (data == null) {
-                // null/undefined qualify as instances
-                return data;
-            }
-
-            var model = data.$model || data;
-            return wrap && Derived.isInstance(model) ? model : NOT_INSTANCE;
-        };
-
         factory = function(data, options) {
             if (wrap && (arguments.length === 0)) {
                 return new Derived();
@@ -848,21 +852,31 @@ function _extend(Base, config, resolver) {
             var instance;
 
             // see if the data is already an instance
-            if ((instance = checkInstance(data)) !== NOT_INSTANCE) {
+            if ((data != null) && (instance = _checkInstance(data, wrap, Derived)) !== NOT_INSTANCE) {
+                // we already have instance of correct type so return it
                 return instance;
             }
 
             if (coerce) {
                 data = coerce.call(Derived, data, (options = _toOptions(options)));
 
+                // If the coerce function returns null/undefined then not
+                // much more we can do so simply return that value
+                if (data == null) {
+                    return data;
+                }
+
                 // Do we have the correct type after coercion?
-                if ((instance = checkInstance(data)) !== NOT_INSTANCE) {
+                if ((instance = _checkInstance(data, wrap, Derived)) !== NOT_INSTANCE) {
+                    // coercion return instance of correct type so return it
                     return instance;
                 }
+            } else if (data == null) {
+                return data;
             }
 
             if (!wrap) {
-                // if we're not wrapping then simply return the raw value
+                // if we're not wrapping or data is null then simply return the raw value
                 return data;
             }
 
