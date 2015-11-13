@@ -1,4 +1,4 @@
-var constantRenameRegex = /([a-z])([A-Z])|(\-)/g;
+var constantRenameRegex = /([a-z])([A-Z])|([^\w])/g;
 
 var toCamelCaseRegex = /([a-z])[_\-]([a-z])/g;
 

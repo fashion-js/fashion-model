@@ -908,7 +908,11 @@ function _extend(Base, config, resolver) {
         };
     }
 
-    Derived.create = Derived.wrap = factory;
+    Derived.wrap = factory;
+
+    if (!Derived.create) {
+        Derived.create = factory;
+    }
 
     inherit(Derived, Base);
 
