@@ -2479,5 +2479,69 @@ describe('Model' , function() {
             expect(cleaned.idList[0]).to.equal(123);
             expect(cleaned.idList[1]).to.equal(456);
         });
+
+        it('should clean model instance using clean method provided by type', function() {
+            var Endpoint = Model.extend({
+                clean: function(endpoint) {
+                    return endpoint.getType() + ':' + endpoint.getId();
+                },
+
+                properties: {
+                    type: String,
+                    id: Number
+                }
+            });
+
+            var endpoint = new Endpoint({
+                type: 'Agent',
+                id: 5
+            });
+
+            var data = {
+                endpoint: endpoint
+            };
+
+            expect(endpoint.clean()).to.equal('Agent:5');
+
+            expect(Model.clean(data)).to.deep.equal({
+                endpoint: 'Agent:5'
+            });
+        });
+
+        it('should support afterClean in type', function() {
+            var Endpoint = Model.extend({
+                afterClean: function(endpoint) {
+                    delete endpoint.extra;
+                },
+
+                properties: {
+                    type: String,
+                    id: Number,
+                    extra: String
+                }
+            });
+
+            var endpoint = new Endpoint({
+                type: 'Agent',
+                id: 5,
+                extra: 'Test!'
+            });
+
+            var data = {
+                endpoint: endpoint
+            };
+
+            expect(endpoint.clean()).to.deep.equal({
+                type: 'Agent',
+                id: 5
+            });
+
+            expect(Model.clean(data)).to.deep.equal({
+                endpoint: {
+                    type: 'Agent',
+                    id: 5
+                }
+            });
+        });
     });
 });

@@ -420,6 +420,10 @@ Model_proto.clean = function(options) {
     var Derived = this.constructor;
     var properties = Derived.properties;
 
+    if (Derived.clean) {
+        return Derived.clean(this, options);
+    }
+
     if (Derived.hasProperties()) {
         var clone = {};
         for (var key in data) {
@@ -438,8 +442,9 @@ Model_proto.clean = function(options) {
                             // call the clean function provided by model
                             value = propertyType.clean(value.$model || value, options);
                         } else if (value.Model || value.$model || propertyType.isWrapped()) {
-                            // value is a Model instance or it is data with a $model or it is something that could be wrapped
-                            // use the default clean function
+                            // value is a Model instance or it is data with a
+                            // $model or it is something that could be wrapped.
+                            // Use the default clean function
                             value = Model.clean(value, options);
                         }
 
@@ -460,10 +465,20 @@ Model_proto.clean = function(options) {
                 }
             }
         }
-        return clone;
-    } else {
-        return data;
+
+        data = clone;
     }
+
+    if (Derived.afterClean) {
+        var result = Derived.afterClean(data, options);
+        if (result !== undefined) {
+            data = result;
+        }
+    }
+
+    // Model does not have properties so simply return the raw data
+    // (there should be no wrapper)
+    return data;
 };
 
 function _getProperty(model, propertyName, errors) {
@@ -597,7 +612,7 @@ function _parseType(type) {
         return ArrayType;
     }
 
-    throw new Error('Unrecognized type. Expected type derived from Model or primitive type.');
+    return null;
 }
 
 function _parseTypeStr(typeStr, propertyConfig, resolver, Type) {
@@ -631,7 +646,7 @@ function _resolve(typeName, resolver, Type) {
     throw new Error('Invalid type: ' + typeName);
 }
 
-function _parseTypeConfig(propertyConfig, resolver, Type) {
+function _parseTypeConfig(propertyName, propertyConfig, resolver, Type) {
     if (Array.isArray(propertyConfig)) {
         propertyConfig = {
             type: propertyConfig
@@ -650,7 +665,7 @@ function _parseTypeConfig(propertyConfig, resolver, Type) {
             if (type.length) {
                 var items = type[0];
                 if (items != null) {
-                    propertyConfig.items = _parseTypeConfig(items, resolver, Type);
+                    propertyConfig.items = _parseTypeConfig(propertyName, items, resolver, Type);
                 }
             }
         } else if (type.constructor === String) {
@@ -659,9 +674,13 @@ function _parseTypeConfig(propertyConfig, resolver, Type) {
             // handle normal notation for types
             propertyConfig.type = _parseType(type);
 
+            if (!propertyConfig.type) {
+                throw new Error('Unrecognized type ' + JSON.stringify(type) + ' for property "' + propertyName + '". Expected type derived from Model or primitive type.');
+            }
+
             // Convert the subtype to special type if necessary
             if (propertyConfig.items) {
-                propertyConfig.items = _parseTypeConfig(propertyConfig.items, resolver, Type);
+                propertyConfig.items = _parseTypeConfig(propertyName, propertyConfig.items, resolver, Type);
             }
         }
     } else {
@@ -672,7 +691,7 @@ function _parseTypeConfig(propertyConfig, resolver, Type) {
 }
 
 function _toProperty(name, propertyConfig, resolver, Type) {
-    propertyConfig = _parseTypeConfig(propertyConfig, resolver, Type);
+    propertyConfig = _parseTypeConfig(name, propertyConfig, resolver, Type);
     propertyConfig.name = name;
     propertyConfig.property = propertyConfig.property || name;
 
