@@ -443,7 +443,8 @@ Model_proto.set = function(propertyName, value, options) {
  *      or an array which will have any errors added to it
  */
 Model_proto.get = function(propertyName, options) {
-    var property = this.properties.get(propertyName);
+    var Type = this.constructor;
+    var property = Type.properties[propertyName];
     if (property) {
         var getter = property.getGetter();
         if (getter) {
