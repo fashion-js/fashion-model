@@ -60,12 +60,16 @@ var NewEnum = Enum.create(config);
 
 ### Primitive Types
 The following primitive types are supported:
-- **Date Type:** `Date` / `"date"` / `require("fashion-model/Date")`
-- **Boolean Type:** `Boolean` / `"boolean"` / `require("fashion-model/Boolean")`
-- **Number Type:** `Number` / `"number"` / `require("fashion-model/Number")`
-- **Integer Type:** `"integer"` / `require("fashion-model/Integer")`
-- **String Type:** `String` / `"string"` / `require("fashion-model/String")`
-- **Array Type:** `Array` / `[]` / `"array"` / `require("fashion-model/Array")`
+
+| Data Type | JavaScript Type | Alias           | Model Type                          |
+|-----------|-----------------|-----------------|-------------------------------------|
+| Date      | Date            | `"date"`        | `require("fashion-model/Date")`     |
+| Boolean   | Boolean         | `"boolean"`     | `require("fashion-model/Boolean")`  |
+| Number    | Number          | `"number"`      | `require("fashion-model/Number")`   |
+| Integer   |                 | `"integer"`     | `require("fashion-model/Integer")`  |
+| String    | String          | `"string"`      | `require("fashion-model/String")`   |
+| Array     | Array           | `"array"` / `[]`| `require("fashion-model/Array")`    |
+| Function  | Function        | `"function"`    | `require("fashion-model/Function")` |
 
 ### Complex Object Type
 
