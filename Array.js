@@ -1,6 +1,48 @@
 var Model = require('./Model');
 
-var ArrayType = module.exports = Model.extend({
+var ArrayType;
+
+function _createModelArray(rawArray) {
+    // only create second array if we need to wrap data with Model instance
+    var newArray = new Array(rawArray.length);
+    newArray.Model = ArrayType;
+    return newArray;
+}
+
+function convertArrayItems(array, ItemType, options) {
+    // We might need to do some type conversion on each item in the array.
+    // Even if we do type conversion we store the "raw" value in the
+    // array and not the model instance
+    var newArray;
+
+    newArray = _createModelArray(array);
+
+    var wrap;
+    var coerce;
+
+    if (ItemType && ((wrap = ItemType.wrap) || (coerce = ItemType.coerce))) {
+        // we need to either wrap or coerce each item in the array
+        var i = array.length;
+        while(--i >= 0) {
+            var item = array[i];
+            if (wrap) {
+                // need to wrap each item and store in new array...
+                newArray[i] = wrap.call(ItemType, item, options);
+            } else {
+                // need to coerce...
+                // if not wrapping items then original array and new array
+                // are the same
+                newArray[i] = coerce.call(ItemType, item, options);
+            }
+        }
+    } else {
+        newArray = array.slice(0);
+    }
+
+    return newArray;
+}
+
+ArrayType = module.exports = Model.extend({
     typeName: 'array',
 
     wrap: true,
@@ -12,46 +54,7 @@ var ArrayType = module.exports = Model.extend({
         return value && (value.Model === ArrayType);
     },
 
-    _initModelArray: function(rawArray, wrapped) {
-        // only create second array if we need to wrap data with Model instance
-        var newArray = wrapped ? new Array(rawArray.length) : rawArray;
-        newArray.Model = ArrayType;
-        newArray.data = rawArray;
-        rawArray.$model = newArray;
-        return newArray;
-    },
-
-    _convertArrayItems: function(array, ItemType, options) {
-        // We might need to do some type conversion on each item in the array.
-        // Even if we do type conversion we store the "raw" value in the
-        // array and not the model instance
-        var newArray;
-
-        var wrapped = ItemType.isWrapped();
-        newArray = ArrayType._initModelArray(array, wrapped);
-
-        if (wrapped || ItemType.coerce) {
-            // we need to either wrap or coerce each item in the array
-            var i = array.length;
-            while(--i >= 0) {
-                var item = array[i];
-                if (wrapped) {
-                    // need to wrap each item and store in new array...
-                    var model = newArray[i] = ItemType.wrap(item, options);
-
-                    // store the unwrapped item in the original array
-                    array[i] = Model.unwrap(model);
-                } else {
-                    // need to coerce...
-                    // if not wrapping items then original array and new array
-                    // are the same
-                    array[i] = ItemType.coerce(item, options);
-                }
-            }
-        }
-
-        return newArray;
-    },
+    convertArrayItems: convertArrayItems,
 
     clean: function(value, options) {
         var property;
@@ -87,29 +90,33 @@ var ArrayType = module.exports = Model.extend({
         }
 
         var valueIsArray = Array.isArray(value);
-        var array;
+        var oldArray;
         if (options.strict) {
             if (!valueIsArray) {
                 this.coercionError(value, options);
+                return;
             }
+            oldArray = value;
         } else {
-            array = valueIsArray ? value : [value];
+            oldArray = valueIsArray ? value : [value];
         }
 
         var property;
         var items;
+        var newArray;
 
         // The property that we're currently coercing is passed in via
         // options. We use the property to get information about the types
         // of each item
         if ((property = options.property) && (items = property.items)) {
             Model._forProperty(items, options, function(options) {
-                array = ArrayType._convertArrayItems(array, items.type, options);
+                newArray = convertArrayItems(oldArray, items.type, options);
             });
         } else {
-            ArrayType._initModelArray(array, false);
+            newArray = oldArray.slice(0);
+            newArray.Model = ArrayType;
         }
 
-        return array;
+        return newArray;
     }
 });

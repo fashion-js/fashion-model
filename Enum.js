@@ -58,10 +58,6 @@ Enum.create = function(config) {
             return value;
         }
 
-        if (value.$model && value.$model.constructor === Type) {
-            return value.$model;
-        }
-
         if (normalize !== undefined) {
             value = normalize(value);
         }
@@ -105,7 +101,6 @@ Enum.create = function(config) {
 
         var enumValue = new Type(value);
         enumValue._name = name;
-        enumValue.data.$model = enumValue;
 
         proto['is' + Enum.toTitleCase(name)] = function() {
             return (this === enumValue);

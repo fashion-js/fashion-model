@@ -1,14 +1,15 @@
 var ArrayType;
 var primitives;
-var NOT_INSTANCE = {};
-
 var inherit = require('raptor-util/inherit');
 var Model;
-var EMPTY_PROPERTIES = {};
 
-function _toModel(obj) {
-    return (obj == null) ? obj : (obj.$model || obj);
+
+function _emptyObject() {
+    return Object.create(null);
 }
+
+var NOT_INSTANCE = {};
+var EMPTY_PROPERTIES = _emptyObject();
 
 function _forProperty(property, options, work) {
     options = _toOptions(options);
@@ -25,8 +26,8 @@ function _notifySet(model, propertyName, oldValue, newValue, property) {
         var event = {
             model: model,
             propertyName: propertyName,
-            oldValue: _toModel(oldValue),
-            newValue: _toModel(newValue),
+            oldValue: oldValue,
+            newValue: newValue,
             property: property
         };
 
@@ -37,44 +38,15 @@ function _notifySet(model, propertyName, oldValue, newValue, property) {
     }
 }
 
-function _get(model, property, options) {
-    var propertyName = property.getProperty();
-    var getter = property.getGetter();
-    if (getter) {
-        // the getter provided for the property needs to do all of
-        // the work...
-        return getter.call(model, propertyName, property);
-    }
-
-    // pull out the raw value...
-    var value = model.data[propertyName];
-
-    var Type = property.getType();
-
-    if ((value != null) && Type.isWrapped()) {
-        // Type is wrapped. Make sure we return an instance of the actual
-        // type and not the raw value
-        var returnValue;
-        _forProperty(property, options, function(options) {
-            returnValue = Type.wrap(value, options);
-        });
-        return returnValue;
-    } else {
-        return value;
-    }
-}
-
-function _set(model, property, value, options) {
+function _set(model, data, property, value, options) {
     var Type = property.getType();
 
     // this the value that we return (it may be the result of wrapping/coercing the original value)
-    var returnValue;
     var wrapped = Type.isWrapped();
 
     if (Model.isModel(value) && Type.isInstance(value)) {
         // value is expected type
         // store raw data in this model's data
-        value = Model.unwrap(value);
     } else if (!wrapped && Type.coerce) {
         // Only call coerce if this type is not wrapped
         // (otherwise we'd call coerce twice which is wasteful)
@@ -86,7 +58,7 @@ function _set(model, property, value, options) {
     }
 
     var propertyName = property.getProperty();
-    var oldValue = model.data[propertyName];
+    var oldValue = data[propertyName];
 
     var setter = property.getSetter();
     if (setter) {
@@ -94,55 +66,53 @@ function _set(model, property, value, options) {
         setter.call(model, propertyName, value, property);
 
         // get the new value
-        value = model.data[propertyName];
+        value = data[propertyName];
     }
 
     if (wrapped) {
         options = _forProperty(property, options, function(options) {
             // recursively call setters
             // The return value is the wrapped value
-            returnValue = Type.wrap(value, options);
-
-            // the value that gets stored in data is the unwrapped value
-            value = Model.unwrap(returnValue);
+            value = Type.wrap(value, options);
         });
-    } else {
-        // value is not wrapped so simply return the raw value
-        returnValue = value;
     }
 
     if (oldValue !== value) {
-        model.data[propertyName] = value;
+        data[propertyName] = value;
         _notifySet(model, propertyName, oldValue, value, property);
     }
 
-    return returnValue;
+    return value;
 }
 
 function _generateGetter(property) {
-    return function(options) {
-        return _get(this, property, options);
-    };
+    var propertyName = property.getProperty();
+    var getter = property.getGetter();
+    if (getter) {
+        return function(options) {
+            return getter.call(this, propertyName, property);
+        };
+    } else {
+        return function(options) {
+            return this.data[propertyName];
+        };
+    }
 }
 
 function _generateSetter(property) {
     return function(value, options) {
-        return _set(this, property, value, options);
+        return _set(this, this.data, property, value, options);
     };
 }
 
 // This function will be used to make sure an array value
 // exists for the given property
-function _ensureArray(property, wrapped) {
+function _ensureArray(model, property) {
     var propertyName = property.getProperty();
-    var array = this.data[propertyName];
+    var array = model.data[propertyName];
     if (!array) {
-        this.data[propertyName] = array = [];
-    }
-
-    // initialize the model array if it doesn't already exist
-    if (!array.$model) {
-        ArrayType._initModelArray(array, wrapped);
+        model.data[propertyName] = array = [];
+        array.Model = ArrayType;
     }
 
     return array;
@@ -151,21 +121,25 @@ function _ensureArray(property, wrapped) {
 function _generateAddValueTo(property) {
     var items = property.items;
     var ItemType = items && items.type;
+    var coerce;
+
+    if (ItemType) {
+        coerce = ItemType.coerce;
+    }
+
     if (ItemType && ItemType.isWrapped()) {
         // the addTo<Property> function will need to wrap each item
         // when adding it to the array
         return function(value, options) {
-            var array = _ensureArray.call(this, property, true);
-            var model = ItemType.wrap(value, options);
-            array.push(Model.unwrap(model));
-            array.$model.push(model);
+            var array = _ensureArray(this, property);
+            array.push(ItemType.wrap(value, options));
         };
     } else {
         // the addTo<Property> function should add raw value to array
         // (call the type coercion function if it exists)
         return function(value, options) {
-            var array = _ensureArray.call(this, property, false);
-            array.push((ItemType && ItemType.coerce) ? ItemType.coerce(value, options) : value);
+            var array = _ensureArray(this, property);
+            array.push((coerce) ? coerce.call(ItemType, value, options) : value);
         };
     }
 }
@@ -175,50 +149,16 @@ function _initialUpperCase(str) {
 }
 
 function _convertArray(array, options) {
-    return ArrayType._convertArrayItems(array, this, options);
+    return ArrayType.convertArrayItems(array, this, options);
 }
 
 // This is the constructor that gets called when ever a Model (or derived type)
 // is created
-module.exports = Model = function Model(data, options) {
-    var Derived = this.constructor;
+module.exports = Model = function Model(rawData, options) {
+    var Type = this.constructor;
 
-    if (Derived.constructable === false) {
-        throw new Error('Instances of this type cannot be created. data: ' + data);
-    }
-
-    if (Derived.hasProperties()) {
-        var properties = Derived.properties;
-        this.data = data || {};
-        if (data != null) {
-            var errors;
-            if (options) {
-                if (Array.isArray(options)) {
-                    // since options is an array we treat as the output array
-                    // for errors
-                    options = {
-                        errors: (errors = options)
-                    };
-                } else {
-                    errors = options.errors;
-                }
-            }
-
-            // use setters to make sure values get properly coerced
-            for (var key in data) {
-                if (data.hasOwnProperty(key) && (key !== '$model')) {
-                    var property = properties[key];
-                    if (property) {
-                        _set(this, property, data[key], options);
-                    } else if (!Derived.additionalProperties && errors) {
-                        errors.push('Unrecognized property: ' + key);
-                    }
-                }
-            }
-        }
-        this.data.$model = this;
-    } else {
-        this.data = data;
+    if (Type.constructable === false) {
+        throw new Error('Instances of this type cannot be created. data: ' + rawData);
     }
 };
 
@@ -234,21 +174,13 @@ Model.isModel = function(obj) {
     return obj && obj.Model;
 };
 
-Model.unwrap = function(obj) {
-    // if obj is Model instance then return raw data, otherwise, return obj
-    return Model.isModel(obj) ? obj.data : obj;
-};
-
-Model.cleanArray = function(obj, options) {
-    // use the model array if it is available, otherwise,
-    // use the raw array
-    var array = obj.$model || obj;
+Model.cleanArray = function(array, options) {
     var i = array.length;
-    var result = new Array(i);
+    var newArray = new Array(i);
     while(--i >= 0) {
-        result[i] = Model.clean(array[i], options);
+        newArray[i] = Model.clean(array[i], options);
     }
-    return result;
+    return newArray;
 };
 
 Model.clean = function(obj, options) {
@@ -258,12 +190,8 @@ Model.clean = function(obj, options) {
         return obj;
     } else if (Array.isArray(obj)) {
         return Model.cleanArray(obj, options);
-    } else if (obj.$model) {
-        // object is raw data that is associated with Model instance
-        // so ask the Model instance to return a cleaned copy
-        return obj.$model.clean(options);
     } else if (obj.Model) {
-        // object appears to be instance of Model so it will have clean function
+        // obj is an instance of a Model
         return obj.clean(options);
     } else {
         // obj is not associated with a model instance...
@@ -287,6 +215,14 @@ Model.clean = function(obj, options) {
     }
 };
 
+Model.unwrap = function(obj) {
+    if (obj.Model) {
+        return obj.data || obj;
+    } else {
+        return obj;
+    }
+};
+
 Model.hasProperties = function() {
     return (this.properties !== EMPTY_PROPERTIES) || (this.additionalProperties === true);
 };
@@ -304,17 +240,22 @@ Model.getProperty = function(propertyName) {
 };
 
 Model.forEachProperty = function(options, callback) {
-    if (arguments.length === 1) {
-        callback = arguments[0];
-        options = {};
+    if (!this.Properties) {
+        return;
     }
 
-    var inherited = (options.inherited !== false);
+    if (arguments.length === 1) {
+        callback = arguments[0];
+        options = _emptyObject();
+    }
 
     var proto = this.Properties.prototype;
-    var seen = {};
+    var inherited = (options.inherited !== false);
+
+    var seen = _emptyObject();
     do {
         for (var key in proto) {
+            // Make sure we haven't already handled the given property
             if (!seen[key] && proto.hasOwnProperty(key)) {
                 var property = proto[key];
                 if (property.constructor === Property) {
@@ -325,6 +266,7 @@ Model.forEachProperty = function(options, callback) {
                 seen[key] = true;
             }
         }
+        // Move up the prototype chain if we care about inherited properties
     } while(inherited && ((proto = Object.getPrototypeOf(proto)) != null));
 };
 
@@ -370,42 +312,14 @@ Model.coercionError = function(value, options, errorMessage) {
     }
 };
 
-function _syncArrays(rawArray, modelArray) {
-    var len = rawArray.length = modelArray.length;
-    var i = len;
-    while(--i >= 0) {
-        rawArray[i] = Model.unwrap(modelArray[i]);
-    }
-}
-
-function _jsonStringifyReplacer(key, value) {
-    if (key === '$model') {
-        return undefined;
-    }
-
-    if (value != null) {
-        if (Model.isModel(value)) {
-            var rawValue = Model.unwrap(value);
-            if (value.Model === ArrayType) {
-                _syncArrays(rawValue, value);
-            }
-            value = rawValue;
-        } else if (value.$model && value.$model.Model === ArrayType) {
-            _syncArrays(value, value.$model);
-        }
-    }
-
-    return value;
-}
-
 Model.stringify = function(obj, pretty) {
-    return JSON.stringify(obj, _jsonStringifyReplacer, pretty ? '    ' : undefined);
+    return JSON.stringify(Model.clean(obj), null, pretty ? '    ' : undefined);
 };
 
 var Model_proto = Model.prototype;
 
 Model_proto.unwrap = function() {
-    return this.data;
+    return this.data || this;
 };
 
 /**
@@ -415,19 +329,22 @@ Model_proto.unwrap = function() {
 Model_proto.clean = function(options) {
     options = _toOptions(options);
 
-    var data = this.data;
+    var Type = this.Model;
 
-    var Derived = this.constructor;
-    var properties = Derived.properties;
-
-    if (Derived.clean) {
-        return Derived.clean(this, options);
+    if (Type.clean) {
+        // call "clean" function provided by type
+        return Type.clean(this, options);
     }
 
-    if (Derived.hasProperties()) {
+    // The "properties" object is a map that we can use to lookup
+    // all property definitions
+    var properties = Type.properties;
+    var data = this.data;
+
+    if (Type.hasProperties()) {
         var clone = {};
         for (var key in data) {
-            if (data.hasOwnProperty(key) && (key !== '$model')) {
+            if (data.hasOwnProperty(key)) {
                 var property = options.property = properties[key];
                 var value = data[key];
                 if (property && (property.isPersisted())) {
@@ -440,11 +357,11 @@ Model_proto.clean = function(options) {
 
                         if (clean) {
                             // call the clean function provided by model
-                            value = propertyType.clean(value.$model || value, options);
-                        } else if (value.Model || value.$model || propertyType.isWrapped()) {
-                            // value is a Model instance or it is data with a
-                            // $model or it is something that could be wrapped.
-                            // Use the default clean function
+                            value = propertyType.clean(value, options);
+                        } else if (value.Model || propertyType.isWrapped()) {
+                            // value is a Model instance or it is something
+                            // that could be wrapped.
+                            // Use the default clean function...
                             value = Model.clean(value, options);
                         }
 
@@ -454,9 +371,9 @@ Model_proto.clean = function(options) {
 
                     // put the cleaned value into the clone
                     clone[key] = value;
-                } else if (Derived.additionalProperties) {
-                    if (value.Model || value.$model) {
-                        value = Model.clean(value, options);
+                } else if (Type.additionalProperties) {
+                    if (value.Model) {
+                        value = value.clean(options);
                     }
                     // simply copy the additional property
                     clone[key] = value;
@@ -469,8 +386,8 @@ Model_proto.clean = function(options) {
         data = clone;
     }
 
-    if (Derived.afterClean) {
-        var result = Derived.afterClean(data, options);
+    if (Type.afterClean) {
+        var result = Type.afterClean(data, options);
         if (result !== undefined) {
             data = result;
         }
@@ -506,13 +423,14 @@ function _getProperty(model, propertyName, errors) {
  *      or an array which will have any errors added to it
  */
 Model_proto.set = function(propertyName, value, options) {
+    var modelData = this.data;
     var property = _getProperty(this, propertyName, options);
     if (property) {
-        _set(this, property, value, options);
+        _set(this, modelData, property, value, options);
     } else {
-        var oldValue = this.data[propertyName];
+        var oldValue = modelData[propertyName];
         if (oldValue !== value) {
-            this.data[propertyName] = value;
+            modelData[propertyName] = value;
             _notifySet(this, propertyName, oldValue, value);
         }
     }
@@ -525,12 +443,15 @@ Model_proto.set = function(propertyName, value, options) {
  *      or an array which will have any errors added to it
  */
 Model_proto.get = function(propertyName, options) {
-    var property = _getProperty(this, propertyName, options);
+    var property = this.properties.get(propertyName);
     if (property) {
-        return _get(this, property);
-    } else {
-        return this.data[propertyName];
+        var getter = property.getGetter();
+        if (getter) {
+            return getter.call(this, propertyName, property);
+        }
     }
+
+    return this.data[propertyName];
 };
 
 Model_proto.stringify = function(pretty) {
@@ -620,7 +541,7 @@ function _parseTypeStr(typeStr, propertyConfig, resolver, Type) {
     if ((typeStr.charAt(len - 2) === '[') && (typeStr.charAt(len - 1) === ']')) {
         // array type
         propertyConfig.type = ArrayType;
-        propertyConfig.items = {};
+        propertyConfig.items = _emptyObject();
         _parseTypeStr(typeStr.substring(0, len - 2), propertyConfig.items, resolver, Type);
     } else {
         propertyConfig.type = _resolve(typeStr, resolver, Type);
@@ -701,7 +622,6 @@ function _toProperty(name, propertyConfig, resolver, Type) {
 var SPECIAL_PROPERTIES = {
     init: 1,
     wrap: 1,
-    unwrap: 1,
     coerce: 1,
     properties: 1,
     prototype: 1,
@@ -718,7 +638,7 @@ function _copyNonSpecialPropertiesToType(config, Type) {
 
 function _toOptions(options) {
     if (options == null) {
-        return {};
+        return _emptyObject();
     }
 
     if (Array.isArray(options)) {
@@ -750,10 +670,10 @@ function _concatToArray(obj, propertyName, otherArr) {
     }
 }
 
-function _installMixin(mixin, Derived, Base, properties) {
+function _installMixin(mixin, Type, Base, existingProperties) {
 
     if (mixin.initType) {
-        mixin.initType(Derived);
+        mixin.initType(Type);
     }
 
     var key;
@@ -764,14 +684,14 @@ function _installMixin(mixin, Derived, Base, properties) {
             return;
         }
 
-        Derived.Properties.prototype[key] = true;
+        Type.Properties.prototype[key] = true;
     }
 
     var mixinPrototype = mixin.prototype;
     if (mixinPrototype) {
         for (key in mixinPrototype) {
             if (mixinPrototype.hasOwnProperty(key)) {
-                Derived.prototype[key] = mixinPrototype[key];
+                Type.prototype[key] = mixinPrototype[key];
             }
         }
     }
@@ -779,48 +699,60 @@ function _installMixin(mixin, Derived, Base, properties) {
     var mixinProperties;
     if ((mixinProperties = mixin.properties)) {
         for (key in mixinProperties) {
-            if (mixinProperties.hasOwnProperty(key) && !properties.hasOwnProperty(key)) {
-                properties[key] = mixinProperties[key];
+            if (mixinProperties.hasOwnProperty(key) && (existingProperties[key] === undefined)) {
+                existingProperties[key] = mixinProperties[key];
             }
         }
     }
 
-    _addToArray(Derived, '_init', mixin.init);
-    _addToArray(Derived, '_onSet', mixin.onSet);
+    _addToArray(Type, '_init', mixin.init);
+    _addToArray(Type, '_onSet', mixin.onSet);
 }
 
-function _checkInstance(data, wrap, Derived) {
-    var model = data.$model || data;
-    return wrap && Derived.isInstance(model) ? model : NOT_INSTANCE;
+function _checkInstance(obj, wrap, Type) {
+    return wrap && Type.isInstance(obj) ? obj : NOT_INSTANCE;
 }
 
 function _extend(Base, config, resolver) {
-    config = config || {};
+    config = config || _emptyObject();
 
     var init = config.init;
     var wrap = config.wrap;
-    var unwrap = config.unwrap;
     var coerce = config.coerce;
     var properties = config.properties;
     var prototype = config.prototype;
     var mixins = config.mixins;
 
-    function Derived(data, options) {
-        Derived.$super.call(this, data, options);
 
-        var initArr = Derived._init;
+    var Data;
+
+    function Type(rawData, options) {
+        if (Data) {
+            if (this.data === undefined) {
+                this.data = new Data(this, rawData, options);
+            }
+        } else {
+            this.data = rawData;
+        }
+
+        // Call the super constructor
+        Type.$super.call(this, rawData, options);
+
+        // Call initialization functions provided by mixins (if any)
+        var initArr = Type._init;
         if (initArr) {
             for (var i = 0; i < initArr.length; i++) {
-                initArr[i].call(this, data, options);
+                initArr[i].call(this, rawData, options);
             }
         }
 
+        // Call the user-provided "constructor" function
         if (init) {
-            init.call(this, data, options);
+            init.call(this, rawData, options);
         }
     }
 
-    // Selectively copy properties from Model to Derived
+    // Selectively copy properties from Model to Type
     [
         'getProperty',
         'getProperties',
@@ -834,39 +766,39 @@ function _extend(Base, config, resolver) {
         'isInstance',
         'isPrimitive'
     ].forEach(function(property) {
-        Derived[property] = Model[property];
+        Type[property] = Model[property];
     });
 
-    Derived.convertArray = _convertArray;
+    Type.convertArray = _convertArray;
 
-    // Now copy any properties from config to Derived that might
+    // Now copy any properties from config to Type that might
     // override any of the special prpoerties that were copied above
-    _copyNonSpecialPropertiesToType(config, Derived);
+    _copyNonSpecialPropertiesToType(config, Type);
 
     if (Base.additionalProperties) {
         // the additionalProperties flag should trickle down if true
-        Derived.additionalProperties = true;
+        Type.additionalProperties = true;
     }
 
-    _concatToArray(Derived, '_onSet', Base._onSet);
+    _concatToArray(Type, '_onSet', Base._onSet);
 
     // Store reference to Model
-    Derived.Model = Model;
+    Type.Model = Model;
 
     if (coerce) {
         // Create a proxy coerce function that guarantees that options
         // argument will be provided.
-        Derived.coerce = function(value, options) {
-            return coerce.call(Derived, value, _toOptions(options));
+        Type.coerce = function(value, options) {
+            return coerce.call(Type, value, _toOptions(options));
         };
     }
 
     // provide method to extend this model
-    Derived.extend = function(config) {
-        return _extend(Derived, config);
+    Type.extend = function(config) {
+        return _extend(Type, config);
     };
 
-    Derived.isWrapped = function() {
+    Type.isWrapped = function() {
         return (wrap !== false);
     };
 
@@ -878,19 +810,19 @@ function _extend(Base, config, resolver) {
 
         factory = function(data, options) {
             if (wrap && (arguments.length === 0)) {
-                return new Derived();
+                return new Type();
             }
 
             var instance;
 
             // see if the data is already an instance
-            if ((data != null) && (instance = _checkInstance(data, wrap, Derived)) !== NOT_INSTANCE) {
+            if ((data != null) && (instance = _checkInstance(data, wrap, Type)) !== NOT_INSTANCE) {
                 // we already have instance of correct type so return it
                 return instance;
             }
 
             if (coerce) {
-                data = coerce.call(Derived, data, (options = _toOptions(options)));
+                data = coerce.call(Type, data, (options = _toOptions(options)));
 
                 // If the coerce function returns null/undefined then not
                 // much more we can do so simply return that value
@@ -899,7 +831,7 @@ function _extend(Base, config, resolver) {
                 }
 
                 // Do we have the correct type after coercion?
-                if ((instance = _checkInstance(data, wrap, Derived)) !== NOT_INSTANCE) {
+                if ((instance = _checkInstance(data, wrap, Type)) !== NOT_INSTANCE) {
                     // coercion return instance of correct type so return it
                     return instance;
                 }
@@ -912,60 +844,53 @@ function _extend(Base, config, resolver) {
                 return data;
             }
 
-            // We might have data associated with a Model instance of
-            // the wrong type so dissociate the data with the Model instance
-            data = Model.unwrap(data);
-            delete data.$model;
-
             if (Array.isArray(data)) {
-                return Derived.convertArray(data, options);
+                return Type.convertArray(data, options);
             }
 
-            // return existing model or create a new model
-            // NOTE: Model constructor will store $model in data
-            return new Derived(data, options);
+            // return new model instance
+            return new Type(data, options);
         };
     }
 
-    Derived.wrap = factory;
+    Type.wrap = factory;
 
-    if (!Derived.create) {
-        Derived.create = factory;
+    if (!Type.create) {
+        Type.create = factory;
     }
 
-    inherit(Derived, Base);
+    inherit(Type, Base);
 
-    var classPrototype = Derived.prototype;
-    classPrototype.Model = Derived;
-
-    if (unwrap) {
-        classPrototype.unwrap = unwrap;
-    }
+    var classPrototype = Type.prototype;
+    classPrototype.Model = Type;
 
     var propertyNames;
     if ((properties && (propertyNames = Object.keys(properties)).length > 0) || mixins) {
         // Use prototype chaining to create property map
-        Derived.Properties = function() {};
+        Type.Properties = function() {
+            // nothing to do here
+        };
 
         if (Base.Properties) {
-            inherit(Derived.Properties, Base.Properties);
+            inherit(Type.Properties, Base.Properties);
+        } else {
+            Type.Properties.prototype = {};
         }
-
 
         var installedMixinIds;
         if (mixins) {
-            installedMixinIds = {};
-            var mixinProperties = {};
+            installedMixinIds = _emptyObject();
+            var mixinProperties = _emptyObject();
             mixins.forEach(function(mixin) {
-                _installMixin(mixin, Derived, Base, mixinProperties);
+                _installMixin(mixin, Type, Base, mixinProperties);
             });
 
             var mixinPropertyNames = Object.keys(mixinProperties);
 
             if (mixinPropertyNames.length) {
                 if (properties) {
-                    // combine mixin properties with properties provided for Derived
-                    // but give precedence to the Derived properties.
+                    // combine mixin properties with properties provided for Type
+                    // but give precedence to the Type properties.
                     for (var i = 0; i < mixinPropertyNames.length; i++) {
                         var propertyName = mixinPropertyNames[i];
                         if (!properties.hasOwnProperty(propertyName)) {
@@ -982,9 +907,9 @@ function _extend(Base, config, resolver) {
         }
 
         if (properties) {
-            var propertiesPrototype = Derived.Properties.prototype;
+            var propertiesPrototype = Type.Properties.prototype;
             propertyNames.forEach(function(name) {
-                var property = _toProperty(name, properties[name], resolver, Derived);
+                var property = _toProperty(name, properties[name], resolver, Type);
                 var propertyName = property.getProperty();
 
                 // Put the properties in the prototype by name and property
@@ -1016,11 +941,100 @@ function _extend(Base, config, resolver) {
             });
         }
 
-        Derived.properties = new Derived.Properties();
+        Type.properties = new Type.Properties();
 
     } else {
-        Derived.Properties = Base.Properties;
-        Derived.properties = Base.properties || EMPTY_PROPERTIES;
+        Type.Properties = Base.Properties;
+        Type.properties = Base.properties || EMPTY_PROPERTIES;
+    }
+
+    if (Type.hasProperties()) {
+        var _allProperties = [];
+        Type.forEachProperty(function(property) {
+            _allProperties.push(property.getProperty());
+        });
+
+        // We define a constructor function for the "data" that this
+        // Model stores which will allow the JavaScript Engine to create
+        // "hidden classes" for the purpose of optimization.
+        Type.Data = Data = function(model, rawData, options) {
+            var properties = Type.properties;
+            var allProperties;
+            var len;
+            var key;
+            var i;
+
+            allProperties = _allProperties;
+            len = allProperties.length;
+
+            if (rawData == null) {
+                // No raw data so set every property value to undefined
+                // as part of our constructor
+
+                // We loop over all properties in a consistent order
+                // for the purpose of JavaScript engine optimization.
+                // See http://www.html5rocks.com/en/tutorials/speed/v8/
+                for (i = 0; i < len; i++) {
+                    key = allProperties[i];
+                    this[key] = undefined;
+                }
+            } else {
+                var errors;
+                if (options) {
+                    if (Array.isArray(options)) {
+                        // since options is an array we treat as the output array
+                        // for errors
+                        options = {
+                            errors: (errors = options)
+                        };
+                    } else {
+                        errors = options.errors;
+                    }
+                }
+
+
+                var modelData = model.data = _emptyObject();
+                var additionalData;
+
+                if (Type.additionalProperties) {
+                    additionalData = _emptyObject();
+                }
+
+                // use setters to make sure values get properly coerced
+                for (key in rawData) {
+                    if (rawData.hasOwnProperty(key)) {
+                        var property = properties[key];
+                        if (property) {
+                            _set(model, modelData, property, rawData[key], options);
+                        } else if (additionalData) {
+                            additionalData[key] = rawData[key];
+                        } else if (errors) {
+                            errors.push('Unrecognized property: ' + key);
+                        }
+                    }
+                }
+
+                // We loop over all properties in a consistent order
+                // for the purpose of JavaScript engine optimization.
+                // See http://www.html5rocks.com/en/tutorials/speed/v8/
+                for (i = 0; i < len; i++) {
+                    key = allProperties[i];
+                    this[key] = modelData[key];
+                }
+
+                // If there are additional properties then we add those
+                // after the known properties. These will propbably
+                // de-optimize this instance since the order might be
+                // inconsistent but not much we can do about that.
+                if (additionalData) {
+                    for (key in additionalData) {
+                        this[key] = additionalData[key];
+                    }
+                }
+            }
+        };
+
+        Data.prototype = null;
     }
 
     if (prototype) {
@@ -1029,7 +1043,7 @@ function _extend(Base, config, resolver) {
         });
     }
 
-    return Derived;
+    return Type;
 }
 
 Model.extend = function(config, resolver) {

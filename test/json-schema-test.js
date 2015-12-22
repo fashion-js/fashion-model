@@ -195,8 +195,7 @@ describe('fashion-model json-schema support', function() {
             });
         });
 
-        it(
-            'should handle converting model type to json schema without using composition',
+        it('should handle converting model type to json schema without using composition',
             function() {
 
                 var jsonSchema = require('../json-schema-draft4');

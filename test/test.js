@@ -164,8 +164,10 @@ describe('Model' , function() {
         person.setName('Jane Doe');
 
         // raw person should also reflect any changes
-        expect(rawPerson.name).to.equal('Jane Doe');
-        expect(rawPerson.dateOfBirth).to.deep.equal(new Date(1980, 1, 1));
+        expect(person.getName()).to.equal('Jane Doe');
+        expect(person.getName()).to.equal(person.data.name);
+        expect(person.getDateOfBirth()).to.deep.equal(new Date(1980, 1, 1));
+        expect(person.getDateOfBirth()).to.equal(person.data.dateOfBirth);
     });
 
     it('should allow custom property names', function() {
@@ -345,45 +347,6 @@ describe('Model' , function() {
         }));
     });
 
-    it('should not allow for native stringify', function() {
-        var Person = Model.extend({
-            properties: {
-                name: String
-            }
-        });
-
-        var person = new Person({
-            name: 'test'
-        });
-
-        expect(function() {
-            return JSON.stringify(person);
-        }).to.throw();
-    });
-
-    it('should allow efficient wrapping and unwrapping', function() {
-        var Person = Model.extend({
-            properties: {
-                name: String
-            }
-        });
-
-        var rawPerson = {
-            name: 'John'
-        };
-
-        expect(Person.hasProperties()).to.equal(true);
-
-        var person = Person.wrap(rawPerson);
-
-        // unwrap person to get the original raw object
-        expect(Model.unwrap(person)).to.equal(rawPerson);
-
-        // if you have the raw object then wrapping it will return
-        // the existing wrapper (and not create a new object)
-        expect(Person.wrap(rawPerson)).to.equal(person);
-    });
-
     describe('Enum', function() {
         it('should allow enum type models', function() {
             expect(Gender.wrap('F').isF()).to.equal(true);
@@ -480,11 +443,16 @@ describe('Model' , function() {
                 }
             });
 
-
             var person = new Person();
             person.setFavoriteColor(Color.BLUE);
 
-            expect(person.unwrap().favoriteColor).to.equal('blue');
+            expect(person.getFavoriteColor().clean()).to.equal('blue');
+
+            expect(person.unwrap().favoriteColor).to.equal(Color.BLUE);
+
+            expect(person.unwrap()).to.deep.equal({
+                favoriteColor: Color.BLUE
+            });
         });
 
         it('should allow setting an enum object value', function() {
@@ -518,7 +486,7 @@ describe('Model' , function() {
             var person = new Person();
             person.setFavoriteColor(Color.BLUE);
 
-            expect(person.unwrap().favoriteColor.hex).to.equal('#0000FF');
+            expect(person.unwrap().favoriteColor.value().hex).to.equal('#0000FF');
         });
 
         it('should allow short-hand syntax for defining enum', function() {
@@ -1021,6 +989,7 @@ describe('Model' , function() {
         expect(errors.length).to.equal(0);
 
         expect(something.clean()).to.deep.equal({
+            moreStuff: undefined,
             stuff: [
                 [{id: 1}, {id: 2}],
                 [{id: 3}, {id: 4}]
@@ -1319,6 +1288,8 @@ describe('Model' , function() {
                         expect(name).to.equal('name');
                         expect(value).to.equal('TEST');
                         expect(property.getName()).to.equal('name');
+
+                        // our setter will convert to lower case
                         this.data[name] = value.toLowerCase();
                     }
                 }
@@ -1329,9 +1300,13 @@ describe('Model' , function() {
 
         test.setName('TEST');
 
+        // make sure setter converted to lower case...
+        expect(test.data.name).to.equal('test');
+
         expect(setCallCount).to.equal(1);
         expect(getCallCount).to.equal(0);
 
+        //
         expect(test.getName()).to.equal('test!!!');
 
         expect(setCallCount).to.equal(1);
@@ -1456,9 +1431,9 @@ describe('Model' , function() {
         var colors = ['red', 'GREEN', 'blue'];
         var newColors = Color.convertArray(colors);
 
-        // values in original array are coerced
+        // values in original array are untouched
         expect(colors[0]).to.equal('red');
-        expect(colors[1]).to.equal('green');
+        expect(colors[1]).to.equal('GREEN');
         expect(colors[2]).to.equal('blue');
 
         // values in new array are model instances
@@ -1471,11 +1446,15 @@ describe('Model' , function() {
         var values = [0, 1];
         var newValues = BooleanType.convertArray(values);
 
-        expect(values === newValues);
+        expect(values !== newValues);
+
+        // old array is not modified
+        expect(values[0]).to.equal(0);
+        expect(values[1]).to.equal(1);
 
         // values in original array are coerced
-        expect(values[0]).to.equal(false);
-        expect(values[1]).to.equal(true);
+        expect(newValues[0]).to.equal(false);
+        expect(newValues[1]).to.equal(true);
     });
 
     it('should handle converting Object type array values', function() {
@@ -1509,7 +1488,7 @@ describe('Model' , function() {
         expect(FunctionType.wrap(undefined)).to.equal(undefined);
     });
 
-    it('should handle wrapping/unwrapping array properties', function() {
+    it('should handle wrapping property value whose type is Array', function() {
         var Color = Enum.create({
             values: ['red', 'green', 'blue', 'yellow']
         });
@@ -1526,17 +1505,15 @@ describe('Model' , function() {
             colors: colors
         });
 
-        expect(colors.$model).to.equal(palette.getColors());
-
-        // values in original array are coerced
+        // values in original array are not modified
         expect(colors[0]).to.equal('red');
-        expect(colors[1]).to.equal('green');
+        expect(colors[1]).to.equal('GREEN');
         expect(colors[2]).to.equal('blue');
 
-        expect(palette.data.colors.$model.Model).to.equal(ArrayType);
-        expect(palette.data.colors[0]).to.equal('red');
-        expect(palette.data.colors[1]).to.equal('green');
-        expect(palette.data.colors[2]).to.equal('blue');
+
+        expect(palette.data.colors[0]).to.equal(Color.RED);
+        expect(palette.data.colors[1]).to.equal(Color.GREEN);
+        expect(palette.data.colors[2]).to.equal(Color.BLUE);
 
         expect(palette.getColors()).to.equal(palette.getColors());
 
@@ -1657,6 +1634,8 @@ describe('Model' , function() {
         });
 
         expect(collection.getItems().length).to.equal(2);
+        expect(collection.getItems()[0]).to.equal('abc');
+        expect(collection.getItems()[1]).to.equal('def');
 
         expect(collection.stringify()).to.equal('{\"items\":[\"abc\",\"def\"]}');
 
@@ -2018,8 +1997,7 @@ describe('Model' , function() {
 
             expect(MessageType.abc.clean()).to.equal('abc');
             expect(Model.clean(MessageType.abc)).to.equal('abc');
-            expect(message.data.type.$model).to.equal(MessageType.abc);
-            expect(message.data.type).to.equal(MessageType.abc.data);
+            expect(message.data.type).to.equal(MessageType.abc);
 
             expect(Model.clean(message)).to.deep.equal({
                 type: 'abc'
@@ -2201,7 +2179,7 @@ describe('Model' , function() {
             expect(cleaned.def.toString()).to.equal('def');
         });
 
-        it('should always remove $model properties within Object property', function() {
+        it('should clean Object property', function() {
             var Something = Model.extend({
                 properties: {
                     data: Object
@@ -2247,7 +2225,7 @@ describe('Model' , function() {
             });
         });
 
-        it('should clean $model from object even if there is property with Object type whose value is Model instance', function() {
+        it('should clean object even if there is property with Object type whose value is Model instance', function() {
             var Something = Model.extend({
                 properties: {
                     config: Object
@@ -2318,7 +2296,7 @@ describe('Model' , function() {
             });
         });
 
-        it('should clean $model from object that has property with type that extends Array', function() {
+        it('should clean object that has property with type that extends Array', function() {
             var Filters = ArrayType.extend({
                 wrap: false,
                 coerce: function(value, options) {

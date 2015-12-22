@@ -362,23 +362,12 @@ assert(personObj.displayName === undefined);
 
 ### Wrap/Unwrap
 
-`Model.unwrap(obj)` can be safely called with any object. If the
-given `obj` is a model then it will be unwrapped via `obj.unwrap()`.
-If the given `obj` is not a model then the `obj` will simply be
-returned.
+`Model.unwrap(obj)` can used to return the underlying data for a `Model`
+instance. If the given `obj` is not a `Model` instance then `obj` is returned.
 
 `SomeType.wrap(obj)` can be used to ensure that the given obj is
 wrapped as `SomeType`. If `obj` is already `SomeType` then `obj`
 will simply be returned.
-
-Note, an unwrapped object that has been previously wrapped will
-have a `$model` property inside of it that stores a cached value
-of the actual model instance. This allows for very efficient
-wrapping and unwrapping without creating a lot of new objects
-in the heap. If you want to ensure that your model is not
-"polluted" with this metadata then use `obj.clean()` or
-`Model.clean(obj)` which will create a cloned version of `obj`
-without any extra metadata or non-persisted properties.
 
 **Examples:**
 ```javascript
