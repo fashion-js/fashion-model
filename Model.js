@@ -216,6 +216,10 @@ Model.clean = function(obj, options) {
 };
 
 Model.unwrap = function(obj) {
+    if (obj == null) {
+        return obj;
+    }
+
     if (obj.Model) {
         return obj.data || obj;
     } else {
