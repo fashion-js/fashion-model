@@ -175,7 +175,7 @@ describe('Model' , function() {
             properties: {
                 id: {
                     type: String,
-                    property: '_id'
+                    key: '_id'
                 }
             }
         });
@@ -300,8 +300,8 @@ describe('Model' , function() {
             properties: {
                 permissions: {
                     type: [String],
-                    set: function(name, value) {
-                        this.data[name] = value;
+                    set: function(value, property) {
+                        this.data[property] = value;
                     }
                 }
             }
@@ -1276,21 +1276,21 @@ describe('Model' , function() {
             properties: {
                 name: {
                     type: String,
-                    get: function(name, property) {
+                    get: function(property) {
                         getCallCount++;
-                        expect(name).to.equal('name');
+                        expect(property.getKey()).to.equal('name');
                         expect(property.getName()).to.equal('name');
-                        return this.data[name] + '!!!';
+                        return this.data[property] + '!!!';
                     },
 
-                    set: function(name, value, property) {
+                    set: function(value, property) {
                         setCallCount++;
-                        expect(name).to.equal('name');
+                        expect(property.getKey()).to.equal('name');
                         expect(value).to.equal('TEST');
                         expect(property.getName()).to.equal('name');
 
                         // our setter will convert to lower case
-                        this.data[name] = value.toLowerCase();
+                        this.data[property] = value.toLowerCase();
                     }
                 }
             }
@@ -1866,7 +1866,7 @@ describe('Model' , function() {
                 properties: {
                     id: {
                         type: String,
-                        property: '_id'
+                        key: '_id'
                     }
                 }
             });

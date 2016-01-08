@@ -120,7 +120,7 @@ exports.fromModel = function(Type, options) {
         Type.forEachProperty({
             inherited: !useAllOf
         }, function(declaredProperty) {
-            var key = declaredProperty.getProperty();
+            var key = declaredProperty.getKey();
             if (!IGNORED_PROPERTIES[key] && !options.isIgnoredProperty(key, declaredProperty)) {
                 var jsonSchemaProperty = properties[key] = {};
 

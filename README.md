@@ -304,7 +304,7 @@ var Person = Entity.extend({
         lastName: String,
         displayName: {
             type: String
-            get: function(name, property) {
+            get: function(property) {
                 return this.getFirstName() + ' ' + this.getLastName();
             }
         }
@@ -329,15 +329,15 @@ var Person = Entity.extend({
     properties: {
         firstName: {
             type: String,
-            set: function(name, value, property) {
-                this.data[name] = value;
+            set: function(value, property) {
+                this.data[property.getKey()] = value;
                 _updateDisplayName(this);
             }
         },
         lastName: {
             type: String,
-            set: function(name, value, property) {
-                this.data[name] = value;
+            set: function(value, property) {
+                this.data[property.getKey()] = value;
                 _updateDisplayName(this);
             }
         },
@@ -545,7 +545,7 @@ var Entity = Model.extend({
         // MongoDB data storage expects a document to store its
         // identifier in the "_id" property but we still want to
         // access it via "getId" and "setId" (and not "get_id" and "set_id")
-        property: '_id'
+        key: '_id'
     }
 })
 ```

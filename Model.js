@@ -20,12 +20,12 @@ function _forProperty(property, options, work) {
     return options;
 }
 
-function _notifySet(model, propertyName, oldValue, newValue, property) {
+function _notifySet(model, oldValue, newValue, property) {
     var Type = model.constructor;
     if (Type._onSet) {
         var event = {
             model: model,
-            propertyName: propertyName,
+            propertyName: property.getName(),
             oldValue: oldValue,
             newValue: newValue,
             property: property
@@ -57,16 +57,16 @@ function _set(model, data, property, value, options) {
         });
     }
 
-    var propertyName = property.getProperty();
-    var oldValue = data[propertyName];
+    var propertyKey = property.getKey();
+    var oldValue = data[propertyKey];
 
     var setter = property.getSetter();
     if (setter) {
         // setter will do all of the work
-        setter.call(model, propertyName, value, property);
+        setter.call(model, value, property);
 
         // get the new value
-        value = data[propertyName];
+        value = data[propertyKey];
     }
 
     if (wrapped) {
@@ -78,23 +78,23 @@ function _set(model, data, property, value, options) {
     }
 
     if (oldValue !== value) {
-        data[propertyName] = value;
-        _notifySet(model, propertyName, oldValue, value, property);
+        data[propertyKey] = value;
+        _notifySet(model, oldValue, value, property);
     }
 
     return value;
 }
 
 function _generateGetter(property) {
-    var propertyName = property.getProperty();
+    var propertyKey = property.getKey();
     var getter = property.getGetter();
     if (getter) {
         return function(options) {
-            return getter.call(this, propertyName, property);
+            return getter.call(this, property);
         };
     } else {
         return function(options) {
-            return this.data[propertyName];
+            return this.data[propertyKey];
         };
     }
 }
@@ -108,10 +108,10 @@ function _generateSetter(property) {
 // This function will be used to make sure an array value
 // exists for the given property
 function _ensureArray(model, property) {
-    var propertyName = property.getProperty();
-    var array = model.data[propertyName];
+    var propertyKey = property.getKey();
+    var array = model.data[propertyKey];
     if (!array) {
-        model.data[propertyName] = array = [];
+        model.data[propertyKey] = array = [];
         array.Model = ArrayType;
     }
 
@@ -477,8 +477,8 @@ Property_proto.getName = function() {
     return this.name;
 };
 
-Property_proto.getProperty = function() {
-    return this.property;
+Property_proto.getKey = Property_proto.toString = function() {
+    return this.key;
 };
 
 Property_proto.getType = function() {
@@ -619,7 +619,7 @@ function _parseTypeConfig(propertyName, propertyConfig, resolver, Type) {
 function _toProperty(name, propertyConfig, resolver, Type) {
     propertyConfig = _parseTypeConfig(name, propertyConfig, resolver, Type);
     propertyConfig.name = name;
-    propertyConfig.property = propertyConfig.property || name;
+    propertyConfig.key = propertyConfig.key || name;
 
     return new Property(propertyConfig);
 }
@@ -913,18 +913,18 @@ function _extend(Base, config, resolver) {
 
         if (properties) {
             var propertiesPrototype = Type.Properties.prototype;
-            propertyNames.forEach(function(name) {
-                var property = _toProperty(name, properties[name], resolver, Type);
-                var propertyName = property.getProperty();
+            propertyNames.forEach(function(propertyName) {
+                var property = _toProperty(propertyName, properties[propertyName], resolver, Type);
+                var propertyKey = property.getKey();
 
                 // Put the properties in the prototype by name and property
-                propertiesPrototype[name] = property;
-                if (name !== propertyName) {
-                    propertiesPrototype[propertyName] = property;
+                propertiesPrototype[propertyName] = property;
+                if (propertyName !== propertyKey) {
+                    propertiesPrototype[propertyKey] = property;
                 }
 
                 var funcName;
-                var funcSuffix = _initialUpperCase(name);
+                var funcSuffix = _initialUpperCase(propertyName);
 
                 // generate getter
                 if (property.getGetter() !== null) {
@@ -956,7 +956,7 @@ function _extend(Base, config, resolver) {
     if (Type.hasProperties()) {
         var _allProperties = [];
         Type.forEachProperty(function(property) {
-            _allProperties.push(property.getProperty());
+            _allProperties.push(property.getKey());
         });
 
         // We define a constructor function for the "data" that this

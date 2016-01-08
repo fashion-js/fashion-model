@@ -204,7 +204,7 @@ describe('fashion-model json-schema support', function() {
                     properties: {
                         result: {
                             type: Object,
-                            property: 'res'
+                            key: 'res'
                         }
                     }
                 });
@@ -224,7 +224,7 @@ describe('fashion-model json-schema support', function() {
                 var properties = {};
 
                 PaginationResponse.forEachProperty(function(property) {
-                    properties[property.getProperty()] = true;
+                    properties[property.getKey()] = true;
                 });
 
                 expect(properties).to.deep.equal({
