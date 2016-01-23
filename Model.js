@@ -202,11 +202,12 @@ Model.clean = function(obj, options) {
         // is already clean.
         if ((obj.constructor !== Date) && (typeof obj === 'object')) {
             var clean = {};
-            for (var key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    var value = obj[key];
-                    clean[key] = Model.clean(value, options);
-                }
+            var keys = Object.keys(obj);
+            var len = keys.length;
+            for (var i = 0; i < len; i++) {
+                var key = keys[i];
+                var value = obj[key];
+                clean[key] = Model.clean(value, options);
             }
             return clean;
         } else {
@@ -347,43 +348,44 @@ Model_proto.clean = function(options) {
 
     if (Type.hasProperties()) {
         var clone = {};
-        for (var key in data) {
-            if (data.hasOwnProperty(key)) {
-                var property = options.property = properties[key];
-                var value = data[key];
-                if (property && (property.isPersisted())) {
-                    // no need to clean null/undefined values
-                    if (value != null) {
-                        var propertyType = property.type;
-                        var clean = propertyType.clean;
-                        var oldProperty = options.property;
-                        options.property = property;
+        var keys = Object.keys(data);
+        var len = keys.length;
+        for (var i = 0; i < len; i++) {
+            var key = keys[i];
+            var property = options.property = properties[key];
+            var value = data[key];
+            if (property && (property.isPersisted())) {
+                // no need to clean null/undefined values
+                if (value != null) {
+                    var propertyType = property.type;
+                    var clean = propertyType.clean;
+                    var oldProperty = options.property;
+                    options.property = property;
 
-                        if (clean) {
-                            // call the clean function provided by model
-                            value = propertyType.clean(value, options);
-                        } else if (value.Model || propertyType.isWrapped()) {
-                            // value is a Model instance or it is something
-                            // that could be wrapped.
-                            // Use the default clean function...
-                            value = Model.clean(value, options);
-                        }
-
-                        // restore the old property
-                        options.property = oldProperty;
+                    if (clean) {
+                        // call the clean function provided by model
+                        value = propertyType.clean(value, options);
+                    } else if (value.Model || propertyType.isWrapped()) {
+                        // value is a Model instance or it is something
+                        // that could be wrapped.
+                        // Use the default clean function...
+                        value = Model.clean(value, options);
                     }
 
-                    // put the cleaned value into the clone
-                    clone[key] = value;
-                } else if (Type.additionalProperties) {
-                    if (value.Model) {
-                        value = value.clean(options);
-                    }
-                    // simply copy the additional property
-                    clone[key] = value;
-                } else if (options.errors) {
-                    options.errors.push('Unrecognized property: ' + key);
+                    // restore the old property
+                    options.property = oldProperty;
                 }
+
+                // put the cleaned value into the clone
+                clone[key] = value;
+            } else if (Type.additionalProperties) {
+                if (value.Model) {
+                    value = value.clean(options);
+                }
+                // simply copy the additional property
+                clone[key] = value;
+            } else if (options.errors) {
+                options.errors.push('Unrecognized property: ' + key);
             }
         }
 
