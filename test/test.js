@@ -1219,6 +1219,44 @@ describe('Model' , function() {
 
             expect(person.getAddressable()).to.equal(true);
         });
+
+        it('should support mixins in base class and in derived class', function() {
+            var mixin1 = {
+                id: 'mixin1',
+
+                prototype: {
+                    hasMixin1: function() {
+                        return true;
+                    }
+                }
+            };
+
+            var mixin2 = {
+                id: 'mixin2',
+
+                prototype: {
+                    hasMixin2: function() {
+                        return true;
+                    }
+                }
+            };
+
+            var BaseSimpleItem = Model.extend({
+                mixins: [mixin1]
+            });
+
+            var DerivedSimpleItem = BaseSimpleItem.extend({
+                mixins: [mixin2]
+            });
+
+            var baseSimpleItem = new BaseSimpleItem();
+            expect(baseSimpleItem.hasMixin1).to.exist;
+            expect(baseSimpleItem.hasMixin2).to.not.exist;
+
+            var derivedSimpleItem = new DerivedSimpleItem();
+            expect(derivedSimpleItem.hasMixin1).to.exist;
+            expect(derivedSimpleItem.hasMixin2).to.exist;
+        });
     });
 
 
