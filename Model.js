@@ -828,6 +828,8 @@ function _extend(Base, config, resolver) {
                 return instance;
             }
 
+            data = Model.unwrap(data);
+
             if (coerce) {
                 data = coerce.call(Type, data, (options = _toOptions(options)));
 

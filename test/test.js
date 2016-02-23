@@ -247,6 +247,43 @@ describe('Model' , function() {
 
             expect(file.getVisibility()).to.equal(Visibility.private);
         });
+
+        it('should handle converting model from one type to another', function() {
+            var Blah = Model.extend({
+                properties: {
+                    abc: String
+                }
+            });
+
+            var IncomingMessage = Model.extend({
+                properties: {
+                    id: String,
+                    incomingData: Blah
+                }
+            });
+
+            var OutgoingMessage = Model.extend({
+                properties: {
+                    id: String,
+                    outgoingData: Blah
+                }
+            });
+
+            var incomingMessage = new IncomingMessage({
+                id: 'abc',
+                incomingData: {
+                    abc: 'testing'
+                }
+            });
+
+            var outgoingMessage = OutgoingMessage.wrap(incomingMessage);
+
+
+            expect(incomingMessage.getId()).to.equal('abc');
+            expect(incomingMessage.getIncomingData().getAbc()).to.equal('testing');
+            expect(outgoingMessage.getId()).to.equal('abc');
+            expect(outgoingMessage.data.incomingData).to.not.exist;
+        });
     });
 
     it('should allow stringify', function() {
@@ -2335,6 +2372,13 @@ describe('Model' , function() {
         });
 
         it('should clean object that has property with type that extends Array', function() {
+            var Filter = Model.extend({
+                properties: {
+                    property: String,
+                    value: Object
+                }
+            });
+
             var Filters = ArrayType.extend({
                 wrap: false,
                 coerce: function(value, options) {
@@ -2357,13 +2401,6 @@ describe('Model' , function() {
                     }
 
                     return ArrayType.coerce(value, options);
-                }
-            });
-
-            var Filter = Model.extend({
-                properties: {
-                    property: String,
-                    value: Object
                 }
             });
 
