@@ -45,6 +45,7 @@ Enum.create = function(config) {
     }
 
     var origCoerce = config.coerce;
+    var Type;
 
     config.coerce = function(value, options) {
         if (origCoerce) {
@@ -69,7 +70,7 @@ Enum.create = function(config) {
         return enumValue;
     };
 
-    var Type = Enum.extend(config);
+    Type = Enum.extend(config);
 
     if (config.autoUpperCase) {
         normalize = NORMALIZE_UPPER_CASE;
