@@ -206,8 +206,10 @@ Model.clean = function(obj, options) {
             var len = keys.length;
             for (var i = 0; i < len; i++) {
                 var key = keys[i];
-                var value = obj[key];
-                clean[key] = Model.clean(value, options);
+                var value = Model.clean(obj[key], options);
+                if (value !== undefined) {
+                    clean[key] = value;
+                }
             }
             return clean;
         } else {
@@ -356,7 +358,11 @@ Model_proto.clean = function(options) {
             var value = data[key];
             if (property && (property.isPersisted())) {
                 // no need to clean null/undefined values
-                if (value != null) {
+                if (value == null) {
+                    if (value !== undefined) {
+                        clone[key] = value;
+                    }
+                } else {
                     var propertyType = property.type;
                     var clean = propertyType.clean;
                     var oldProperty = options.property;
@@ -374,16 +380,20 @@ Model_proto.clean = function(options) {
 
                     // restore the old property
                     options.property = oldProperty;
-                }
 
-                // put the cleaned value into the clone
-                clone[key] = value;
+                    if (value !== undefined) {
+                        // put the cleaned value into the clone
+                        clone[key] = value;
+                    }
+                }
             } else if (Type.additionalProperties) {
                 if (value.Model) {
                     value = value.clean(options);
                 }
                 // simply copy the additional property
-                clone[key] = value;
+                if (value !== undefined) {
+                    clone[key] = value;
+                }
             } else if (options.errors) {
                 options.errors.push('Unrecognized property: ' + key);
             }
@@ -828,8 +838,6 @@ function _extend(Base, config, resolver) {
                 return instance;
             }
 
-            data = Model.unwrap(data);
-
             if (coerce) {
                 data = coerce.call(Type, data, (options = _toOptions(options)));
 
@@ -847,6 +855,8 @@ function _extend(Base, config, resolver) {
             } else if (data == null) {
                 return data;
             }
+
+            data = Model.unwrap(data);
 
             if (!wrap) {
                 // if we're not wrapping or data is null then simply return the raw value
