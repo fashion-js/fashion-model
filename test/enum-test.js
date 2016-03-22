@@ -36,6 +36,9 @@ describe('Enum', function() {
         expect(Gender.F.isM()).to.equal(false);
         expect(Gender.F.isF()).to.equal(true);
 
+        expect(Gender.M.ordinal()).to.equal(0);
+        expect(Gender.F.ordinal()).to.equal(1);
+
         var person1 = new Person({
             gender: 'F'
         });
@@ -49,6 +52,8 @@ describe('Enum', function() {
 
         expect(person2.getGender().isM()).to.equal(true);
         expect(person2.getGender().isF()).to.equal(false);
+
+        expect(person2.getGender().ordinal()).to.equal(0);
     });
 
     it('should allow enum object values', function() {
@@ -93,6 +98,9 @@ describe('Enum', function() {
 
         expect(Color.blue.value().hex).to.equal('#0000FF');
         expect(Color.blue.value().name).to.equal('Blue');
+
+        expect(Color.red.ordinal()).to.equal(0);
+        expect(Color.green.ordinal()).to.equal(1);
     });
 
     it('should allow unwrapping an enum', function() {

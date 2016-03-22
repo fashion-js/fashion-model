@@ -606,6 +606,9 @@ assert(Color.RED.value() === 'red');
 
 // Clean the enum value which will return its name
 assert(Color.RED.clean() === 'red');
+
+// Get the ordinal value associated with index of the value.
+assert(Color.RED.ordinal() === 0);
 ```
 
 **Object enum values:**
@@ -636,6 +639,7 @@ assert(Color.red.value().name === 'Red');
 assert(Color.RED.name() === 'red');
 assert(Color.RED.value().hex === '#FF0000');
 assert(Color.RED.value().name === 'Red');
+assert(Color.RED.ordinal() === 0);
 ```
 
 **Loop over values:**

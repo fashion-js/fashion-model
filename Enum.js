@@ -97,7 +97,7 @@ Enum.create = function(config) {
     Type.names = [];
     Type.values = [];
 
-    function createEnumValue(name, value) {
+    function createEnumValue(name, value, ordinal) {
         Type.names.push(name);
 
         var enumValue = new Type(value);
@@ -109,6 +109,10 @@ Enum.create = function(config) {
 
         Type[name] = Type[Enum.toConstantName(name)] = enumValue;
 
+        Type[name].ordinal = function() {
+            return ordinal;
+        };
+
         Type.values.push(enumValue);
 
         return enumValue;
@@ -116,16 +120,13 @@ Enum.create = function(config) {
 
     if (Array.isArray(values)) {
         values.forEach(function(value, index) {
-            createEnumValue(value, value);
+            createEnumValue(value, value, index);
         });
     } else {
-        for (var name in values) {
-            if (values.hasOwnProperty(name)) {
-                createEnumValue(name, values[name]);
-            }
-        }
+        Object.keys(values).forEach(function(name, index) {
+            createEnumValue(name, values[name], index);
+        });
     }
-
 
     Type.preventConstruction();
 
