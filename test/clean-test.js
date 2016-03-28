@@ -724,4 +724,46 @@ describe('Cleaning', function() {
             }
         });
     });
+
+    it('should allow enum values to override clean in prototype', function() {
+        var Gender = Enum.create({
+            values: {
+                MALE: {
+                    code: 'M'
+                },
+                FEMALE: {
+                    code: 'F'
+                }
+            },
+
+            prototype: {
+                clean: function() {
+                    return this.data.code;
+                }
+            }
+        });
+
+        expect(Model.clean(Gender.MALE)).to.equal('M');
+        expect(Model.clean(Gender.FEMALE)).to.equal('F');
+    });
+
+    it('should allow enum values to override clean in static method', function() {
+        var Gender = Enum.create({
+            values: {
+                MALE: {
+                    code: 'M'
+                },
+                FEMALE: {
+                    code: 'F'
+                }
+            },
+
+            clean: function(value) {
+                return value.data.code;
+            }
+        });
+
+        expect(Model.clean(Gender.MALE)).to.equal('M');
+        expect(Model.clean(Gender.FEMALE)).to.equal('F');
+    });
 });

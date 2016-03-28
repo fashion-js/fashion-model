@@ -3,7 +3,27 @@ var constantRenameRegex = /([a-z])([A-Z])|([^\w])/g;
 var toCamelCaseRegex = /([a-z])[_\-]([a-z])/g;
 
 var Model = require('./Model');
-var Enum = module.exports = Model.extend({});
+
+function Enum_prototype_name() {
+    return this._name;
+}
+
+var Enum = module.exports = Model.extend({
+    prototype: {
+        value: function() {
+            return this.data;
+        },
+
+        name: Enum_prototype_name,
+
+        toString: Enum_prototype_name,
+
+        clean: function(options) {
+            var Type = this.Model;
+            return Type.clean ? Type.clean(this, options) : this._name;
+        }
+    }
+});
 
 Enum.toConstantName = function(str) {
     return str.replace(constantRenameRegex, function(match, lowerCh, upperCh, specialCh) {
@@ -79,18 +99,6 @@ Enum.create = function(config) {
     }
 
     var proto = Type.prototype;
-
-    proto.value = function() {
-        return this.data;
-    };
-
-    proto.name = proto.toString = function() {
-        return this._name;
-    };
-
-    proto.clean = function() {
-        return this._name;
-    };
 
     var values = config.values;
 
