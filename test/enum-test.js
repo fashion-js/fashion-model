@@ -167,4 +167,35 @@ describe('Enum', function() {
         expect(Color.green.isGreen()).to.equal(true);
         expect(Color.blue.isBlue()).to.equal(true);
     });
+
+    it('should provide helper isX methods', function() {
+        var ContentType = Enum.create({
+            values: [
+                'application/json',
+                'text/html',
+                'something!*&special'
+            ]
+        });
+
+        expect(ContentType['text/html'].isTextHtml()).to.equal(true);
+        expect(ContentType['application/json'].isApplicationJson()).to.equal(true);
+        expect(ContentType['something!*&special'].isSomethingSpecial()).to.equal(true);
+
+        expect(ContentType['text/html'].isApplicationJson()).to.equal(false);
+        expect(ContentType['application/json'].isTextHtml()).to.equal(false);
+    });
+
+    it('should handle special characters', function() {
+        var ContentType = Enum.create({
+            values: [
+                'application/json',
+                'text/html',
+                'something!*&special'
+            ]
+        });
+
+        expect(ContentType['text/html']).to.equal(ContentType.TEXT_HTML);
+        expect(ContentType['application/json']).to.equal(ContentType.APPLICATION_JSON);
+        expect(ContentType['something!*&special']).to.equal(ContentType.SOMETHING___SPECIAL);
+    });
 });

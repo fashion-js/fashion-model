@@ -1,6 +1,6 @@
 var constantRenameRegex = /([a-z])([A-Z])|([^\w])/g;
 
-var toCamelCaseRegex = /([a-z])[_\-]([a-z])/g;
+var toCamelCaseRegex = /([a-z])[^a-z]+([a-z])/g;
 
 var Model = require('./Model');
 
