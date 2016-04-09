@@ -204,4 +204,40 @@ describe('Mixins', function() {
         expect(derivedSimpleItem.hasMixin1).to.exist;
         expect(derivedSimpleItem.hasMixin2).to.exist;
     });
+
+    it('should allow mixins to add other mixins', function() {
+        var Cacheable = {
+            id: 'Cacheable',
+
+            prototype: {
+                isCacheable: function() {
+                    return true;
+                }
+            }
+        };
+
+        var Entity = {
+            id: 'Entity',
+
+            mixins: [
+                Cacheable
+            ],
+
+            prototype: {
+                isEntity: function() {
+                    return true;
+                }
+            }
+        };
+
+        var Person = Model.extend({
+            mixins: [
+                Entity
+            ]
+        });
+
+        var person = new Person();
+        expect(person.isEntity).to.exist;
+        expect(person.isCacheable).to.exist;
+    });
 });

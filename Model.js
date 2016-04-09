@@ -688,7 +688,6 @@ function _concatToArray(obj, propertyName, otherArr) {
 }
 
 function _installMixin(mixin, Type, Base, existingProperties) {
-
     if (mixin.initType) {
         mixin.initType(Type);
     }
@@ -696,7 +695,9 @@ function _installMixin(mixin, Type, Base, existingProperties) {
     var key;
     if (mixin.id) {
         key = '_mixin_' + mixin.id;
-        if (Base.properties && Base.properties[key]) {
+
+        if (Base.properties && Base.properties[key] ||
+            Type.Properties.prototype[key]) {
             // this mixin is already installed
             return;
         }
@@ -724,6 +725,13 @@ function _installMixin(mixin, Type, Base, existingProperties) {
 
     _addToArray(Type, '_init', mixin.init);
     _addToArray(Type, '_onSet', mixin.onSet);
+
+    var mixins;
+    if ((mixins = mixin.mixins)) {
+        mixins.forEach(function(mixin) {
+            _installMixin(mixin, Type, Base, existingProperties);
+        });
+    }
 }
 
 function _checkInstance(obj, wrap, Type) {
