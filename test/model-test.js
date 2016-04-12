@@ -122,6 +122,22 @@ describe('Model' , function() {
         expect(pong.getTimestamp().getTime()).to.equal(ping.getTimestamp().getTime());
     });
 
+    it('should parse dates without Z suffix', function() {
+        var dateStr = '2016-04-13T18:00:00';
+        var date = new Date(dateStr);
+
+        var Ping = Model.extend({
+            properties: {
+                timestamp: Date
+            }
+        });
+
+        var ping = new Ping();
+        ping.setTimestamp(dateStr);
+
+        expect(ping.getTimestamp().getTime()).to.equal(date.getTime());
+    });
+
     it('should provide setters', function() {
         var Person = Model.extend({
             properties: {
