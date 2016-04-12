@@ -103,6 +103,25 @@ describe('Model' , function() {
         expect(pong.getTimestamp().getTime()).to.equal(ping.getTimestamp().getTime());
     });
 
+    it('should serialize and deserialize date properly without Z suffix', function() {
+        var date = new Date('2016-04-13T18:00:00');
+
+        var Ping = Model.extend({
+            properties: {
+                timestamp: Date
+            }
+        });
+
+        var ping = new Ping({
+            timestamp: date
+        });
+
+        expect(ping.getTimestamp()).to.equal(date);
+
+        var pong = Ping.wrap(JSON.parse(JSON.stringify(ping.clean())));
+        expect(pong.getTimestamp().getTime()).to.equal(ping.getTimestamp().getTime());
+    });
+
     it('should provide setters', function() {
         var Person = Model.extend({
             properties: {

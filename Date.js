@@ -1,5 +1,5 @@
 var isoDateFormat =
-    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z$/;
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z?$/;
 
 module.exports = require('./Model').extend({
 	typeName: 'date',
