@@ -79,4 +79,38 @@ describe('init/constructor function', function() {
         expect(person2.getName()).to.equal('John');
         expect(person2.getAge()).to.equal(30);
     });
+
+    it('should call init method in super types starting from the base class', function() {
+        var Animal = Model.extend({
+            init: function() {
+                expect(this._isAnimal).to.not.exist;
+                expect(this._isDog).to.not.exist;
+                expect(this._isPoodle).to.not.exist;
+                this._isAnimal = true;
+            }
+        });
+
+        var Dog = Animal.extend({
+            init: function() {
+                expect(this._isAnimal).to.equal(true);
+                expect(this._isDog).to.not.exist;
+                expect(this._isPoodle).to.not.exist;
+                this._isDog = true;
+            }
+        });
+
+        var Poodle = Dog.extend({
+            init: function() {
+                expect(this._isAnimal).to.equal(true);
+                expect(this._isDog).to.equal(true);
+                expect(this._isPoodle).to.not.exist;
+                this._isPoodle = true;
+            }
+        });
+
+        var poodle = new Poodle();
+        expect(poodle._isAnimal).to.equal(true);
+        expect(poodle._isDog).to.equal(true);
+        expect(poodle._isPoodle).to.equal(true);
+    });
 });
