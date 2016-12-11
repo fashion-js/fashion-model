@@ -996,6 +996,23 @@ describe('Model' , function() {
         expect(FunctionType.wrap(undefined)).to.equal(undefined);
     });
 
+    it('should handle wrapping an object that was created with a null prototype', function() {
+        var Person = Model.extend({
+            properties: {
+                name: String
+            }
+        });
+
+        var data = Object.create(null);
+        data.name = 'Austin';
+
+        var errors = [];
+        var person = Person.wrap(data, errors);
+
+        expect(errors.length).to.equal(0);
+        expect(person.getName()).to.equal('Austin');
+    });
+
     it('should handle wrapping property value whose type is Array', function() {
         var Color = Enum.create({
             values: ['red', 'green', 'blue', 'yellow']
