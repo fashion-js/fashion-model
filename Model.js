@@ -1029,7 +1029,7 @@ function _extend(Base, config, resolver) {
 
                 // use setters to make sure values get properly coerced
                 for (key in rawData) {
-                    if (rawData.hasOwnProperty(key)) {
+                    if ((rawData.hasOwnProperty && rawData.hasOwnProperty(key)) || rawData[key] !== undefined) {
                         var property = properties[key];
                         if (property) {
                             _set(model, modelData, property, rawData[key], options);
