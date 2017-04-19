@@ -19,9 +19,17 @@
   },
   "main": "./Model.js",
   "devDependencies": {
-    "chai": "^3.4.0",
+    "chai": "^3.5.0",
+    "eslint": "^3.19.0",
+    "eslint-config-semistandard": "^8.0.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-mocha": "^4.9.0",
+    "eslint-plugin-node": "^4.2.2",
+    "eslint-plugin-promise": "^3.5.0",
+    "eslint-plugin-standard": "^3.0.1",
     "jayschema": "^0.3.1",
-    "mocha": "^2.3.3",
+    "mocha": "^3.2.0",
     "z-schema": "^3.9.4"
   },
   "dependencies": {

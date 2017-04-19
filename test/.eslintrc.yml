@@ -1,0 +1,8 @@
+extends: '../.eslintrc.yml'
+plugins:
+  - mocha
+globals:
+  describe: true
+  it: true
+  expect: true
+  before: true

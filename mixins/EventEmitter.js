@@ -9,8 +9,8 @@ mixin.prototype = EventEmitter.prototype;
 
 // init method is called when new instance is created and the scope
 // of the function is the new instance
-mixin.init = function() {
-    EventEmitter.call(this);
+mixin.init = function () {
+  EventEmitter.call(this);
 };
 
 /**
@@ -19,7 +19,7 @@ mixin.init = function() {
  * @param {Model} model a model instance whose property was changed
  * @param {Object} event data about the changed property
  */
-mixin.onSet = function(model, event) {
-    model.emit('change', event);
-    model.emit('change:' + event.propertyName, event);
+mixin.onSet = function (model, event) {
+  model.emit('change', event);
+  model.emit('change:' + event.propertyName, event);
 };

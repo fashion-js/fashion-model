@@ -152,14 +152,14 @@ var Something = require('fashion-model/Model').extend({
 ```javascript
 var something = new Something();
 
-something.on('change:value', function(event) {
+something.on('change:value', function (event) {
     // The "value" property changed
     console.log(
         'Old value: ' + event.oldValue,
         'New value: ' + event.newValue);
 });
 
-something.on('change', function(event) {
+something.on('change', function (event) {
     // Some property changed
     console.log(
         'Property: ' + event.propertyName,
@@ -258,7 +258,7 @@ var Person = Entity.extend({
         lastName: String
     },
     prototype: {
-        getDisplayName: function() {
+        getDisplayName: function () {
             return this.getFirstName() + ' ' + this.getLastName();
         }
     }
@@ -304,7 +304,7 @@ var Person = Entity.extend({
         lastName: String,
         displayName: {
             type: String
-            get: function(property) {
+            get: function (property) {
                 return this.getFirstName() + ' ' + this.getLastName();
             }
         }
@@ -321,7 +321,7 @@ then you might want to mark an property as non-persisted.
 **For example, here's a Model type that will automatically
 update `displayName` whenever `firstName` or `lastName` is changed:**
 ```javascript
-function _updateDisplayName(person) {
+function _updateDisplayName (person) {
     person.setDisplayName(person.getFirstName() + ' ' + person.getLastName());
 }
 
@@ -329,14 +329,14 @@ var Person = Entity.extend({
     properties: {
         firstName: {
             type: String,
-            set: function(value, property) {
+            set: function (value, property) {
                 this.data[property.getKey()] = value;
                 _updateDisplayName(this);
             }
         },
         lastName: {
             type: String,
-            set: function(value, property) {
+            set: function (value, property) {
                 this.data[property.getKey()] = value;
                 _updateDisplayName(this);
             }
@@ -437,12 +437,12 @@ var Binary = Model.extend({
 
     // Provide a clean function that will be used to clean values
     // associated with properties whose type is Binary
-    clean: function(value) {
+    clean: function (value) {
         // clean will convert to base64
         return value.toString('base64');
     },
 
-    coerce: function(value, options) {
+    coerce: function (value, options) {
         if (value == null) {
             return value;
         }
@@ -525,7 +525,7 @@ var ObjectId = Model.extend({
 
     // We provide a "coerce" function to convert a value to the proper
     // MongoDB ObjectID type
-    coerce: function(data) {
+    coerce: function (data) {
         if (data == null) {
             return data;
         } else {
@@ -644,14 +644,14 @@ assert(Color.RED.ordinal() === 0);
 
 **Loop over values:**
 ```javascript
-Color.values.forEach(function(colorValue) {
+Color.values.forEach(function (colorValue) {
     console.log('Color ' + colorValue.name());
 });
 ```
 
 **Loop over names:**
 ```javascript
-Color.names.forEach(function(colorName) {
+Color.names.forEach(function (colorName) {
     console.log('Color ' + colorName);
 });
 ```
@@ -697,7 +697,7 @@ var colorPalette = new ColorPalette({
 
 // getColors() will return an Array and we can use the "forEach" function.
 // Each item in the returned Array will be an instance of Color.
-colorPalette.getColors().forEach(function(color, index) {
+colorPalette.getColors().forEach(function (color, index) {
     assert(color.constructor === Color);
 });
 ```
@@ -753,8 +753,8 @@ var someModelSchema = jsonSchema.fromModel(SomeModel, options);
 
 | Option | Type | Purpose |
 | ------ | ---- | ------- |
-| `toRef` | `function(Model)` | This function can be used to turn a Model definition to a reference name (return value will be used as value for `$ref` properties) |
-| `isIgnoredProperty` | `function(name, property)` | This function can be used to exclude a property from the schema definition of a complex object |
+| `toRef` | `function (Model)` | This function can be used to turn a Model definition to a reference name (return value will be used as value for `$ref` properties) |
+| `isIgnoredProperty` | `function (name, property)` | This function can be used to exclude a property from the schema definition of a complex object |
 
 
 #### Convert Model to JSON Schema
@@ -816,7 +816,7 @@ var Person = Entity.extend({
 ```javascript
 var jsonSchema = require('fashion-model/json-schema-draft4');
 var jsonSchemaOptions = {
-    toRef: function(Model) {
+    toRef: function (Model) {
         return Model.typeName;
     }
 };
