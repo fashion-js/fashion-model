@@ -200,6 +200,8 @@ describe('Enum', function () {
       values: [
         'apply',
         'call',
+        'plan',
+        'destroy'
       ]
     });
 
