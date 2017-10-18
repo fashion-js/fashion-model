@@ -1,20 +1,21 @@
 /* eslint camelcase: ["off"] */
 
-var ArrayType;
-var primitives;
-var inherit = require('raptor-util/inherit');
-var Model;
+const inherit = require('./util/inherit');
+
+let ArrayType;
+let primitives;
+let Model;
 
 function _emptyObject () {
   return Object.create(null);
 }
 
-var NOT_INSTANCE = {};
-var EMPTY_PROPERTIES = _emptyObject();
+const NOT_INSTANCE = {};
+const EMPTY_PROPERTIES = _emptyObject();
 
 function _forProperty (property, options, work) {
   options = _toOptions(options);
-  var origProperty = options.property;
+  const origProperty = options.property;
   options.property = property;
   work(options);
   options.property = origProperty;
@@ -22,9 +23,9 @@ function _forProperty (property, options, work) {
 }
 
 function _notifySet (model, oldValue, newValue, property) {
-  var Type = model.constructor;
+  const Type = model.constructor;
   if (Type._onSet) {
-    var event = {
+    const event = {
       model: model,
       propertyName: property.getName(),
       oldValue: oldValue,
@@ -32,18 +33,18 @@ function _notifySet (model, oldValue, newValue, property) {
       property: property
     };
 
-    var len = Type._onSet.length;
-    for (var i = 0; i < len; i++) {
+    const len = Type._onSet.length;
+    for (let i = 0; i < len; i++) {
       Type._onSet[i](model, event);
     }
   }
 }
 
 function _set (model, data, property, value, options) {
-  var Type = property.getType();
+  const Type = property.getType();
 
   // this the value that we return (it may be the result of wrapping/coercing the original value)
-  var wrapped = Type.isWrapped();
+  const wrapped = Type.isWrapped();
 
   if (Model.isModel(value) && Type.isInstance(value)) {
     // value is expected type
@@ -58,10 +59,10 @@ function _set (model, data, property, value, options) {
     });
   }
 
-  var propertyKey = property.getKey();
-  var oldValue = data[propertyKey];
+  const propertyKey = property.getKey();
+  const oldValue = data[propertyKey];
 
-  var setter = property.getSetter();
+  const setter = property.getSetter();
   if (setter) {
     // setter will do all of the work
     setter.call(model, value, property);
@@ -87,8 +88,8 @@ function _set (model, data, property, value, options) {
 }
 
 function _generateGetter (property) {
-  var propertyKey = property.getKey();
-  var getter = property.getGetter();
+  const propertyKey = property.getKey();
+  const getter = property.getGetter();
   if (getter) {
     return function (options) {
       return getter.call(this, property);
@@ -109,20 +110,20 @@ function _generateSetter (property) {
 // This function will be used to make sure an array value
 // exists for the given property
 function _ensureArray (model, property) {
-  var propertyKey = property.getKey();
-  var array = model.data[propertyKey];
+  const propertyKey = property.getKey();
+  let array = model.data[propertyKey];
   if (!array) {
     model.data[propertyKey] = array = [];
-    array.Model = ArrayType;
+    ArrayType.flagAsArrayType(array);
   }
 
   return array;
 }
 
 function _generateAddValueTo (property) {
-  var items = property.items;
-  var ItemType = items && items.type;
-  var coerce;
+  const items = property.items;
+  const ItemType = items && items.type;
+  let coerce;
 
   if (ItemType) {
     coerce = ItemType.coerce;
@@ -132,14 +133,14 @@ function _generateAddValueTo (property) {
     // the addTo<Property> function will need to wrap each item
     // when adding it to the array
     return function (value, options) {
-      var array = _ensureArray(this, property);
+      const array = _ensureArray(this, property);
       array.push(ItemType.wrap(value, options));
     };
   } else {
     // the addTo<Property> function should add raw value to array
     // (call the type coercion function if it exists)
     return function (value, options) {
-      var array = _ensureArray(this, property);
+      const array = _ensureArray(this, property);
       array.push((coerce) ? coerce.call(ItemType, value, options) : value);
     };
   }
@@ -156,7 +157,7 @@ function _convertArray (array, options) {
 // This is the constructor that gets called when ever a Model (or derived type)
 // is created
 module.exports = Model = function Model (rawData, options) {
-  var Type = this.constructor;
+  const Type = this.constructor;
 
   if (Type.constructable === false) {
     throw new Error('Instances of this type cannot be created. data: ' + rawData);
@@ -176,8 +177,8 @@ Model.isModel = function (obj) {
 };
 
 Model.cleanArray = function (array, options) {
-  var i = array.length;
-  var newArray = new Array(i);
+  let i = array.length;
+  const newArray = new Array(i);
   while (--i >= 0) {
     newArray[i] = Model.clean(array[i], options);
   }
@@ -202,12 +203,12 @@ Model.clean = function (obj, options) {
     // NOTE: Don't clone Date object to clean it since we assume it
     // is already clean.
     if ((obj.constructor !== Date) && (typeof obj === 'object')) {
-      var clean = {};
-      var keys = Object.keys(obj);
-      var len = keys.length;
-      for (var i = 0; i < len; i++) {
-        var key = keys[i];
-        var value = Model.clean(obj[key], options);
+      const clean = {};
+      const keys = Object.keys(obj);
+      const len = keys.length;
+      for (let i = 0; i < len; i++) {
+        const key = keys[i];
+        const value = Model.clean(obj[key], options);
         if (value !== undefined) {
           clean[key] = value;
         }
@@ -257,15 +258,15 @@ Model.forEachProperty = function (options, callback) {
     options = _emptyObject();
   }
 
-  var proto = this.Properties.prototype;
-  var inherited = (options.inherited !== false);
+  let proto = this.Properties.prototype;
+  const inherited = (options.inherited !== false);
 
-  var seen = _emptyObject();
+  const seen = _emptyObject();
   do {
-    for (var key in proto) {
+    for (let key in proto) {
       // Make sure we haven't already handled the given property
       if (!seen[key] && proto.hasOwnProperty(key)) {
-        var property = proto[key];
+        const property = proto[key];
         if (property.constructor === Property) {
           if (key === property.getName()) {
             callback(property);
@@ -287,7 +288,7 @@ Model.preventConstruction = function () {
 };
 
 Model.isCompatibleWith = function (other) {
-  var cur = this;
+  let cur = this;
   do {
     if (cur === other) {
       return true;
@@ -305,7 +306,7 @@ Model.isPrimitive = function () {
 };
 
 Model.coercionError = function (value, options, errorMessage) {
-  var message = '';
+  let message = '';
   if (options && options.property && options.property.getName) {
     message += options.property.getName() + ': ';
   }
@@ -318,7 +319,7 @@ Model.coercionError = function (value, options, errorMessage) {
   if (options && options.errors) {
     options.errors.push(message);
   } else {
-    var err = new Error(message);
+    const err = new Error(message);
     err.source = Model;
     throw err;
   }
@@ -328,7 +329,7 @@ Model.stringify = function (obj, pretty) {
   return JSON.stringify(Model.clean(obj), null, pretty ? '  ' : undefined);
 };
 
-var Model_proto = Model.prototype;
+const Model_proto = Model.prototype;
 
 Model_proto.unwrap = function () {
   return this.data || this;
@@ -341,7 +342,7 @@ Model_proto.unwrap = function () {
 Model_proto.clean = function (options) {
   options = _toOptions(options);
 
-  var Type = this.Model;
+  const Type = this.Model;
 
   if (Type.clean) {
     // call "clean" function provided by type
@@ -350,17 +351,17 @@ Model_proto.clean = function (options) {
 
   // The "properties" object is a map that we can use to lookup
   // all property definitions
-  var properties = Type.properties;
-  var data = this.data;
+  const properties = Type.properties;
+  let data = this.data;
 
   if (Type.hasProperties()) {
-    var clone = {};
-    var keys = Object.keys(data);
-    var len = keys.length;
-    for (var i = 0; i < len; i++) {
-      var key = keys[i];
-      var property = options.property = properties[key];
-      var value = data[key];
+    const clone = {};
+    const keys = Object.keys(data);
+    const len = keys.length;
+    for (let i = 0; i < len; i++) {
+      const key = keys[i];
+      const property = options.property = properties[key];
+      let value = data[key];
       if (property && (property.isPersisted())) {
         // no need to clean null/undefined values
         if (value == null) {
@@ -368,9 +369,9 @@ Model_proto.clean = function (options) {
             clone[key] = value;
           }
         } else {
-          var propertyType = property.type;
-          var clean = propertyType.clean;
-          var oldProperty = options.property;
+          const propertyType = property.type;
+          const clean = propertyType.clean;
+          const oldProperty = options.property;
           options.property = property;
 
           if (clean) {
@@ -408,7 +409,7 @@ Model_proto.clean = function (options) {
   }
 
   if (Type.afterClean) {
-    var result = Type.afterClean(data, options);
+    const result = Type.afterClean(data, options);
     if (result !== undefined) {
       data = result;
     }
@@ -420,12 +421,12 @@ Model_proto.clean = function (options) {
 };
 
 function _getProperty (model, propertyName, errors) {
-  var Type = model.constructor;
-  var properties = Type.properties;
-  var property = properties[propertyName];
+  const Type = model.constructor;
+  const properties = Type.properties;
+  const property = properties[propertyName];
   if (!property) {
     if (!Type.additionalProperties) {
-      var err = new Error('Invalid property: ' + propertyName);
+      const err = new Error('Invalid property: ' + propertyName);
       if (errors) {
         errors.push(err);
       } else {
@@ -444,12 +445,12 @@ function _getProperty (model, propertyName, errors) {
  *    or an array which will have any errors added to it
  */
 Model_proto.set = function (propertyName, value, options) {
-  var modelData = this.data;
-  var property = _getProperty(this, propertyName, options);
+  const modelData = this.data;
+  const property = _getProperty(this, propertyName, options);
   if (property) {
     _set(this, modelData, property, value, options);
   } else {
-    var oldValue = modelData[propertyName];
+    const oldValue = modelData[propertyName];
     if (oldValue !== value) {
       modelData[propertyName] = value;
       _notifySet(this, propertyName, oldValue, value);
@@ -464,10 +465,10 @@ Model_proto.set = function (propertyName, value, options) {
  *    or an array which will have any errors added to it
  */
 Model_proto.get = function (propertyName, options) {
-  var Type = this.constructor;
-  var property = Type.properties[propertyName];
+  const Type = this.constructor;
+  const property = Type.properties[propertyName];
   if (property) {
-    var getter = property.getGetter();
+    const getter = property.getGetter();
     if (getter) {
       return getter.call(this, propertyName, property);
     }
@@ -481,14 +482,14 @@ Model_proto.stringify = function (pretty) {
 };
 
 function Property (config) {
-  for (var key in config) {
+  for (let key in config) {
     if (config.hasOwnProperty(key)) {
       this[key] = config[key];
     }
   }
 }
 
-var Property_proto = Property.prototype;
+const Property_proto = Property.prototype;
 
 Property_proto.getName = function () {
   return this.name;
@@ -522,7 +523,7 @@ function Items (owner) {
   this.owner = owner;
 }
 
-var Items_proto = Items.prototype;
+const Items_proto = Items.prototype;
 
 Items_proto.getName = function () {
   return this.owner.getName();
@@ -555,7 +556,7 @@ function _parseType (type) {
 }
 
 function _parseTypeStr (typeStr, propertyConfig, resolver, Type) {
-  var len = typeStr.length;
+  const len = typeStr.length;
   if ((typeStr.charAt(len - 2) === '[') && (typeStr.charAt(len - 1) === ']')) {
     // array type
     propertyConfig.type = ArrayType;
@@ -567,7 +568,7 @@ function _parseTypeStr (typeStr, propertyConfig, resolver, Type) {
 }
 
 function _resolve (typeName, resolver, Type) {
-  var type = primitives[typeName];
+  let type = primitives[typeName];
   if (type) {
     return type;
   }
@@ -596,13 +597,13 @@ function _parseTypeConfig (propertyName, propertyConfig, resolver, Type) {
     };
   }
 
-  var type = propertyConfig.type;
+  const type = propertyConfig.type;
   if (type) {
     if (Array.isArray(type)) {
       // handle short-hand notation for Array types
       propertyConfig.type = ArrayType;
       if (type.length) {
-        var items = type[0];
+        const items = type[0];
         if (items != null) {
           propertyConfig.items = _parseTypeConfig(propertyName, items, resolver, Type);
         }
@@ -623,7 +624,7 @@ function _parseTypeConfig (propertyName, propertyConfig, resolver, Type) {
       }
     }
   } else {
-    propertyConfig.type = primitives.object;
+    propertyConfig.type = primitives.any;
   }
 
   return propertyConfig;
@@ -637,7 +638,7 @@ function _toProperty (name, propertyConfig, resolver, Type) {
   return new Property(propertyConfig);
 }
 
-var SPECIAL_PROPERTIES = {
+const SPECIAL_PROPERTIES = {
   init: 1,
   wrap: 1,
   coerce: 1,
@@ -647,7 +648,7 @@ var SPECIAL_PROPERTIES = {
 };
 
 function _copyNonSpecialPropertiesToType (config, Type) {
-  for (var key in config) {
+  for (let key in config) {
     if (config.hasOwnProperty(key) && !SPECIAL_PROPERTIES[key]) {
       Type[key] = config[key];
     }
@@ -673,7 +674,7 @@ function _addToArray (obj, propertyName, value) {
     return;
   }
 
-  var arr = obj[propertyName] || (obj[propertyName] = []);
+  const arr = obj[propertyName] || (obj[propertyName] = []);
   arr.push(value);
 }
 
@@ -682,8 +683,8 @@ function _concatToArray (obj, propertyName, otherArr) {
     return;
   }
 
-  var arr = obj[propertyName] || (obj[propertyName] = []);
-  for (var i = 0; i < otherArr.length; i++) {
+  const arr = obj[propertyName] || (obj[propertyName] = []);
+  for (let i = 0; i < otherArr.length; i++) {
     arr.push(otherArr[i]);
   }
 }
@@ -693,12 +694,11 @@ function _installMixin (mixin, Type, Base, existingProperties) {
     mixin.initType(Type);
   }
 
-  var key;
+  let key;
   if (mixin.id) {
     key = '_mixin_' + mixin.id;
 
-    if (Base.properties && Base.properties[key] ||
-      Type.Properties.prototype[key]) {
+    if ((Base.properties && Base.properties[key]) || Type.Properties.prototype[key]) {
       // this mixin is already installed
       return;
     }
@@ -706,7 +706,7 @@ function _installMixin (mixin, Type, Base, existingProperties) {
     Type.Properties.prototype[key] = true;
   }
 
-  var mixinPrototype = mixin.prototype;
+  const mixinPrototype = mixin.prototype;
   if (mixinPrototype) {
     for (key in mixinPrototype) {
       if (mixinPrototype.hasOwnProperty(key)) {
@@ -715,7 +715,7 @@ function _installMixin (mixin, Type, Base, existingProperties) {
     }
   }
 
-  var mixinProperties;
+  let mixinProperties;
   if ((mixinProperties = mixin.properties)) {
     for (key in mixinProperties) {
       if (mixinProperties.hasOwnProperty(key) && (existingProperties[key] === undefined)) {
@@ -727,11 +727,11 @@ function _installMixin (mixin, Type, Base, existingProperties) {
   _addToArray(Type, '_init', mixin.init);
   _addToArray(Type, '_onSet', mixin.onSet);
 
-  var mixins;
+  let mixins;
   if ((mixins = mixin.mixins)) {
-    mixins.forEach(function (mixin) {
+    for (const mixin of mixins) {
       _installMixin(mixin, Type, Base, existingProperties);
-    });
+    }
   }
 }
 
@@ -742,13 +742,13 @@ function _checkInstance (obj, wrap, Type) {
 function _extend (Base, config, resolver) {
   config = config || _emptyObject();
 
-  var init = config.init;
-  var wrap = config.wrap;
-  var coerce = config.coerce;
-  var properties = config.properties;
-  var prototype = config.prototype;
-  var mixins = config.mixins;
-  var Data;
+  const init = config.init;
+  let wrap = config.wrap;
+  const coerce = config.coerce;
+  let properties = config.properties;
+  const prototype = config.prototype;
+  const mixins = config.mixins;
+  let Data;
 
   function Type (rawData, options) {
     if (Data) {
@@ -763,9 +763,9 @@ function _extend (Base, config, resolver) {
     Type.$super.call(this, rawData, options);
 
     // Call initialization functions provided by mixins (if any)
-    var initArr = Type._init;
+    const initArr = Type._init;
     if (initArr) {
-      for (var i = 0; i < initArr.length; i++) {
+      for (let i = 0; i < initArr.length; i++) {
         initArr[i].call(this, rawData, options);
       }
     }
@@ -777,7 +777,7 @@ function _extend (Base, config, resolver) {
   }
 
   // Selectively copy properties from Model to Type
-  [
+  for (const property of [
     'getProperty',
     'getProperties',
     'hasProperty',
@@ -789,9 +789,9 @@ function _extend (Base, config, resolver) {
     'isCompatibleWith',
     'isInstance',
     'isPrimitive'
-  ].forEach(function (property) {
+  ]) {
     Type[property] = Model[property];
-  });
+  }
 
   Type.convertArray = _convertArray;
 
@@ -807,7 +807,12 @@ function _extend (Base, config, resolver) {
   _concatToArray(Type, '_onSet', Base._onSet);
 
   // Store reference to Model
-  Type.Model = Model;
+  Object.defineProperty(Type, 'Model', {
+    enumerable: false,
+    configurable: false,
+    writable: false,
+    value: Model
+  });
 
   if (coerce) {
     // Create a proxy coerce function that guarantees that options
@@ -826,7 +831,7 @@ function _extend (Base, config, resolver) {
     return (wrap !== false);
   };
 
-  var factory;
+  let factory;
   if (wrap && wrap.constructor === Function) {
     factory = wrap;
   } else {
@@ -837,7 +842,7 @@ function _extend (Base, config, resolver) {
         return new Type();
       }
 
-      var instance;
+      let instance;
 
       // see if the data is already an instance
       if ((data != null) && (instance = _checkInstance(data, wrap, Type)) !== NOT_INSTANCE) {
@@ -887,10 +892,10 @@ function _extend (Base, config, resolver) {
 
   inherit(Type, Base);
 
-  var classPrototype = Type.prototype;
+  const classPrototype = Type.prototype;
   classPrototype.Model = Type;
 
-  var propertyNames;
+  let propertyNames;
   if ((properties && (propertyNames = Object.keys(properties)).length > 0) || mixins) {
     // Use prototype chaining to create property map
     Type.Properties = function () {
@@ -904,19 +909,19 @@ function _extend (Base, config, resolver) {
     }
 
     if (mixins) {
-      var mixinProperties = _emptyObject();
-      mixins.forEach(function (mixin) {
+      const mixinProperties = _emptyObject();
+      for (const mixin of mixins) {
         _installMixin(mixin, Type, Base, mixinProperties);
-      });
+      }
 
-      var mixinPropertyNames = Object.keys(mixinProperties);
+      const mixinPropertyNames = Object.keys(mixinProperties);
 
       if (mixinPropertyNames.length) {
         if (properties) {
           // combine mixin properties with properties provided for Type
           // but give precedence to the Type properties.
-          for (var i = 0; i < mixinPropertyNames.length; i++) {
-            var propertyName = mixinPropertyNames[i];
+          for (let i = 0; i < mixinPropertyNames.length; i++) {
+            const propertyName = mixinPropertyNames[i];
             if (!properties.hasOwnProperty(propertyName)) {
               properties[propertyName] = mixinProperties[propertyName];
               propertyNames.push(propertyName);
@@ -931,10 +936,10 @@ function _extend (Base, config, resolver) {
     }
 
     if (properties) {
-      var propertiesPrototype = Type.Properties.prototype;
-      propertyNames.forEach(function (propertyName) {
-        var property = _toProperty(propertyName, properties[propertyName], resolver, Type);
-        var propertyKey = property.getKey();
+      const propertiesPrototype = Type.Properties.prototype;
+      for (const propertyName of propertyNames) {
+        const property = _toProperty(propertyName, properties[propertyName], resolver, Type);
+        const propertyKey = property.getKey();
 
         // Put the properties in the prototype by name and property
         propertiesPrototype[propertyName] = property;
@@ -942,8 +947,8 @@ function _extend (Base, config, resolver) {
           propertiesPrototype[propertyKey] = property;
         }
 
-        var funcName;
-        var funcSuffix = _initialUpperCase(propertyName);
+        let funcName;
+        const funcSuffix = _initialUpperCase(propertyName);
 
         // generate getter
         if (property.getGetter() !== null) {
@@ -962,7 +967,7 @@ function _extend (Base, config, resolver) {
           funcName = 'addTo' + funcSuffix;
           classPrototype[funcName] = _generateAddValueTo(property);
         }
-      });
+      }
     }
 
     Type.properties = new Type.Properties();
@@ -972,7 +977,7 @@ function _extend (Base, config, resolver) {
   }
 
   if (Type.hasProperties()) {
-    var _allProperties = [];
+    const _allProperties = [];
     Type.forEachProperty(function (property) {
       _allProperties.push(property.getKey());
     });
@@ -981,11 +986,11 @@ function _extend (Base, config, resolver) {
     // Model stores which will allow the JavaScript Engine to create
     // "hidden classes" for the purpose of optimization.
     Type.Data = Data = function (model, rawData, options) {
-      var properties = Type.properties;
-      var allProperties;
-      var len;
-      var key;
-      var i;
+      const properties = Type.properties;
+      let allProperties;
+      let len;
+      let key;
+      let i;
 
       allProperties = _allProperties;
       len = allProperties.length;
@@ -1002,7 +1007,7 @@ function _extend (Base, config, resolver) {
           this[key] = undefined;
         }
       } else {
-        var errors;
+        let errors;
         if (options) {
           if (Array.isArray(options)) {
             // since options is an array we treat as the output array
@@ -1015,8 +1020,8 @@ function _extend (Base, config, resolver) {
           }
         }
 
-        var modelData = model.data = _emptyObject();
-        var additionalData;
+        const modelData = model.data = _emptyObject();
+        let additionalData;
 
         if (Type.additionalProperties) {
           additionalData = _emptyObject();
@@ -1025,7 +1030,7 @@ function _extend (Base, config, resolver) {
         // use setters to make sure values get properly coerced
         for (key in rawData) {
           if ((rawData.hasOwnProperty && rawData.hasOwnProperty(key)) || rawData[key] !== undefined) {
-            var property = properties[key];
+            const property = properties[key];
             if (property) {
               _set(model, modelData, property, rawData[key], options);
             } else if (additionalData) {

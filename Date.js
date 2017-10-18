@@ -1,5 +1,5 @@
-var isoDateFormat =
-    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?Z?$/;
+const isoDateFormat =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z)?$/;
 
 module.exports = require('./Model').extend({
   typeName: 'date',
@@ -15,12 +15,18 @@ module.exports = require('./Model').extend({
 
     if (value != null) {
       if (value.constructor === String) {
-        var a = isoDateFormat.exec(value);
+        const a = isoDateFormat.exec(value);
         if (a) {
-          var millisecond = a[7];
+          let millisecond = a[7];
           millisecond = (millisecond === undefined) ? 0 : +millisecond;
 
-          value = new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4], +a[5], +a[6], millisecond));
+          if (a[8] === 'Z') {
+            // The `Z` suffix is used to indicate UTC time zone
+            value = new Date(Date.UTC(+a[1], +a[2] - 1, +a[3], +a[4], +a[5], +a[6], millisecond));
+          } else {
+            // No `Z` suffix so implicitly use time zone of this computer
+            value = new Date(+a[1], +a[2] - 1, +a[3], +a[4], +a[5], +a[6], millisecond);
+          }
         } else {
           return null;
         }

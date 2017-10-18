@@ -1,1 +1,6 @@
 extends: semistandard
+parserOptions:
+  ecmaVersion: 8
+rules:
+  template-curly-spacing:
+    - off

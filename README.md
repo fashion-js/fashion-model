@@ -43,19 +43,19 @@ information.
 ### Requiring
 ```javascript
 // Requiring the base Model type
-var Model = require('fashion-model');
+const Model = require('fashion-model');
 
 // Variation on requiring the Model type
-var Model = require('fashion-model/Model');
+const Model = require('fashion-model/Model');
 
 // Requiring the Enum type factory
-var Enum = require('fashion-model/Enum');
+const Enum = require('fashion-model/Enum');
 
 // Create new model type
-var NewModel = Model.extend(config);
+const NewModel = Model.extend(config);
 
 // Create new enum type
-var NewEnum = Enum.create(config);
+const NewEnum = Enum.create(config);
 ```
 
 ### Primitive Types
@@ -63,6 +63,7 @@ The following primitive types are supported:
 
 | Data Type | JavaScript Type | Alias           | Model Type                          |
 |-----------|-----------------|-----------------|-------------------------------------|
+| Any       |                 | `"any"`         | `require("fashion-model/Any")`     |
 | Date      | Date            | `"date"`        | `require("fashion-model/Date")`     |
 | Boolean   | Boolean         | `"boolean"`     | `require("fashion-model/Boolean")`  |
 | Number    | Number          | `"number"`      | `require("fashion-model/Number")`   |
@@ -75,45 +76,63 @@ The following primitive types are supported:
 
 **Declare custom complex object type:**
 ```javascript
-var Address = Model.extend({
-    properties: {
-        city: String,
-        state: String
-    }
+const Address = Model.extend({
+  properties: {
+    city: String,
+    state: String,
+    primary: Boolean,
+
+    // The `{}` is equivalent to `"any"` data type
+    metadata: {}
+  }
 });
 ```
 
 **Create instance via `new` constructor with no initial data:**
 ```javascript
 // Create via constructor with no initial data
-var address = new Address();
+const address = new Address();
 address.setCity('San Francisco');
 address.setState('CA');
+address.setPrimary(true);
+address.setMetadata({a: 'b'});
 ```
 
 **Create instance via `new` constructor with some initial data:**
 ```javascript
 // Create via constructor with initial data
-var address = new Address({
-    city: 'San Francisco',
-    state: 'CA'
+const address = new Address({
+  city: 'San Francisco',
+  state: 'CA',
+  primary: true,
+  metadata: {
+    a: 'b'
+  }
 });
 ```
 
 **Create instance via `create` method:**
 ```javascript
 // Create via "create" function
-var address = Address.create();
+const address = Address.create();
 address.setCity('San Francisco');
 address.setState('CA');
+address.setPrimary(true);
+address.setMetadata({a: 'b'});
 ```
 
 **Create instance by wrapping existing data:**
 ```javascript
-// Create via "wrap" function
+// Create via "wrap" function.
+// If the argument to `Address.wrap(...)` function is already
+// the correct type then the original value will be returned.
 address = Address.wrap({
-    city: 'San Francisco',
-    state: 'CA'
+  city: 'San Francisco',
+  state: 'CA',
+  primary: true,
+  metadata: {
+    a: 'b'
+  }
 });
 ```
 
@@ -128,21 +147,21 @@ events
 **Example using ObservableModel:**
 
 ```javascript
-var Something = require('fashion-model/ObservableModel').extend({
-    properties: {
-        value: String
-    }
+const Something = require('fashion-model/ObservableModel').extend({
+  properties: {
+    value: String
+  }
 });
 ```
 
 **Example using mixin:**
 
 ```javascript
-var Something = require('fashion-model/Model').extend({
-    properties: {
-        value: String
-    },
-    mixins: [require('fashion-model/mixins/EventEmitter')]
+const Something = require('fashion-model/Model').extend({
+  properties: {
+    value: String
+  },
+  mixins: [require('fashion-model/mixins/EventEmitter')]
 });
 ```
 
@@ -150,21 +169,21 @@ var Something = require('fashion-model/Model').extend({
 **Listening for property value changes:**
 
 ```javascript
-var something = new Something();
+const something = new Something();
 
 something.on('change:value', function (event) {
-    // The "value" property changed
-    console.log(
-        'Old value: ' + event.oldValue,
-        'New value: ' + event.newValue);
+  // The "value" property changed
+  console.log(
+    'Old value: ' + event.oldValue,
+    'New value: ' + event.newValue);
 });
 
 something.on('change', function (event) {
-    // Some property changed
-    console.log(
-        'Property: ' + event.propertyName,
-        'Old value: ' + event.oldValue,
-        'New value: ' + event.newValue);
+  // Some property changed
+  console.log(
+    'Property: ' + event.propertyName,
+    'Old value: ' + event.oldValue,
+    'New value: ' + event.newValue);
 });
 ```
 
@@ -181,38 +200,38 @@ node.
 ```javascript
 // Declare a linked list node type that has a pointer
 // to the next node
-var LinkedListNode = Model.extend({
-    properties: {
-        next: 'self',
-        value: Object
-    }
+const LinkedListNode = Model.extend({
+  properties: {
+    next: 'self',
+    value: Object
+  }
 });
 
 // Here is another functionally equivalent variation of LinkedListNode
-var LinkedListNode = Model.extend({
-    properties: {
-        next: {
-            type: 'self'
-        },
-        value: Object
-    }
+const LinkedListNode = Model.extend({
+  properties: {
+    next: {
+      type: 'self'
+    },
+    value: Object
+  }
 });
 
 // An example of self-type reference within an array
-var TreeNode = Model.extend({
-    properties: {
-        children: ['self'],
-        value: Object
-    }
+const TreeNode = Model.extend({
+  properties: {
+    children: ['self'],
+    value: Object
+  }
 });
 
 // Here is another functionally equivalent variation of TreeNode
-var TreeNode = Model.extend({
-    properties: {
-        // Brackets at end of type name are used to denote arrays
-        children: 'self[]',
-        value: Object
-    }
+const TreeNode = Model.extend({
+  properties: {
+    // Brackets at end of type name are used to denote arrays
+    children: 'self[]',
+    value: Object
+  }
 });
 ```
 
@@ -223,15 +242,15 @@ for each property defined in the model.
 **For example:**
 ```javascript
 // Define an Address model
-var Address = Model.extend({
-    properties: {
-        city: String,
-        state: String
-    }
+const Address = Model.extend({
+  properties: {
+    city: String,
+    state: String
+  }
 });
 
 // Create instance of Address
-var address = new Address();
+const address = new Address();
 
 // Use the generated setter to set the city
 address.setCity('New York');
@@ -252,16 +271,16 @@ configuration.
 
 **For example:**
 ```javascript
-var Person = Entity.extend({
-    properties: {
-        firstName: String,
-        lastName: String
-    },
-    prototype: {
-        getDisplayName: function () {
-            return this.getFirstName() + ' ' + this.getLastName();
-        }
+const Person = Entity.extend({
+  properties: {
+    firstName: String,
+    lastName: String
+  },
+  prototype: {
+    getDisplayName: function () {
+      return this.getFirstName() + ' ' + this.getLastName();
     }
+  }
 });
 ```
 
@@ -269,19 +288,19 @@ var Person = Entity.extend({
 
 **Define your base Entity type:**
 ```javascript
-var Entity = Model.extend({
-    properties: {
-        id: String
-    }
+const Entity = Model.extend({
+  properties: {
+    id: String
+  }
 });
 ```
 
 **Define a type that extends Entity:**
 ```javascript
-var Person = Entity.extend({
-    properties: {
-        email: String
-    }
+const Person = Entity.extend({
+  properties: {
+    email: String
+  }
 });
 ```
 
@@ -289,7 +308,7 @@ The new `Person` type will recognize `email` (defined for `Person`) and
 `id` (defined for `Entity`) as properties.
 
 ```javascript
-var person = new Person();
+const person = new Person();
 person.setId('john-doe');
 person.setEmail('john.doe@example.com');
 ```
@@ -298,17 +317,17 @@ You can also create getters for computed/derived properties.
 
 **For example:**
 ```javascript
-var Person = Entity.extend({
-    properties: {
-        firstName: String,
-        lastName: String,
-        displayName: {
-            type: String
-            get: function (property) {
-                return this.getFirstName() + ' ' + this.getLastName();
-            }
-        }
+const Person = Entity.extend({
+  properties: {
+    firstName: String,
+    lastName: String,
+    displayName: {
+      type: String
+      get: function (property) {
+        return this.getFirstName() + ' ' + this.getLastName();
+      }
     }
+  }
 });
 ```
 
@@ -325,34 +344,34 @@ function _updateDisplayName (person) {
     person.setDisplayName(person.getFirstName() + ' ' + person.getLastName());
 }
 
-var Person = Entity.extend({
-    properties: {
-        firstName: {
-            type: String,
-            set: function (value, property) {
-                this.data[property.getKey()] = value;
-                _updateDisplayName(this);
-            }
-        },
-        lastName: {
-            type: String,
-            set: function (value, property) {
-                this.data[property.getKey()] = value;
-                _updateDisplayName(this);
-            }
-        },
-        // displayName is updated whenever firstName or lastName change
-        displayName: {
-            type: String,
+const Person = Entity.extend({
+  properties: {
+    firstName: {
+      type: String,
+      set: function (value, property) {
+        this.data[property.getKey()] = value;
+        _updateDisplayName(this);
+      }
+    },
+    lastName: {
+      type: String,
+      set: function (value, property) {
+        this.data[property.getKey()] = value;
+        _updateDisplayName(this);
+      }
+    },
+    // displayName is updated whenever firstName or lastName change
+    displayName: {
+      type: String,
 
-            // do not persist displayName when clean() is called since it is
-            // a derived value
-            persist: false
-        }
+      // do not persist displayName when clean() is called since it is
+      // a derived value
+      persist: false
     }
+  }
 });
 
-var person = new Person({
+const person = new Person({
     firstName: 'John',
     lastName: 'Doe'
 });
@@ -360,7 +379,7 @@ var person = new Person({
 assert(person.getDisplayName() === 'John Doe');
 
 // Remove non-persisted properties
-var personObj = person.clean();
+const personObj = person.clean();
 assert(personObj.displayName === undefined);
 ```
 
@@ -375,24 +394,24 @@ will simply be returned.
 
 **Examples:**
 ```javascript
-var Address = Model.extend({
-    properties: {
-        city: String,
-        state: String
-    }
+const Address = Model.extend({
+  properties: {
+    city: String,
+    state: String
+  }
 });
 
-var address = new Address({
-    city: 'San Francisco',
-    state: 'CA'
+const address = new Address({
+  city: 'San Francisco',
+  state: 'CA'
 });
 
 // Create an instance of Address
-var addressObj = Model.unwrap(address);
+const addressObj = Model.unwrap(address);
 assert(addressObj.city === 'San Francisco');
 
 // Wrap the unwrapped object
-var addressWrapped = Address.wrap(addressObj);
+const addressWrapped = Address.wrap(addressObj);
 assert(addressWrapped.getCity() === 'San Francisco');
 
 // The wrapped object returned by Address.wrap()
@@ -408,9 +427,9 @@ function will always return a deep clone of the given object if the
 given argument is non-null and not a primitive.
 
 ```javascript
-var address = new Address({
-    city: 'San Francisco',
-    state: 'CA'
+const address = new Address({
+  city: 'San Francisco',
+  state: 'CA'
 });
 
 // When saving a model object to disk or storage, use clean to remove
@@ -430,53 +449,53 @@ Here's an example how to use the `clean` function to convert a `Buffer`
 to a Base64 encoded string:
 
 ```javascript
-var Binary = Model.extend({
-    // Don't wrap binary data because we want to use the raw Buffer type
-    // provided by Node.js runtime environment
-    wrap: false,
+const Binary = Model.extend({
+  // Don't wrap binary data because we want to use the raw Buffer type
+  // provided by Node.js runtime environment
+  wrap: false,
 
-    // Provide a clean function that will be used to clean values
-    // associated with properties whose type is Binary
-    clean: function (value) {
-        // clean will convert to base64
-        return value.toString('base64');
-    },
+  // Provide a clean function that will be used to clean values
+  // associated with properties whose type is Binary
+  clean: function (value) {
+    // clean will convert to base64
+    return value.toString('base64');
+  },
 
-    coerce: function (value, options) {
-        if (value == null) {
-            return value;
-        }
-
-        if (value.constructor === Buffer) {
-            // no conversion needed
-            return value;
-        }
-
-        // Buffers can be of type array. We assume that if an array is provided,
-        // that it is an array of bytes.
-        if (Array.isArray(value)) {
-            return new Buffer(value);
-        }
-
-        if (value.constructor === String) {
-            // assume that a string represents base64 encoded data
-            return new Buffer(value, 'base64');
-        }
-
-        this.coercionError(value, options, 'Invalid binary data.');
+  coerce: function (value, options) {
+    if (value == null) {
+        return value;
     }
+
+    if (value.constructor === Buffer) {
+        // no conversion needed
+        return value;
+    }
+
+    // Buffers can be of type array. We assume that if an array is provided,
+    // that it is an array of bytes.
+    if (Array.isArray(value)) {
+        return new Buffer(value);
+    }
+
+    if (value.constructor === String) {
+        // assume that a string represents base64 encoded data
+        return new Buffer(value, 'base64');
+    }
+
+    this.coercionError(value, options, 'Invalid binary data.');
+  }
 });
 
-var Image = Model.extend({
-    properties: {
-        data: Binary
-    }
+const Image = Model.extend({
+  properties: {
+    data: Binary
+  }
 });
 
-var image = new Image({
-    // data can be provided as Array of bytes, base64 encoded string, or Buffer
-    // because Binary.coerce function handles each of these.
-    data: someData
+const image = new Image({
+  // data can be provided as Array of bytes, base64 encoded string, or Buffer
+  // because Binary.coerce function handles each of these.
+  data: someData
 });
 
 // the data will be converted to Buffer object via Binary.coerce function
@@ -484,7 +503,7 @@ assert(image.getData() instanceof Buffer);
 
 // Calling clean on the image model instance will cause the contained data
 // to be converted to base64 string via Binary.clean function.
-var cleanedImage = image.clean();
+const cleanedImage = image.clean();
 
 // the data will be converted to String via Binary.clean function
 assert(typeof cleanedImage.data.constructor === 'string');
@@ -515,38 +534,38 @@ instances are coerced into instances of a Model.
 For example, consider this example of declaring `ObjectId` type that
 automatically coerces Strings to actual instances of `require('mongodb').ObjectID`:
 ```javascript
-var MongoDbObjectID = require('mongodb').ObjectID;
+const MongoDbObjectID = require('mongodb').ObjectID;
 
-var ObjectId = Model.extend({
-    // Don't wrap object ID.
-    // This means that the getters for properties of this type
-    // will return the raw MongoDB ObjectID type
-    wrap: false,
+const ObjectId = Model.extend({
+  // Don't wrap object ID.
+  // This means that the getters for properties of this type
+  // will return the raw MongoDB ObjectID type
+  wrap: false,
 
-    // We provide a "coerce" function to convert a value to the proper
-    // MongoDB ObjectID type
-    coerce: function (data) {
-        if (data == null) {
-            return data;
-        } else {
-            // Use the MongoDB ObjectID constructor to coerce our
-            // value (for example, it will handle String instances)
-            return new MongoDbObjectID(data);
-        }
+  // We provide a "coerce" function to convert a value to the proper
+  // MongoDB ObjectID type
+  coerce: function (data) {
+    if (data == null) {
+      return data;
+    } else {
+      // Use the MongoDB ObjectID constructor to coerce our
+      // value (for example, it will handle String instances)
+      return new MongoDbObjectID(data);
     }
+  }
 });
 
-var Entity = Model.extend({
-    id: {
-        // ObjectId is a type that we use just to make sure that the value
-        // is automatically converted to the type that we need for storage
-        type: ObjectId,
+const Entity = Model.extend({
+  id: {
+    // ObjectId is a type that we use just to make sure that the value
+    // is automatically converted to the type that we need for storage
+    type: ObjectId,
 
-        // MongoDB data storage expects a document to store its
-        // identifier in the "_id" property but we still want to
-        // access it via "getId" and "setId" (and not "get_id" and "set_id")
-        key: '_id'
-    }
+    // MongoDB data storage expects a document to store its
+    // identifier in the "_id" property but we still want to
+    // access it via "getId" and "setId" (and not "get_id" and "set_id")
+    key: '_id'
+  }
 })
 ```
 Models that use the primitive `Date` type also benefit from type coercion.
@@ -557,11 +576,11 @@ to Strings using the standard ISO format.
 
 **For example:**
 ```javascript
-var Document = Model.extend({
-    dateCreated: Date
+const Document = Model.extend({
+  dateCreated: Date
 });
 
-var document = new Document();
+const document = new Document();
 // A String value in ISO date format is automatically converted to a
 // real Date.
 document.setDateCreated('2014-12-22T21:18:45.905Z');
@@ -572,14 +591,14 @@ document.setDateCreated('2014-12-22T21:18:45.905Z');
 **Short-hand syntax for declaring an enum type:**
 
 ```javascript
-var Color = Enum.create(['red', 'green', 'blue']);
+const Color = Enum.create(['red', 'green', 'blue']);
 ```
 
 **Alternate syntax for declaring an enum type:**
 
 ```javascript
-var Color = Enum.create({
-    values: ['red', 'green', 'blue']
+const Color = Enum.create({
+  values: ['red', 'green', 'blue']
 });
 ```
 
@@ -595,7 +614,7 @@ functions as shown shown in the examples below.
 // test to see
 
 // Check to see if given color is the RED enum value
-var color = Color.RED;
+const color = Color.RED;
 assert(color.isRed());
 
 // Get the name of the enum
@@ -613,23 +632,23 @@ assert(Color.RED.ordinal() === 0);
 
 **Object enum values:**
 ```javascript
-var Color = Enum.create({
-    values: {
-        red: {
-            hex: '#FF0000',
-            name: 'Red'
-        },
+const Color = Enum.create({
+  values: {
+    red: {
+      hex: '#FF0000',
+      name: 'Red'
+    },
 
-        green: {
-            hex: '#00FF00',
-            name: 'Green'
-        },
+    green: {
+      hex: '#00FF00',
+      name: 'Green'
+    },
 
-        blue: {
-            hex: '#0000FF',
-            name: 'Blue'
-        }
+    blue: {
+      hex: '#0000FF',
+      name: 'Blue'
     }
+  }
 });
 
 // The following assertions will be true:
@@ -645,14 +664,14 @@ assert(Color.RED.ordinal() === 0);
 **Loop over values:**
 ```javascript
 Color.values.forEach(function (colorValue) {
-    console.log('Color ' + colorValue.name());
+  console.log('Color ' + colorValue.name());
 });
 ```
 
 **Loop over names:**
 ```javascript
 Color.names.forEach(function (colorName) {
-    console.log('Color ' + colorName);
+  console.log('Color ' + colorName);
 });
 ```
 
@@ -660,45 +679,45 @@ Color.names.forEach(function (colorName) {
 
 **Syntax:**
 ```javascript
-var Color = Enum.create({
-    values: ['red', 'green', 'blue']
+const Color = Enum.create({
+  values: ['red', 'green', 'blue']
 });
 
-var ColorPalette = Model.extend({
-    properties: {
-        colors: {
-            // colors has type array
-            type: Array,
+const ColorPalette = Model.extend({
+  properties: {
+    colors: {
+      // colors has type array
+      type: Array,
 
-            // each item in the array is a Color
-            items: Color
-        }
+      // each item in the array is a Color
+      items: Color
     }
+  }
 });
 ```
 
 **Short-hand syntax:**
 ```javascript
-var ColorPalette = Model.extend({
-    properties: {
-        // Using an Array instance is short-hand for specifying
-        // that the property is of type array. The first item
-        // in this array indicates the type of each item.
-        colors: [Color]
-    }
+const ColorPalette = Model.extend({
+  properties: {
+    // Using an Array instance is short-hand for specifying
+    // that the property is of type array. The first item
+    // in this array indicates the type of each item.
+    colors: [Color]
+  }
 });
 ```
 
 **Accessing an array property:**
 ```javascript
-var colorPalette = new ColorPalette({
-    colors: ['red', 'green', 'blue']
+const colorPalette = new ColorPalette({
+  colors: ['red', 'green', 'blue']
 });
 
 // getColors() will return an Array and we can use the "forEach" function.
 // Each item in the returned Array will be an instance of Color.
 colorPalette.getColors().forEach(function (color, index) {
-    assert(color.constructor === Color);
+  assert(color.constructor === Color);
 });
 ```
 
@@ -708,37 +727,37 @@ colorPalette.getColors().forEach(function (color, index) {
 
 ```javascript
 // array that will collect errors
-var errors = [];
+const errors = [];
 
 // collect errors while wrapping existing person data
-var person1 = Person.wrap({
-    name: 'John',
-    age: 'bad integer'
+const person1 = Person.wrap({
+  name: 'John',
+  age: 'bad integer'
 }, errors);
 
 // collect errors while constructing new person
-var person2 = new Person({
-    name: 'John',
-    age: 'bad integer'
+const person2 = new Person({
+  name: 'John',
+  age: 'bad integer'
 }, errors);
 ```
 
 **Using extended options:**
 
 ```javascript
-var options = {
-    // array that will collect errors
-    errors: [],
+const options = {
+  // array that will collect errors
+  errors: [],
 
-    // strict mode is used by some primitive types to require
-    // that values be of the same primitive types
-    // (no automatic type coercion)
-    strict: true
+  // strict mode is used by some primitive types to require
+  // that values be of the same primitive types
+  // (no automatic type coercion)
+  strict: true
 };
 
-var person = new Person({
-    name: 'John',
-    age: 'bad integer'
+const person = new Person({
+  name: 'John',
+  age: 'bad integer'
 }, options);
 ```
 
@@ -747,8 +766,8 @@ var person = new Person({
 A `Model` type can be easily converted to an equivalent JSON schema
 with the following module:
 ```javascript
-var jsonSchema = require('fashion-model/json-schema-draft4');
-var someModelSchema = jsonSchema.fromModel(SomeModel, options);
+const jsonSchema = require('fashion-model/json-schema-draft4');
+const someModelSchema = jsonSchema.fromModel(SomeModel, options);
 ```
 
 | Option | Type | Purpose |
@@ -762,83 +781,83 @@ var someModelSchema = jsonSchema.fromModel(SomeModel, options);
 **Define your models:**
 
 ```javascript
-var Model = require('fashion-model/Model');
-var Enum = require('fashion-model/Enum');
+const Model = require('fashion-model/Model');
+const Enum = require('fashion-model/Enum');
 
-var Entity = Model.extend({
-    typeName: 'Entity',
-    properties: {
-        id: String
-    }
+const Entity = Model.extend({
+  typeName: 'Entity',
+  properties: {
+    id: String
+  }
 });
 
-var Gender = Enum.create({
-    typeName: 'Gender',
-    title: 'Gender',
-    description: 'A person\'s gender',
-    values: ['M', 'F']
+const Gender = Enum.create({
+  typeName: 'Gender',
+  title: 'Gender',
+  description: 'A person\'s gender',
+  values: ['M', 'F']
 });
 
-var Species = Enum.create({
-    typeName: 'Species',
-    title: 'Species',
-    description: 'A species',
-    values: ['dog', 'cat']
+const Species = Enum.create({
+  typeName: 'Species',
+  title: 'Species',
+  description: 'A species',
+  values: ['dog', 'cat']
 });
 
-var Pet = Model.extend({
-    typeName: 'Pet',
-    properties: {
-        name: String,
-        species: Species
-    }
+const Pet = Model.extend({
+  typeName: 'Pet',
+  properties: {
+    name: String,
+    species: Species
+  }
 });
 
-var Person = Entity.extend({
-    typeName: 'Person',
-    title: 'Person',
-    description: 'A person',
-    properties: {
-        name: String,
-        dateOfBirth: Date,
-        gender: Gender,
-        age: 'integer',
-        pets: [Pet],
-        favoriteNumbers: ['integer'],
-        anything: [],
-        blob: Object
-    }
+const Person = Entity.extend({
+  typeName: 'Person',
+  title: 'Person',
+  description: 'A person',
+  properties: {
+    name: String,
+    dateOfBirth: Date,
+    gender: Gender,
+    age: 'integer',
+    pets: [Pet],
+    favoriteNumbers: ['integer'],
+    anything: [],
+    blob: Object
+  }
 });
 ```
 
 **Convert your model to JSON schema:**
 
 ```javascript
-var jsonSchema = require('fashion-model/json-schema-draft4');
-var jsonSchemaOptions = {
-    toRef: function (Model) {
-        return Model.typeName;
-    }
+const jsonSchema = require('fashion-model/json-schema-draft4');
+const jsonSchemaOptions = {
+  toRef: function (Model) {
+    return Model.typeName;
+  }
 };
 
-var EntitySchema = jsonSchema.fromModel(Entity, jsonSchemaOptions);
-var GenderSchema = jsonSchema.fromModel(Gender, jsonSchemaOptions);
-var SpeciesSchema = jsonSchema.fromModel(Species, jsonSchemaOptions);
-var PetSchema = jsonSchema.fromModel(Pet, jsonSchemaOptions);
-var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
+const EntitySchema = jsonSchema.fromModel(Entity, jsonSchemaOptions);
+const GenderSchema = jsonSchema.fromModel(Gender, jsonSchemaOptions);
+const SpeciesSchema = jsonSchema.fromModel(Species, jsonSchemaOptions);
+const PetSchema = jsonSchema.fromModel(Pet, jsonSchemaOptions);
+const PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 ```
 
 **Entity JSON Schema:**
 
 ```json
 {
-   "id": "Entity",
-   "type": "object",
-   "properties": {
-      "id": {
-         "type": "string"
-      }
-   }
+  "id": "Entity",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    }
+  }
 }
 ```
 
@@ -846,14 +865,14 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Gender",
-   "title": "Gender",
-   "description": "A person's gender",
-   "type": "string",
-   "enum": [
-      "M",
-      "F"
-   ]
+  "id": "Gender",
+  "title": "Gender",
+  "description": "A person's gender",
+  "type": "string",
+  "enum": [
+    "M",
+    "F"
+  ]
 }
 ```
 
@@ -861,14 +880,14 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Species",
-   "title": "Species",
-   "description": "A species",
-   "type": "string",
-   "enum": [
-      "dog",
-      "cat"
-   ]
+  "id": "Species",
+  "title": "Species",
+  "description": "A species",
+  "type": "string",
+  "enum": [
+    "dog",
+    "cat"
+  ]
 }
 ```
 
@@ -876,16 +895,16 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Pet",
-   "type": "object",
-   "properties": {
-      "name": {
-         "type": "string"
-      },
-      "species": {
-         "$ref": "Species"
-      }
-   }
+  "id": "Pet",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "species": {
+      "$ref": "Species"
+    }
+  }
 }
 ```
 
@@ -893,47 +912,47 @@ var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Person",
-   "title": "Person",
-   "description": "A person",
-   "allOf": [
-      {
-         "$ref": "Entity"
+  "id": "Person",
+  "title": "Person",
+  "description": "A person",
+  "allOf": [
+    {
+      "$ref": "Entity"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "dateOfBirth": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "gender": {
+      "$ref": "Gender"
+    },
+    "age": {
+      "type": "integer"
+    },
+    "pets": {
+      "type": "array",
+      "items": {
+        "$ref": "Pet"
       }
-   ],
-   "type": "object",
-   "properties": {
-      "name": {
-         "type": "string"
-      },
-      "dateOfBirth": {
-         "type": "string",
-         "format": "date-time"
-      },
-      "gender": {
-         "$ref": "Gender"
-      },
-      "age": {
-         "type": "integer"
-      },
-      "pets": {
-         "type": "array",
-         "items": {
-            "$ref": "Pet"
-         }
-      },
-      "favoriteNumbers": {
-         "type": "array",
-         "items": {
-            "type": "integer"
-         }
-      },
-      "anything": {
-         "type": "array"
-      },
-      "blob": {
-         "type": "object"
+    },
+    "favoriteNumbers": {
+      "type": "array",
+      "items": {
+        "type": "integer"
       }
-   }
+    },
+    "anything": {
+      "type": "array"
+    },
+    "blob": {
+      "type": "object"
+    }
+  }
 }
 ```

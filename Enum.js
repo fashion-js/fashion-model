@@ -1,16 +1,16 @@
 /* eslint camelcase: ["off"] */
 
-var constantRenameRegex = /([a-z])([A-Z])|([^\w])/g;
+const constantRenameRegex = /([a-z])([A-Z])|([^\w])/g;
 
-var toCamelCaseRegex = /([a-z])[^a-z]+([a-z])/g;
+const toCamelCaseRegex = /([a-z])[^a-z]+([a-z])/g;
 
-var Model = require('./Model');
+const Model = require('./Model');
 
 function Enum_prototype_name () {
   return this._name;
 }
 
-var Enum = module.exports = Model.extend({
+const Enum = module.exports = Model.extend({
   prototype: {
     value: function () {
       return this.data;
@@ -21,7 +21,7 @@ var Enum = module.exports = Model.extend({
     toString: Enum_prototype_name,
 
     clean: function (options) {
-      var Type = this.Model;
+      const Type = this.Model;
       return Type.clean ? Type.clean(this, options) : this._name;
     }
   }
@@ -44,20 +44,20 @@ Enum.toCamelCase = function (str) {
 };
 
 Enum.toTitleCase = function (str) {
-  var title = Enum.toCamelCase(str);
+  const title = Enum.toCamelCase(str);
   return title.charAt(0).toUpperCase() + title.substring(1);
 };
 
-var NORMALIZE_LOWER_CASE = function (str) {
+const NORMALIZE_LOWER_CASE = function (str) {
   return str.toLowerCase();
 };
 
-var NORMALIZE_UPPER_CASE = function (str) {
+const NORMALIZE_UPPER_CASE = function (str) {
   return str.toUpperCase();
 };
 
 Enum.create = function (config) {
-  var normalize;
+  let normalize;
 
   if (Array.isArray(config)) {
     config = {
@@ -65,12 +65,12 @@ Enum.create = function (config) {
     };
   }
 
-  var origCoerce = config.coerce;
-  var Type;
+  const origCoerce = config.coerce;
+  let Type;
 
   config.coerce = function (value, options) {
     if (origCoerce) {
-      var newValue = origCoerce.call(this, value, options);
+      const newValue = origCoerce.call(this, value, options);
       if (newValue !== undefined) {
         value = newValue;
       }
@@ -84,7 +84,7 @@ Enum.create = function (config) {
       value = normalize(value);
     }
 
-    var enumValue = Type[value];
+    const enumValue = Type[value];
     if (enumValue === undefined) {
       this.coercionError(value, options);
     }
@@ -99,9 +99,9 @@ Enum.create = function (config) {
     normalize = NORMALIZE_LOWER_CASE;
   }
 
-  var proto = Type.prototype;
+  const proto = Type.prototype;
 
-  var values = config.values;
+  const values = config.values;
 
   Type.names = [];
   Type.values = [];
@@ -109,7 +109,7 @@ Enum.create = function (config) {
   function createEnumValue (name, value, ordinal) {
     Type.names.push(name);
 
-    var enumValue = new Type(value);
+    const enumValue = new Type(value);
     enumValue._name = name;
 
     proto['is' + Enum.toTitleCase(name)] = function () {

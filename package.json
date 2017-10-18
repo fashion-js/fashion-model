@@ -1,40 +1,38 @@
 {
-  "name": "fashion-model",
-  "description": "JavaScript library for defining types and their properties with support for wrapping/unwrapping and serialization/deserialization.",
-  "keywords": [
-    "data",
-    "models",
-    "types",
-    "data-modeling",
-    "modeling"
-  ],
-  "homepage": "https://github.com/philidem/fashion-model",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/philidem/fashion-model.git"
-  },
-  "author": "Phil Gates-Idem <phillip.idem@gmail.com",
-  "scripts": {
-    "test": "node_modules/.bin/mocha --ui bdd --reporter spec ./test/**/*-test.js"
-  },
-  "main": "./Model.js",
-  "devDependencies": {
-    "chai": "^3.5.0",
-    "eslint": "^3.19.0",
-    "eslint-config-semistandard": "^8.0.0",
-    "eslint-config-standard": "^10.2.1",
-    "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-mocha": "^4.9.0",
-    "eslint-plugin-node": "^4.2.2",
-    "eslint-plugin-promise": "^3.5.0",
-    "eslint-plugin-standard": "^3.0.1",
-    "jayschema": "^0.3.1",
-    "mocha": "^3.2.0",
-    "z-schema": "^3.9.4"
-  },
-  "dependencies": {
-    "events": "^1.1.1",
-    "raptor-util": "^3.1.0"
-  },
-  "version": "5.0.19"
+    "name": "fashion-model",
+    "description": "JavaScript library for defining types and their properties with support for wrapping/unwrapping and serialization/deserialization.",
+    "keywords": [
+        "data",
+        "models",
+        "types",
+        "data-modeling",
+        "modeling"
+    ],
+    "homepage": "https://github.com/philidem/fashion-model",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/philidem/fashion-model.git"
+    },
+    "author": "Phil Gates-Idem <phillip.idem@gmail.com",
+    "scripts": {
+        "lint": "eslint .",
+        "test": "ava --verbose test/**/*.test.js"
+    },
+    "main": "./Model.js",
+    "devDependencies": {
+        "ava": "^0.22.0",
+        "eslint": "^4.9.0",
+        "eslint-config-semistandard": "^11.0.0",
+        "eslint-config-standard": "^10.2.1",
+        "eslint-plugin-import": "^2.7.0",
+        "eslint-plugin-node": "^5.2.0",
+        "eslint-plugin-promise": "^3.4.1",
+        "eslint-plugin-standard": "^3.0.1",
+        "jayschema": "^0.3.1",
+        "z-schema": "^3.9.4"
+    },
+    "dependencies": {
+        "events": "^1.1.1"
+    },
+    "version": "6.0.1"
 }

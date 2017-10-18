@@ -1,7 +1,7 @@
-var Model = require('./Model');
-var Enum = require('./Enum');
+const Model = require('./Model');
+const Enum = require('./Enum');
 
-var DEFAULT_TO_REF = function (Type) {
+const DEFAULT_TO_REF = function (Type) {
   if (!Type.typeName) {
     throw new Error('Cannot build ref to type that does not have "typeName"');
   }
@@ -9,11 +9,17 @@ var DEFAULT_TO_REF = function (Type) {
   return Type.typeName;
 };
 
-var DEFAULT_IS_IGNORED_PROPERTY = function (name, property) {
+const DEFAULT_IS_IGNORED_PROPERTY = function (name, property) {
   return false;
 };
 
-var SPECIAL_TYPES = {
+const SPECIAL_TYPES = {
+  'any': {
+    configureJsonSchemaProperty: function (jsonSchemaProperty) {
+      delete jsonSchemaProperty.type;
+    }
+  },
+
   'object': {
     configureJsonSchemaProperty: function (jsonSchemaProperty) {
       jsonSchemaProperty.type = 'object';
@@ -54,8 +60,8 @@ var SPECIAL_TYPES = {
 };
 
 function _configure (jsonSchemaProperty, Type, options) {
-  var typeName = Type.typeName;
-  var specialType;
+  const typeName = Type.typeName;
+  let specialType;
   if (typeName && ((specialType = SPECIAL_TYPES[typeName]) !== undefined)) {
     specialType.configureJsonSchemaProperty(jsonSchemaProperty);
   } else {
@@ -63,7 +69,7 @@ function _configure (jsonSchemaProperty, Type, options) {
   }
 }
 
-var IGNORED_PROPERTIES = {
+const IGNORED_PROPERTIES = {
   constructor: 1,
   $super: 1
 };
@@ -80,27 +86,27 @@ exports.fromModel = function (Type, options) {
   options.toRef = options.toRef || DEFAULT_TO_REF;
   options.isIgnoredProperty = options.isIgnoredProperty || DEFAULT_IS_IGNORED_PROPERTY;
 
-  var schema = {};
+  const schema = {};
 
   if (Type.typeName) {
     schema.id = Type.typeName;
   }
 
   ['title', 'description', 'pattern'].forEach(function (attr) {
-    var value = Type[attr];
+    const value = Type[attr];
     if (value !== undefined) {
       schema[attr] = value;
     }
   });
 
-  var useAllOf = (options.useAllOf !== false);
+  const useAllOf = (options.useAllOf !== false);
   if (useAllOf) {
     // "allOf" is used to express composition.
     // However, swagger-ui currently doesn't handle composition very well
     // so we provide an option for disabling its usage.
     // When "allOf" is disabled, the inherited properties are automatically
     // put into the derived type definitions
-    var SuperType = Type.$super;
+    const SuperType = Type.$super;
     if (SuperType && (SuperType !== Model) && !SuperType.isCompatibleWith(Enum)) {
       schema.allOf = [
         {
@@ -115,17 +121,17 @@ exports.fromModel = function (Type, options) {
     schema.enum = Type.names;
   } else if (Type.hasProperties()) {
     schema.type = 'object';
-    var properties = schema.properties = {};
+    const properties = schema.properties = {};
 
     Type.forEachProperty({
       inherited: !useAllOf
     }, function (declaredProperty) {
-      var key = declaredProperty.getKey();
+      const key = declaredProperty.getKey();
       if (!IGNORED_PROPERTIES[key] && !options.isIgnoredProperty(key, declaredProperty)) {
-        var jsonSchemaProperty = properties[key] = {};
+        const jsonSchemaProperty = properties[key] = {};
 
         ['title', 'description'].forEach(function (attr) {
-          var value = declaredProperty[attr];
+          const value = declaredProperty[attr];
           if (value !== undefined) {
             jsonSchemaProperty[attr] = value;
           }
@@ -135,12 +141,12 @@ exports.fromModel = function (Type, options) {
           options.handleProperty(key, declaredProperty, jsonSchemaProperty);
         }
 
-        var PropertyType = declaredProperty.type;
+        const PropertyType = declaredProperty.type;
 
         if (declaredProperty.type.typeName === 'array') {
           jsonSchemaProperty.type = 'array';
 
-          var items = declaredProperty.items;
+          const items = declaredProperty.items;
           jsonSchemaProperty.items = {};
 
           if (items) {
