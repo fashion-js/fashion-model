@@ -1,6 +1,6 @@
-var Model = require('./Model');
+const Model = require('./Model');
 
-var ArrayType;
+let ArrayType;
 
 function flagAsArrayType (array) {
   Object.defineProperty(array, 'Model', {
@@ -12,7 +12,7 @@ function flagAsArrayType (array) {
 }
 function _createModelArray (rawArray) {
   // only create second array if we need to wrap data with Model instance
-  var newArray = new Array(rawArray.length);
+  const newArray = new Array(rawArray.length);
 
   flagAsArrayType(newArray);
 
@@ -23,18 +23,18 @@ function convertArrayItems (array, ItemType, options) {
   // We might need to do some type conversion on each item in the array.
   // Even if we do type conversion we store the "raw" value in the
   // array and not the model instance
-  var newArray;
+  let newArray;
 
   newArray = _createModelArray(array);
 
-  var wrap;
-  var coerce;
+  let wrap;
+  let coerce;
 
   if (ItemType && ((wrap = ItemType.wrap) || (coerce = ItemType.coerce))) {
     // we need to either wrap or coerce each item in the array
-    var i = array.length;
+    let i = array.length;
     while (--i >= 0) {
-      var item = array[i];
+      const item = array[i];
       if (wrap) {
         // need to wrap each item and store in new array...
         newArray[i] = wrap.call(ItemType, item, options);
@@ -69,18 +69,18 @@ ArrayType = module.exports = Model.extend({
   flagAsArrayType,
 
   clean: function (value, options) {
-    var property;
-    var items;
+    let property;
+    let items;
 
     // The property that we're currently coercing is passed in via
     // options. We use the property to get information about the types
     // of each item
     if ((property = options.property) && (items = property.items)) {
       options.property = items;
-      var itemType = items.type;
+      const itemType = items.type;
       if (itemType.clean) {
-        var i = value.length;
-        var clone = new Array(i);
+        let i = value.length;
+        const clone = new Array(i);
         while (--i >= 0) {
           clone[i] = itemType.clean(value[i], options);
         }
@@ -101,8 +101,8 @@ ArrayType = module.exports = Model.extend({
       return value;
     }
 
-    var valueIsArray = Array.isArray(value);
-    var oldArray;
+    const valueIsArray = Array.isArray(value);
+    let oldArray;
     if (options.strict) {
       if (!valueIsArray) {
         this.coercionError(value, options);
@@ -113,9 +113,9 @@ ArrayType = module.exports = Model.extend({
       oldArray = valueIsArray ? value : [value];
     }
 
-    var property;
-    var items;
-    var newArray;
+    let property;
+    let items;
+    let newArray;
 
     // The property that we're currently coercing is passed in via
     // options. We use the property to get information about the types

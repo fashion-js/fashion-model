@@ -18,7 +18,7 @@ module.exports = require('./Model').extend({
       return value;
     }
 
-    var number = Number(value);
+    const number = Number(value);
 
     if (isNaN(number)) {
       this.coercionError(value, options);

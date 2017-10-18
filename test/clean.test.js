@@ -1,11 +1,11 @@
 const test = require('ava');
 
-var Model = require('../Model');
-var Enum = require('../Enum');
-var ArrayType = require('../Array');
+const Model = require('../Model');
+const Enum = require('../Enum');
+const ArrayType = require('../Array');
 
 test('should deep clean', function (t) {
-  var Gender = Enum.create({
+  const Gender = Enum.create({
     values: {
       MALE: {
         code: 'M'
@@ -16,14 +16,14 @@ test('should deep clean', function (t) {
     }
   });
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       displayName: String,
       gender: Gender
     }
   });
 
-  var wrapper = {
+  const wrapper = {
     something: {
       person: new Person({
         displayName: 'John Doe',
@@ -38,7 +38,7 @@ test('should deep clean', function (t) {
     female: Gender.FEMALE
   };
 
-  var cleaned = Model.clean(wrapper);
+  const cleaned = Model.clean(wrapper);
 
   t.is(wrapper.something.person.getDisplayName(), 'John Doe');
 
@@ -59,7 +59,7 @@ test('should deep clean', function (t) {
 });
 
 test('should allow cleaning of "hidden" model properties from raw data', function (t) {
-  var Entity = Model.extend({
+  const Entity = Model.extend({
     properties: {
       id: {
         type: String,
@@ -68,7 +68,7 @@ test('should allow cleaning of "hidden" model properties from raw data', functio
     }
   });
 
-  var AddressType = Enum.create({
+  const AddressType = Enum.create({
     values: {
       'home': {
         title: 'Home'
@@ -80,7 +80,7 @@ test('should allow cleaning of "hidden" model properties from raw data', functio
     }
   });
 
-  var Address = Model.extend({
+  const Address = Model.extend({
     properties: {
       city: String,
       state: String,
@@ -88,7 +88,7 @@ test('should allow cleaning of "hidden" model properties from raw data', functio
     }
   });
 
-  var Person = Entity.extend({
+  const Person = Entity.extend({
     properties: {
       name: String,
       dateOfBirth: Date,
@@ -96,7 +96,7 @@ test('should allow cleaning of "hidden" model properties from raw data', functio
     }
   });
 
-  var person = new Person({
+  const person = new Person({
     _id: 'test',
     name: 'John Doe',
     dateOfBirth: new Date(1980, 1, 1),
@@ -120,7 +120,7 @@ test('should allow cleaning of "hidden" model properties from raw data', functio
 });
 
 test('should allow cleaning enum types', function (t) {
-  var AddressType = Enum.create({
+  const AddressType = Enum.create({
     values: {
       'home': {
         title: 'Home'
@@ -132,15 +132,15 @@ test('should allow cleaning enum types', function (t) {
     }
   });
 
-  var Region = Enum.create({
+  const Region = Enum.create({
     values: ['southeast']
   });
 
-  var Climate = Enum.create({
+  const Climate = Enum.create({
     values: ['hot', 'humid']
   });
 
-  var Address = Model.extend({
+  const Address = Model.extend({
     properties: {
       city: String,
       state: String,
@@ -150,7 +150,7 @@ test('should allow cleaning enum types', function (t) {
     }
   });
 
-  var address = new Address({
+  const address = new Address({
     city: 'Durham',
     state: 'NC',
     type: AddressType.WORK,
@@ -168,26 +168,26 @@ test('should allow cleaning enum types', function (t) {
 });
 
 test('should allow cleaning enum types whose value is another type', function (t) {
-  var Something = Model.extend({
+  const Something = Model.extend({
     typeName: 'Something',
     properties: {
       name: String
     }
   });
 
-  var MessageType = Enum.create({
+  const MessageType = Enum.create({
     values: {
       abc: Something
     }
   });
 
-  var Message = Model.extend({
+  const Message = Model.extend({
     properties: {
       type: MessageType
     }
   });
 
-  var message = new Message();
+  const message = new Message();
   message.setType(MessageType.abc);
   t.is(message.getType(), MessageType.abc);
   t.is(message.getType().value(), Something);
@@ -202,7 +202,7 @@ test('should allow cleaning enum types whose value is another type', function (t
 });
 
 test('should not clean property values associated with types that are not wrapped', function (t) {
-  var Binary = Model.extend({
+  const Binary = Model.extend({
     wrap: false,
     coerce: function (value, options) {
       if (value == null) {
@@ -214,36 +214,36 @@ test('should not clean property values associated with types that are not wrappe
       }
 
       if (value.constructor === String) {
-        return new Buffer(value, 'utf8');
+        return Buffer.from(value, 'utf8');
       }
 
       this.coercionError(value, options, 'Invalid binary data.');
     }
   });
 
-  var Image = Model.extend({
+  const Image = Model.extend({
     properties: {
       data: Binary
     }
   });
 
-  var image = new Image({
+  const image = new Image({
     data: 'abc'
   });
 
   t.true(image.getData() instanceof Buffer);
 
-  var str = image.getData().toString('utf8');
+  const str = image.getData().toString('utf8');
 
   t.is(str, 'abc');
 
-  var cleanedImage = image.clean();
+  const cleanedImage = image.clean();
   t.true(cleanedImage.data instanceof Buffer);
   t.is(cleanedImage.data.toString('utf8'), 'abc');
 });
 
 test('should allow unwrapped type to control how its value is cleaned via "clean: function"', function (t) {
-  var Binary = Model.extend({
+  const Binary = Model.extend({
     wrap: false,
     clean: function (value) {
       // clean will convert to base64
@@ -261,25 +261,25 @@ test('should allow unwrapped type to control how its value is cleaned via "clean
       // Buffers can be of type array. We assume that if an array is passed,
       // that it is in fact an array buffer
       if (Array.isArray(value)) {
-        return new Buffer(value);
+        return Buffer.from(value);
       }
 
       if (value.constructor === String) {
         // assume a binary string is something that was base64 encoded
-        return new Buffer(value, 'base64');
+        return Buffer.from(value, 'base64');
       }
 
       this.coercionError(value, options, 'Invalid binary data.');
     }
   });
 
-  var Data = Model.extend({
+  const Data = Model.extend({
     properties: {
       binary: Binary
     }
   });
 
-  var data = new Data({
+  const data = new Data({
     // binary data will be single byte with value 0
     binary: [0]
   });
@@ -288,18 +288,18 @@ test('should allow unwrapped type to control how its value is cleaned via "clean
   t.is(data.getBinary().length, 1);
   t.is(data.getBinary().readInt8(0), 0);
 
-  var cleanedData = data.clean();
+  const cleanedData = data.clean();
   t.is(cleanedData.binary.constructor, String);
   t.is(cleanedData.binary, 'AA==');
 
-  var modelData = Data.wrap(cleanedData);
+  const modelData = Data.wrap(cleanedData);
   t.is(modelData.getBinary().constructor, Buffer);
   t.is(modelData.getBinary().length, 1);
   t.is(modelData.getBinary().readInt8(0), 0);
 });
 
 test('should allow wrapped type to control how its value is cleaned', function (t) {
-  var LatLng = Model.extend({
+  const LatLng = Model.extend({
     properties: {
       lat: Number,
       lng: Number
@@ -336,38 +336,38 @@ test('should allow wrapped type to control how its value is cleaned', function (
     }
   });
 
-  var Location = Model.extend({
+  const Location = Model.extend({
     properties: {
       coord: LatLng
     }
   });
 
-  var location = new Location({
+  const location = new Location({
     coord: [35.994033, -78.898619]
   });
 
   t.is(location.getCoord().getLat(), 35.994033);
   t.is(location.getCoord().getLng(), -78.898619);
 
-  var cleaned = location.clean();
+  const cleaned = location.clean();
   t.is(cleaned.coord[0], 35.994033);
   t.is(cleaned.coord[1], -78.898619);
 });
 
 test('should copy additional properties as-is when cleaning', function (t) {
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {},
     additionalProperties: true
   });
 
   t.is(Something.additionalProperties, true);
 
-  var something = new Something({
-    abc: new Buffer('abc'),
-    def: new Buffer('def')
+  const something = new Something({
+    abc: Buffer.from('abc'),
+    def: Buffer.from('def')
   });
 
-  var cleaned = Model.clean(something);
+  const cleaned = Model.clean(something);
   t.true(cleaned.abc instanceof Buffer);
   t.true(cleaned.def instanceof Buffer);
   t.is(cleaned.abc.toString(), 'abc');
@@ -375,26 +375,26 @@ test('should copy additional properties as-is when cleaning', function (t) {
 });
 
 test('should clean Object property', function (t) {
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       data: Object
     }
   });
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       name: String
     }
   });
 
-  var something = new Something();
+  const something = new Something();
 
   something.setData(new Person({
     name: 'John Doe'
   }));
 
-  var errors = [];
-  var cleaned = Model.clean(something, errors);
+  let errors = [];
+  let cleaned = Model.clean(something, errors);
 
   t.deepEqual(errors, []);
 
@@ -421,32 +421,32 @@ test('should clean Object property', function (t) {
 });
 
 test('should clean object even if there is property with Object type whose value is Model instance', function (t) {
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       config: Object
     }
   });
 
-  var Filter = Model.extend({
+  const Filter = Model.extend({
     properties: {
       id: Number
     }
   });
 
-  var Mapping = Model.extend({
+  const Mapping = Model.extend({
     properties: {
       id: Number,
       filters: [Filter]
     }
   });
 
-  var Config = Model.extend({
+  const Config = Model.extend({
     properties: {
       mappings: [Mapping]
     }
   });
 
-  var something = new Something();
+  const something = new Something();
   something.setConfig(new Config({
     mappings: [
       {
@@ -464,9 +464,9 @@ test('should clean object even if there is property with Object type whose value
     ]
   }));
 
-  var errors = [];
+  const errors = [];
 
-  var cleaned = Model.clean(something, errors);
+  const cleaned = Model.clean(something, errors);
 
   t.deepEqual(errors, []);
   t.is(something.getConfig().getMappings().Model, ArrayType);
@@ -492,14 +492,14 @@ test('should clean object even if there is property with Object type whose value
 });
 
 test('should clean object that has property with type that extends Array', function (t) {
-  var Filter = Model.extend({
+  const Filter = Model.extend({
     properties: {
       property: String,
       value: Object
     }
   });
 
-  var Filters = ArrayType.extend({
+  const Filters = ArrayType.extend({
     wrap: false,
     coerce: function (value, options) {
       if (value == null) {
@@ -507,11 +507,11 @@ test('should clean object that has property with type that extends Array', funct
       }
 
       if (!Array.isArray(value)) {
-        var filterObj = value;
+        const filterObj = value;
         value = [];
-        for (var key in filterObj) {
+        for (let key in filterObj) {
           if (filterObj.hasOwnProperty(key)) {
-            var filter = new Filter({
+            const filter = new Filter({
               property: key,
               value: filterObj[key]
             });
@@ -524,7 +524,7 @@ test('should clean object that has property with type that extends Array', funct
     }
   });
 
-  var Config = Model.extend({
+  const Config = Model.extend({
     properties: {
       filters: {
         type: Filters,
@@ -533,9 +533,9 @@ test('should clean object that has property with type that extends Array', funct
     }
   });
 
-  var errors = [];
+  const errors = [];
 
-  var config = new Config({
+  const config = new Config({
     filters: {
       job: 'test'
     }
@@ -545,7 +545,7 @@ test('should clean object that has property with type that extends Array', funct
 
   t.deepEqual(errors, []);
 
-  var cleaned = Model.clean(config, errors);
+  const cleaned = Model.clean(config, errors);
 
   t.deepEqual(errors, []);
 
@@ -555,11 +555,11 @@ test('should clean object that has property with type that extends Array', funct
 });
 
 test('should allow customizing clean via options', function (t) {
-  var CleanFor = Enum.create({
+  const CleanFor = Enum.create({
     values: ['DATABASE']
   });
 
-  var EntityId = Model.extend({
+  const EntityId = Model.extend({
     wrap: false,
     clean: function (value, options) {
       if (options.target === CleanFor.DATABASE) {
@@ -576,29 +576,29 @@ test('should allow customizing clean via options', function (t) {
     }
   });
 
-  var Entity = Model.extend({
+  const Entity = Model.extend({
     properties: {
       id: EntityId
     }
   });
 
-  var entity = new Entity();
+  const entity = new Entity();
   entity.setId('123');
 
-  var cleanedForDb = entity.clean({
+  const cleanedForDb = entity.clean({
     target: CleanFor.DATABASE
   });
 
-  var cleanedForOther = entity.clean();
+  const cleanedForOther = entity.clean();
 
   t.is(cleanedForDb.id, 123);
   t.is(cleanedForOther.id, '123');
 
-  var invalidEntityForDb = new Entity();
+  const invalidEntityForDb = new Entity();
   invalidEntityForDb.setId(true);
 
-  var errors = [];
-  var cleaned = invalidEntityForDb.clean({
+  const errors = [];
+  const cleaned = invalidEntityForDb.clean({
     target: CleanFor.DATABASE,
     errors: errors
   });
@@ -611,11 +611,11 @@ test('should allow customizing clean via options', function (t) {
 });
 
 test('should allow customizing cleaning values within array via options', function (t) {
-  var CleanFor = Enum.create({
+  const CleanFor = Enum.create({
     values: ['DATABASE']
   });
 
-  var EntityId = Model.extend({
+  const EntityId = Model.extend({
     wrap: false,
     clean: function (value, options) {
       if (options.target === CleanFor.DATABASE) {
@@ -632,17 +632,17 @@ test('should allow customizing cleaning values within array via options', functi
     }
   });
 
-  var EntityList = Model.extend({
+  const EntityList = Model.extend({
     properties: {
       idList: [EntityId]
     }
   });
 
-  var entityList = new EntityList();
+  const entityList = new EntityList();
   entityList.setIdList(['123', '456']);
 
-  var errors = [];
-  var cleaned = entityList.clean({
+  const errors = [];
+  const cleaned = entityList.clean({
     errors: errors,
     target: CleanFor.DATABASE
   });
@@ -652,7 +652,7 @@ test('should allow customizing cleaning values within array via options', functi
 });
 
 test('should clean model instance using clean method provided by type', function (t) {
-  var Endpoint = Model.extend({
+  const Endpoint = Model.extend({
     clean: function (endpoint) {
       return endpoint.getType() + ':' + endpoint.getId();
     },
@@ -663,12 +663,12 @@ test('should clean model instance using clean method provided by type', function
     }
   });
 
-  var endpoint = new Endpoint({
+  const endpoint = new Endpoint({
     type: 'Agent',
     id: 5
   });
 
-  var data = {
+  const data = {
     endpoint: endpoint
   };
 
@@ -680,7 +680,7 @@ test('should clean model instance using clean method provided by type', function
 });
 
 test('should support afterClean in type', function (t) {
-  var Endpoint = Model.extend({
+  const Endpoint = Model.extend({
     afterClean: function (endpoint) {
       delete endpoint.extra;
     },
@@ -692,13 +692,13 @@ test('should support afterClean in type', function (t) {
     }
   });
 
-  var endpoint = new Endpoint({
+  const endpoint = new Endpoint({
     type: 'Agent',
     id: 5,
     extra: 'Test!'
   });
 
-  var data = {
+  const data = {
     endpoint: endpoint
   };
 
@@ -716,7 +716,7 @@ test('should support afterClean in type', function (t) {
 });
 
 test('should allow enum values to override clean in prototype', function (t) {
-  var Gender = Enum.create({
+  const Gender = Enum.create({
     values: {
       MALE: {
         code: 'M'
@@ -738,7 +738,7 @@ test('should allow enum values to override clean in prototype', function (t) {
 });
 
 test('should allow enum values to override clean in static method', function (t) {
-  var Gender = Enum.create({
+  const Gender = Enum.create({
     values: {
       MALE: {
         code: 'M'

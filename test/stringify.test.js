@@ -1,22 +1,22 @@
 const test = require('ava');
 
-var Model = require('../Model');
-var Enum = require('../Enum');
-var IntegerType = require('../Integer');
+const Model = require('../Model');
+const Enum = require('../Enum');
+const IntegerType = require('../Integer');
 
-var Address = Model.extend({
+const Address = Model.extend({
   properties: {
     city: String,
     state: String
   }
 });
 
-var Gender = Enum.create({
+const Gender = Enum.create({
   values: ['M', 'F'],
   autoUpperCase: true
 });
 
-var Member = Model.extend({
+const Member = Model.extend({
   properties: {
     email: String,
     dateCreated: Date,
@@ -27,7 +27,7 @@ var Member = Model.extend({
 });
 
 test('should allow stringify', function (t) {
-  var member = new Member({
+  const member = new Member({
     email: 'jane.doe@example.com',
     displayName: 'Jane',
     address: {
@@ -47,13 +47,13 @@ test('should allow stringify', function (t) {
 });
 
 test('should properly stringify an array of models', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       name: String
     }
   });
 
-  var people = [
+  const people = [
     Person.wrap({
       name: 'John'
     }),
@@ -73,7 +73,7 @@ test('should properly stringify an array of models', function (t) {
 });
 
 test('should allow setting of array of strings when custom "set" function is provided', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       permissions: {
         type: [String],
@@ -84,7 +84,7 @@ test('should allow setting of array of strings when custom "set" function is pro
     }
   });
 
-  var person = new Person();
+  const person = new Person();
   person.setPermissions(['a', 'b', 'c']);
 
   t.is(person.getPermissions().length, 3);
@@ -95,13 +95,13 @@ test('should allow setting of array of strings when custom "set" function is pro
 });
 
 test('should properly stringify an array of models within a simple object', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       name: String
     }
   });
 
-  var people = Person.convertArray([
+  const people = Person.convertArray([
     {
       name: 'John'
     },
@@ -128,19 +128,19 @@ test('should properly stringify an array of models within a simple object', func
 });
 
 test('should handle stringifying models with array of Enum values', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: ['red', 'green', 'blue', 'yellow']
   });
 
-  var Palette = Model.extend({
+  const Palette = Model.extend({
     properties: {
       colors: [Color]
     }
   });
 
   // original array
-  var colors = ['red', 'green', 'blue'];
-  var palette = new Palette({
+  const colors = ['red', 'green', 'blue'];
+  const palette = new Palette({
     colors: colors
   });
 
@@ -150,21 +150,21 @@ test('should handle stringifying models with array of Enum values', function (t)
 });
 
 test('should handle stringifying models with array of object values', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       name: String,
       age: IntegerType
     }
   });
 
-  var Group = Model.extend({
+  const Group = Model.extend({
     properties: {
       people: [Person]
     }
   });
 
   // original array
-  var people = [
+  const people = [
     {
       name: 'John',
       age: 10
@@ -174,7 +174,7 @@ test('should handle stringifying models with array of object values', function (
       age: 12
     }
   ];
-  var group = new Group({
+  const group = new Group({
     people: people
   });
 

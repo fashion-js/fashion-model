@@ -1,11 +1,11 @@
 const test = require('ava');
 
-var Model = require('../Model');
-var Enum = require('../Enum');
-var ObservableModel = require('../ObservableModel');
+const Model = require('../Model');
+const Enum = require('../Enum');
+const ObservableModel = require('../ObservableModel');
 
 test('should support type coercion', function (t) {
-  var NumericId = Model.extend({
+  const NumericId = Model.extend({
     wrap: false,
     coerce: function (value) {
       if (value != null && value.constructor !== Number) {
@@ -15,13 +15,13 @@ test('should support type coercion', function (t) {
     }
   });
 
-  var Product = Model.extend({
+  const Product = Model.extend({
     properties: {
       id: NumericId
     }
   });
 
-  var product = new Product({
+  const product = new Product({
     id: '123'
   });
 
@@ -29,7 +29,7 @@ test('should support type coercion', function (t) {
 });
 
 test('should allow allow type coercion when setting null value for enum', function (t) {
-  var Visibility = Enum.create({
+  const Visibility = Enum.create({
     values: ['private', 'public'],
 
     coerce: function (value, options) {
@@ -43,47 +43,47 @@ test('should allow allow type coercion when setting null value for enum', functi
     }
   });
 
-  var File = Model.extend({
+  const File = Model.extend({
     properties: {
       visibility: Visibility
     }
   });
 
-  var file = new File();
+  const file = new File();
   file.setVisibility(null);
 
   t.is(file.getVisibility(), Visibility.private);
 });
 
 test('should handle converting model from one type to another', function (t) {
-  var Blah = Model.extend({
+  const Blah = Model.extend({
     properties: {
       abc: String
     }
   });
 
-  var IncomingMessage = Model.extend({
+  const IncomingMessage = Model.extend({
     properties: {
       id: String,
       incomingData: Blah
     }
   });
 
-  var OutgoingMessage = Model.extend({
+  const OutgoingMessage = Model.extend({
     properties: {
       id: String,
       outgoingData: Blah
     }
   });
 
-  var incomingMessage = new IncomingMessage({
+  const incomingMessage = new IncomingMessage({
     id: 'abc',
     incomingData: {
       abc: 'testing'
     }
   });
 
-  var outgoingMessage = OutgoingMessage.wrap(incomingMessage);
+  const outgoingMessage = OutgoingMessage.wrap(incomingMessage);
 
   t.is(incomingMessage.getId(), 'abc');
   t.is(incomingMessage.getIncomingData().getAbc(), 'testing');
@@ -92,13 +92,13 @@ test('should handle converting model from one type to another', function (t) {
 });
 
 test('should handle calling coerce to convert model of one type to another without unwrapping', function (t) {
-  var AddressType = module.exports = Enum.create({
+  const AddressType = module.exports = Enum.create({
     values: [
       'Client'
     ]
   });
 
-  var Address = Model.extend({
+  const Address = Model.extend({
     properties: {
       type: AddressType,
       uri: String
@@ -122,11 +122,11 @@ test('should handle calling coerce to convert model of one type to another witho
     }
   });
 
-  var Addressable = {
+  const Addressable = {
     id: 'Addressable',
 
     initType: function (Type) {
-      var addressType = Type.prototype.addressType = Type.addressType;
+      const addressType = Type.prototype.addressType = Type.addressType;
       if (!addressType) {
         throw new Error('addressType is required for Addressable type');
       }
@@ -134,12 +134,12 @@ test('should handle calling coerce to convert model of one type to another witho
 
     prototype: {
       getAddress: function () {
-        var id = this.getId();
+        const id = this.getId();
         if (!id) {
           return null;
         }
 
-        var address = this._address;
+        let address = this._address;
         if (address === undefined) {
           this._address = address = new Address();
           address.setType(this.addressType);
@@ -151,7 +151,7 @@ test('should handle calling coerce to convert model of one type to another witho
     }
   };
 
-  var Client = ObservableModel.extend({
+  const Client = ObservableModel.extend({
     addressType: AddressType.Client,
 
     mixins: [Addressable],
@@ -161,17 +161,17 @@ test('should handle calling coerce to convert model of one type to another witho
     }
   });
 
-  var Message = Model.extend({
+  const Message = Model.extend({
     properties: {
       from: Address
     }
   });
 
-  var client = new Client({
+  const client = new Client({
     id: 'abc'
   });
 
-  var message = new Message();
+  const message = new Message();
   message.setFrom(client);
 
   t.is(message.getFrom().getUri(), 'abc');

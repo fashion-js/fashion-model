@@ -1,9 +1,9 @@
 const test = require('ava');
 
-var Model = require('../Model');
+const Model = require('../Model');
 
 test('should support prototype', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       displayName: String
     },
@@ -15,7 +15,7 @@ test('should support prototype', function (t) {
     }
   });
 
-  var person = new Person({
+  const person = new Person({
     displayName: 'John Doe'
   });
 

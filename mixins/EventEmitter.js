@@ -1,6 +1,6 @@
-var EventEmitter = require('events').EventEmitter;
+const EventEmitter = require('events').EventEmitter;
 
-var mixin = exports;
+const mixin = exports;
 
 mixin.id = 'EventEmitter';
 

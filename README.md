@@ -43,19 +43,19 @@ information.
 ### Requiring
 ```javascript
 // Requiring the base Model type
-var Model = require('fashion-model');
+const Model = require('fashion-model');
 
 // Variation on requiring the Model type
-var Model = require('fashion-model/Model');
+const Model = require('fashion-model/Model');
 
 // Requiring the Enum type factory
-var Enum = require('fashion-model/Enum');
+const Enum = require('fashion-model/Enum');
 
 // Create new model type
-var NewModel = Model.extend(config);
+const NewModel = Model.extend(config);
 
 // Create new enum type
-var NewEnum = Enum.create(config);
+const NewEnum = Enum.create(config);
 ```
 
 ### Primitive Types
@@ -75,7 +75,7 @@ The following primitive types are supported:
 
 **Declare custom complex object type:**
 ```javascript
-var Address = Model.extend({
+const Address = Model.extend({
     properties: {
         city: String,
         state: String
@@ -86,7 +86,7 @@ var Address = Model.extend({
 **Create instance via `new` constructor with no initial data:**
 ```javascript
 // Create via constructor with no initial data
-var address = new Address();
+const address = new Address();
 address.setCity('San Francisco');
 address.setState('CA');
 ```
@@ -94,7 +94,7 @@ address.setState('CA');
 **Create instance via `new` constructor with some initial data:**
 ```javascript
 // Create via constructor with initial data
-var address = new Address({
+const address = new Address({
     city: 'San Francisco',
     state: 'CA'
 });
@@ -103,7 +103,7 @@ var address = new Address({
 **Create instance via `create` method:**
 ```javascript
 // Create via "create" function
-var address = Address.create();
+const address = Address.create();
 address.setCity('San Francisco');
 address.setState('CA');
 ```
@@ -128,7 +128,7 @@ events
 **Example using ObservableModel:**
 
 ```javascript
-var Something = require('fashion-model/ObservableModel').extend({
+const Something = require('fashion-model/ObservableModel').extend({
     properties: {
         value: String
     }
@@ -138,7 +138,7 @@ var Something = require('fashion-model/ObservableModel').extend({
 **Example using mixin:**
 
 ```javascript
-var Something = require('fashion-model/Model').extend({
+const Something = require('fashion-model/Model').extend({
     properties: {
         value: String
     },
@@ -150,7 +150,7 @@ var Something = require('fashion-model/Model').extend({
 **Listening for property value changes:**
 
 ```javascript
-var something = new Something();
+const something = new Something();
 
 something.on('change:value', function (event) {
     // The "value" property changed
@@ -181,7 +181,7 @@ node.
 ```javascript
 // Declare a linked list node type that has a pointer
 // to the next node
-var LinkedListNode = Model.extend({
+const LinkedListNode = Model.extend({
     properties: {
         next: 'self',
         value: Object
@@ -189,7 +189,7 @@ var LinkedListNode = Model.extend({
 });
 
 // Here is another functionally equivalent variation of LinkedListNode
-var LinkedListNode = Model.extend({
+const LinkedListNode = Model.extend({
     properties: {
         next: {
             type: 'self'
@@ -199,7 +199,7 @@ var LinkedListNode = Model.extend({
 });
 
 // An example of self-type reference within an array
-var TreeNode = Model.extend({
+const TreeNode = Model.extend({
     properties: {
         children: ['self'],
         value: Object
@@ -207,7 +207,7 @@ var TreeNode = Model.extend({
 });
 
 // Here is another functionally equivalent variation of TreeNode
-var TreeNode = Model.extend({
+const TreeNode = Model.extend({
     properties: {
         // Brackets at end of type name are used to denote arrays
         children: 'self[]',
@@ -223,7 +223,7 @@ for each property defined in the model.
 **For example:**
 ```javascript
 // Define an Address model
-var Address = Model.extend({
+const Address = Model.extend({
     properties: {
         city: String,
         state: String
@@ -231,7 +231,7 @@ var Address = Model.extend({
 });
 
 // Create instance of Address
-var address = new Address();
+const address = new Address();
 
 // Use the generated setter to set the city
 address.setCity('New York');
@@ -252,7 +252,7 @@ configuration.
 
 **For example:**
 ```javascript
-var Person = Entity.extend({
+const Person = Entity.extend({
     properties: {
         firstName: String,
         lastName: String
@@ -269,7 +269,7 @@ var Person = Entity.extend({
 
 **Define your base Entity type:**
 ```javascript
-var Entity = Model.extend({
+const Entity = Model.extend({
     properties: {
         id: String
     }
@@ -278,7 +278,7 @@ var Entity = Model.extend({
 
 **Define a type that extends Entity:**
 ```javascript
-var Person = Entity.extend({
+const Person = Entity.extend({
     properties: {
         email: String
     }
@@ -289,7 +289,7 @@ The new `Person` type will recognize `email` (defined for `Person`) and
 `id` (defined for `Entity`) as properties.
 
 ```javascript
-var person = new Person();
+const person = new Person();
 person.setId('john-doe');
 person.setEmail('john.doe@example.com');
 ```
@@ -298,7 +298,7 @@ You can also create getters for computed/derived properties.
 
 **For example:**
 ```javascript
-var Person = Entity.extend({
+const Person = Entity.extend({
     properties: {
         firstName: String,
         lastName: String,
@@ -325,7 +325,7 @@ function _updateDisplayName (person) {
     person.setDisplayName(person.getFirstName() + ' ' + person.getLastName());
 }
 
-var Person = Entity.extend({
+const Person = Entity.extend({
     properties: {
         firstName: {
             type: String,
@@ -352,7 +352,7 @@ var Person = Entity.extend({
     }
 });
 
-var person = new Person({
+const person = new Person({
     firstName: 'John',
     lastName: 'Doe'
 });
@@ -360,7 +360,7 @@ var person = new Person({
 assert(person.getDisplayName() === 'John Doe');
 
 // Remove non-persisted properties
-var personObj = person.clean();
+const personObj = person.clean();
 assert(personObj.displayName === undefined);
 ```
 
@@ -375,24 +375,24 @@ will simply be returned.
 
 **Examples:**
 ```javascript
-var Address = Model.extend({
+const Address = Model.extend({
     properties: {
         city: String,
         state: String
     }
 });
 
-var address = new Address({
+const address = new Address({
     city: 'San Francisco',
     state: 'CA'
 });
 
 // Create an instance of Address
-var addressObj = Model.unwrap(address);
+const addressObj = Model.unwrap(address);
 assert(addressObj.city === 'San Francisco');
 
 // Wrap the unwrapped object
-var addressWrapped = Address.wrap(addressObj);
+const addressWrapped = Address.wrap(addressObj);
 assert(addressWrapped.getCity() === 'San Francisco');
 
 // The wrapped object returned by Address.wrap()
@@ -408,7 +408,7 @@ function will always return a deep clone of the given object if the
 given argument is non-null and not a primitive.
 
 ```javascript
-var address = new Address({
+const address = new Address({
     city: 'San Francisco',
     state: 'CA'
 });
@@ -430,7 +430,7 @@ Here's an example how to use the `clean` function to convert a `Buffer`
 to a Base64 encoded string:
 
 ```javascript
-var Binary = Model.extend({
+const Binary = Model.extend({
     // Don't wrap binary data because we want to use the raw Buffer type
     // provided by Node.js runtime environment
     wrap: false,
@@ -467,13 +467,13 @@ var Binary = Model.extend({
     }
 });
 
-var Image = Model.extend({
+const Image = Model.extend({
     properties: {
         data: Binary
     }
 });
 
-var image = new Image({
+const image = new Image({
     // data can be provided as Array of bytes, base64 encoded string, or Buffer
     // because Binary.coerce function handles each of these.
     data: someData
@@ -484,7 +484,7 @@ assert(image.getData() instanceof Buffer);
 
 // Calling clean on the image model instance will cause the contained data
 // to be converted to base64 string via Binary.clean function.
-var cleanedImage = image.clean();
+const cleanedImage = image.clean();
 
 // the data will be converted to String via Binary.clean function
 assert(typeof cleanedImage.data.constructor === 'string');
@@ -515,9 +515,9 @@ instances are coerced into instances of a Model.
 For example, consider this example of declaring `ObjectId` type that
 automatically coerces Strings to actual instances of `require('mongodb').ObjectID`:
 ```javascript
-var MongoDbObjectID = require('mongodb').ObjectID;
+const MongoDbObjectID = require('mongodb').ObjectID;
 
-var ObjectId = Model.extend({
+const ObjectId = Model.extend({
     // Don't wrap object ID.
     // This means that the getters for properties of this type
     // will return the raw MongoDB ObjectID type
@@ -536,7 +536,7 @@ var ObjectId = Model.extend({
     }
 });
 
-var Entity = Model.extend({
+const Entity = Model.extend({
     id: {
         // ObjectId is a type that we use just to make sure that the value
         // is automatically converted to the type that we need for storage
@@ -557,11 +557,11 @@ to Strings using the standard ISO format.
 
 **For example:**
 ```javascript
-var Document = Model.extend({
+const Document = Model.extend({
     dateCreated: Date
 });
 
-var document = new Document();
+const document = new Document();
 // A String value in ISO date format is automatically converted to a
 // real Date.
 document.setDateCreated('2014-12-22T21:18:45.905Z');
@@ -572,13 +572,13 @@ document.setDateCreated('2014-12-22T21:18:45.905Z');
 **Short-hand syntax for declaring an enum type:**
 
 ```javascript
-var Color = Enum.create(['red', 'green', 'blue']);
+const Color = Enum.create(['red', 'green', 'blue']);
 ```
 
 **Alternate syntax for declaring an enum type:**
 
 ```javascript
-var Color = Enum.create({
+const Color = Enum.create({
     values: ['red', 'green', 'blue']
 });
 ```
@@ -595,7 +595,7 @@ functions as shown shown in the examples below.
 // test to see
 
 // Check to see if given color is the RED enum value
-var color = Color.RED;
+const color = Color.RED;
 assert(color.isRed());
 
 // Get the name of the enum
@@ -613,7 +613,7 @@ assert(Color.RED.ordinal() === 0);
 
 **Object enum values:**
 ```javascript
-var Color = Enum.create({
+const Color = Enum.create({
     values: {
         red: {
             hex: '#FF0000',
@@ -660,11 +660,11 @@ Color.names.forEach(function (colorName) {
 
 **Syntax:**
 ```javascript
-var Color = Enum.create({
+const Color = Enum.create({
     values: ['red', 'green', 'blue']
 });
 
-var ColorPalette = Model.extend({
+const ColorPalette = Model.extend({
     properties: {
         colors: {
             // colors has type array
@@ -679,7 +679,7 @@ var ColorPalette = Model.extend({
 
 **Short-hand syntax:**
 ```javascript
-var ColorPalette = Model.extend({
+const ColorPalette = Model.extend({
     properties: {
         // Using an Array instance is short-hand for specifying
         // that the property is of type array. The first item
@@ -691,7 +691,7 @@ var ColorPalette = Model.extend({
 
 **Accessing an array property:**
 ```javascript
-var colorPalette = new ColorPalette({
+const colorPalette = new ColorPalette({
     colors: ['red', 'green', 'blue']
 });
 
@@ -708,16 +708,16 @@ colorPalette.getColors().forEach(function (color, index) {
 
 ```javascript
 // array that will collect errors
-var errors = [];
+const errors = [];
 
 // collect errors while wrapping existing person data
-var person1 = Person.wrap({
+const person1 = Person.wrap({
     name: 'John',
     age: 'bad integer'
 }, errors);
 
 // collect errors while constructing new person
-var person2 = new Person({
+const person2 = new Person({
     name: 'John',
     age: 'bad integer'
 }, errors);
@@ -726,7 +726,7 @@ var person2 = new Person({
 **Using extended options:**
 
 ```javascript
-var options = {
+const options = {
     // array that will collect errors
     errors: [],
 
@@ -736,7 +736,7 @@ var options = {
     strict: true
 };
 
-var person = new Person({
+const person = new Person({
     name: 'John',
     age: 'bad integer'
 }, options);
@@ -747,8 +747,8 @@ var person = new Person({
 A `Model` type can be easily converted to an equivalent JSON schema
 with the following module:
 ```javascript
-var jsonSchema = require('fashion-model/json-schema-draft4');
-var someModelSchema = jsonSchema.fromModel(SomeModel, options);
+const jsonSchema = require('fashion-model/json-schema-draft4');
+const someModelSchema = jsonSchema.fromModel(SomeModel, options);
 ```
 
 | Option | Type | Purpose |
@@ -762,31 +762,31 @@ var someModelSchema = jsonSchema.fromModel(SomeModel, options);
 **Define your models:**
 
 ```javascript
-var Model = require('fashion-model/Model');
-var Enum = require('fashion-model/Enum');
+const Model = require('fashion-model/Model');
+const Enum = require('fashion-model/Enum');
 
-var Entity = Model.extend({
+const Entity = Model.extend({
     typeName: 'Entity',
     properties: {
         id: String
     }
 });
 
-var Gender = Enum.create({
+const Gender = Enum.create({
     typeName: 'Gender',
     title: 'Gender',
     description: 'A person\'s gender',
     values: ['M', 'F']
 });
 
-var Species = Enum.create({
+const Species = Enum.create({
     typeName: 'Species',
     title: 'Species',
     description: 'A species',
     values: ['dog', 'cat']
 });
 
-var Pet = Model.extend({
+const Pet = Model.extend({
     typeName: 'Pet',
     properties: {
         name: String,
@@ -794,7 +794,7 @@ var Pet = Model.extend({
     }
 });
 
-var Person = Entity.extend({
+const Person = Entity.extend({
     typeName: 'Person',
     title: 'Person',
     description: 'A person',
@@ -814,18 +814,18 @@ var Person = Entity.extend({
 **Convert your model to JSON schema:**
 
 ```javascript
-var jsonSchema = require('fashion-model/json-schema-draft4');
-var jsonSchemaOptions = {
+const jsonSchema = require('fashion-model/json-schema-draft4');
+const jsonSchemaOptions = {
     toRef: function (Model) {
         return Model.typeName;
     }
 };
 
-var EntitySchema = jsonSchema.fromModel(Entity, jsonSchemaOptions);
-var GenderSchema = jsonSchema.fromModel(Gender, jsonSchemaOptions);
-var SpeciesSchema = jsonSchema.fromModel(Species, jsonSchemaOptions);
-var PetSchema = jsonSchema.fromModel(Pet, jsonSchemaOptions);
-var PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
+const EntitySchema = jsonSchema.fromModel(Entity, jsonSchemaOptions);
+const GenderSchema = jsonSchema.fromModel(Gender, jsonSchemaOptions);
+const SpeciesSchema = jsonSchema.fromModel(Species, jsonSchemaOptions);
+const PetSchema = jsonSchema.fromModel(Pet, jsonSchemaOptions);
+const PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 ```
 
 **Entity JSON Schema:**

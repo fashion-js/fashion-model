@@ -1,4 +1,4 @@
-var isoDateFormat =
+const isoDateFormat =
     /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z)?$/;
 
 module.exports = require('./Model').extend({
@@ -15,9 +15,9 @@ module.exports = require('./Model').extend({
 
     if (value != null) {
       if (value.constructor === String) {
-        var a = isoDateFormat.exec(value);
+        const a = isoDateFormat.exec(value);
         if (a) {
-          var millisecond = a[7];
+          let millisecond = a[7];
           millisecond = (millisecond === undefined) ? 0 : +millisecond;
 
           if (a[8] === 'Z') {

@@ -1,10 +1,10 @@
 const test = require('ava');
 
-var Model = require('../Model');
+const Model = require('../Model');
 
 test('should support mixins for types with properties', function (t) {
-  var initCallCount;
-  var onSetCallCount;
+  let initCallCount;
+  let onSetCallCount;
 
   function resetCallCounts () {
     initCallCount = 0;
@@ -13,7 +13,7 @@ test('should support mixins for types with properties', function (t) {
 
   resetCallCounts();
 
-  var myMixin = {
+  const myMixin = {
     id: 'myMixin',
 
     init: function () {
@@ -32,7 +32,7 @@ test('should support mixins for types with properties', function (t) {
     }
   };
 
-  var BaseItem = Model.extend({
+  const BaseItem = Model.extend({
     typeName: 'BaseItem',
     properties: {
       count: Number
@@ -40,7 +40,7 @@ test('should support mixins for types with properties', function (t) {
     mixins: [myMixin]
   });
 
-  var DerivedItem = BaseItem.extend({
+  const DerivedItem = BaseItem.extend({
     typeName: 'DerivedItem',
     properties: {
       count: Number
@@ -50,14 +50,14 @@ test('should support mixins for types with properties', function (t) {
 
   t.is(DerivedItem._onSet.length, 1);
 
-  var baseItem = new BaseItem();
+  const baseItem = new BaseItem();
   t.is(initCallCount, 1);
   t.is(onSetCallCount, 1);
   t.is(baseItem.getCount(), 0);
 
   resetCallCounts();
 
-  var derivedItem = new DerivedItem();
+  const derivedItem = new DerivedItem();
   t.is(initCallCount, 1);
   t.is(onSetCallCount, 1);
   t.is(derivedItem.getCount(), 0);
@@ -74,7 +74,7 @@ test('should support mixins for types without properties', function (t) {
 
   resetCallCounts();
 
-  var myMixin = {
+  const myMixin = {
     id: 'myMixin',
 
     init: function () {
@@ -88,36 +88,36 @@ test('should support mixins for types without properties', function (t) {
     }
   };
 
-  var BaseSimpleItem = Model.extend({
+  const BaseSimpleItem = Model.extend({
   });
 
-  var DerivedSimpleItem = BaseSimpleItem.extend({
+  const DerivedSimpleItem = BaseSimpleItem.extend({
     mixins: [myMixin]
   });
 
-  var AnotherDerivedSimpleItem = BaseSimpleItem.extend({
+  const AnotherDerivedSimpleItem = BaseSimpleItem.extend({
     mixins: [myMixin]
   });
 
-  var baseSimpleItem = new BaseSimpleItem();
+  const baseSimpleItem = new BaseSimpleItem();
   t.is(baseSimpleItem.incrementCount, undefined);
   t.is(baseSimpleItem.count, undefined);
 
-  var derivedSimpleItem = new DerivedSimpleItem();
+  const derivedSimpleItem = new DerivedSimpleItem();
   t.true(derivedSimpleItem.incrementCount !== undefined);
   t.is(derivedSimpleItem.count, 0);
 
-  var anotherDerivedSimpleItem = new AnotherDerivedSimpleItem();
+  const anotherDerivedSimpleItem = new AnotherDerivedSimpleItem();
   t.true(anotherDerivedSimpleItem.incrementCount !== undefined);
   t.is(anotherDerivedSimpleItem.count, 0);
 });
 
 test('should allow properties from mixin', function (t) {
-  var Addressable = {
+  const Addressable = {
     id: 'Addressable',
 
     initType: function (Type) {
-      var typeName = Type.typeName;
+      const typeName = Type.typeName;
 
       t.is(typeName, 'Person');
 
@@ -139,7 +139,7 @@ test('should allow properties from mixin', function (t) {
     }
   };
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     typeName: 'Person',
 
     properties: {
@@ -151,7 +151,7 @@ test('should allow properties from mixin', function (t) {
 
   t.is(Person.toAddressString('123'), 'Person:123');
 
-  var person = new Person({
+  const person = new Person({
     id: 'john'
   });
 
@@ -159,7 +159,7 @@ test('should allow properties from mixin', function (t) {
 });
 
 test('should support mixins in base class and in derived class', function (t) {
-  var mixin1 = {
+  const mixin1 = {
     id: 'mixin1',
 
     prototype: {
@@ -169,7 +169,7 @@ test('should support mixins in base class and in derived class', function (t) {
     }
   };
 
-  var mixin2 = {
+  const mixin2 = {
     id: 'mixin2',
 
     prototype: {
@@ -179,25 +179,25 @@ test('should support mixins in base class and in derived class', function (t) {
     }
   };
 
-  var BaseSimpleItem = Model.extend({
+  const BaseSimpleItem = Model.extend({
     mixins: [mixin1]
   });
 
-  var DerivedSimpleItem = BaseSimpleItem.extend({
+  const DerivedSimpleItem = BaseSimpleItem.extend({
     mixins: [mixin2]
   });
 
-  var baseSimpleItem = new BaseSimpleItem();
+  const baseSimpleItem = new BaseSimpleItem();
   t.truthy(baseSimpleItem.hasMixin1);
   t.is(baseSimpleItem.hasMixin2, undefined);
 
-  var derivedSimpleItem = new DerivedSimpleItem();
+  const derivedSimpleItem = new DerivedSimpleItem();
   t.truthy(derivedSimpleItem.hasMixin1);
   t.truthy(derivedSimpleItem.hasMixin2);
 });
 
 test('should allow mixins to add other mixins', function (t) {
-  var Cacheable = {
+  const Cacheable = {
     id: 'Cacheable',
 
     prototype: {
@@ -207,7 +207,7 @@ test('should allow mixins to add other mixins', function (t) {
     }
   };
 
-  var Entity = {
+  const Entity = {
     id: 'Entity',
 
     mixins: [
@@ -221,13 +221,13 @@ test('should allow mixins to add other mixins', function (t) {
     }
   };
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     mixins: [
       Entity
     ]
   });
 
-  var person = new Person();
+  const person = new Person();
   t.truthy(person.isEntity);
   t.truthy(person.isCacheable);
 });

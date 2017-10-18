@@ -1,9 +1,9 @@
 const test = require('ava');
 
-var Model = require('../Model');
-var Enum = require('../Enum');
+const Model = require('../Model');
+const Enum = require('../Enum');
 
-var Gender = Enum.create({
+const Gender = Enum.create({
   values: ['M', 'F'],
   autoUpperCase: true
 });
@@ -11,7 +11,7 @@ var Gender = Enum.create({
 test('should allow enum type models', function (t) {
   t.is(Gender.wrap('F').isF(), true);
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       gender: Gender
     }
@@ -35,7 +35,7 @@ test('should allow enum type models', function (t) {
   t.is(Gender.M.ordinal(), 0);
   t.is(Gender.F.ordinal(), 1);
 
-  var person1 = new Person({
+  const person1 = new Person({
     gender: 'F'
   });
 
@@ -43,7 +43,7 @@ test('should allow enum type models', function (t) {
 
   t.is(person1.getGender().isF(), true);
 
-  var person2 = new Person();
+  const person2 = new Person();
   person2.setGender('M');
 
   t.is(person2.getGender().isM(), true);
@@ -53,7 +53,7 @@ test('should allow enum type models', function (t) {
 });
 
 test('should allow enum object values', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: {
       red: {
         hex: '#FF0000',
@@ -99,17 +99,17 @@ test('should allow enum object values', function (t) {
 });
 
 test('should allow unwrapping an enum', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: ['red', 'green', 'blue']
   });
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       favoriteColor: Color
     }
   });
 
-  var person = new Person();
+  const person = new Person();
   person.setFavoriteColor(Color.BLUE);
 
   t.is(person.getFavoriteColor().clean(), 'blue');
@@ -122,7 +122,7 @@ test('should allow unwrapping an enum', function (t) {
 });
 
 test('should allow setting an enum object value', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: {
       red: {
         hex: '#FF0000',
@@ -141,27 +141,27 @@ test('should allow setting an enum object value', function (t) {
     }
   });
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       favoriteColor: Color
     }
   });
 
-  var person = new Person();
+  const person = new Person();
   person.setFavoriteColor(Color.BLUE);
 
   t.is(person.unwrap().favoriteColor.value().hex, '#0000FF');
 });
 
 test('should allow short-hand syntax for defining enum', function (t) {
-  var Color = Enum.create(['red', 'green', 'blue']);
+  const Color = Enum.create(['red', 'green', 'blue']);
   t.is(Color.red.isRed(), true);
   t.is(Color.green.isGreen(), true);
   t.is(Color.blue.isBlue(), true);
 });
 
 test('should provide helper isX methods', function (t) {
-  var ContentType = Enum.create({
+  const ContentType = Enum.create({
     values: [
       'application/json',
       'text/html',
@@ -178,7 +178,7 @@ test('should provide helper isX methods', function (t) {
 });
 
 test('should handle special characters', function (t) {
-  var ContentType = Enum.create({
+  const ContentType = Enum.create({
     values: [
       'application/json',
       'text/html',
@@ -192,7 +192,7 @@ test('should handle special characters', function (t) {
 });
 
 test('should allow "apply" and "call"', function (t) {
-  var Action = Enum.create({
+  const Action = Enum.create({
     values: [
       'apply',
       'call',
@@ -201,13 +201,13 @@ test('should allow "apply" and "call"', function (t) {
     ]
   });
 
-  var Config = Model.extend({
+  const Config = Model.extend({
     properties: {
       action: Action
     }
   });
 
-  var config = new Config();
+  const config = new Config();
   config.setAction('apply');
   t.is(config.getAction(), Action.APPLY);
 });

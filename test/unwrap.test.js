@@ -1,8 +1,8 @@
 const test = require('ava');
 
-var Model = require('../Model');
+const Model = require('../Model');
 
-var Address = Model.extend({
+const Address = Model.extend({
   properties: {
     city: String,
     state: String
@@ -10,12 +10,12 @@ var Address = Model.extend({
 });
 
 test('should allow unwrapping', function (t) {
-  var address = new Address({
+  const address = new Address({
     city: 'Durham',
     state: 'NC'
   });
 
-  var addressData = Model.unwrap(address);
+  const addressData = Model.unwrap(address);
   t.is(addressData.city, 'Durham');
   t.is(addressData.state, 'NC');
 });

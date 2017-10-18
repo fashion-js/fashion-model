@@ -1,11 +1,11 @@
 const test = require('ava');
 
-var Model = require('../Model');
+const Model = require('../Model');
 
 test('should support additionalProperties', function (t) {
-  var IntegerType = require('../Integer');
+  const IntegerType = require('../Integer');
 
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       name: String,
       age: IntegerType
@@ -13,7 +13,7 @@ test('should support additionalProperties', function (t) {
     additionalProperties: true
   });
 
-  var errors;
+  let errors;
 
   errors = [];
   Something.wrap({
@@ -23,11 +23,11 @@ test('should support additionalProperties', function (t) {
 });
 
 test('should recognize that a type has additionalProperties if extending type that has additionalProperties', function (t) {
-  var Something = Model.extend({
+  const Something = Model.extend({
     additionalProperties: true
   });
 
-  var SomethingElse = Something.extend({
+  const SomethingElse = Something.extend({
 
   });
 

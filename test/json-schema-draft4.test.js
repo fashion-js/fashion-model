@@ -1,34 +1,34 @@
 const test = require('ava');
 
-var Model = require('../Model');
-var Enum = require('../Enum');
+const Model = require('../Model');
+const Enum = require('../Enum');
 
-var Entity = Model.extend({
+const Entity = Model.extend({
   properties: {
     id: String
   }
 });
 
-var Gender = Enum.create({
+const Gender = Enum.create({
   title: 'Gender',
   description: 'A person\'s gender',
   values: ['M', 'F']
 });
 
-var Species = Enum.create({
+const Species = Enum.create({
   title: 'Species',
   description: 'A species',
   values: ['dog', 'cat']
 });
 
-var Pet = Model.extend({
+const Pet = Model.extend({
   properties: {
     name: String,
     species: Species
   }
 });
 
-var Person = Entity.extend({
+const Person = Entity.extend({
   title: 'Person',
   description: 'A person',
   properties: {
@@ -43,7 +43,7 @@ var Person = Entity.extend({
   }
 });
 
-var models = {
+const models = {
   Entity: Entity,
   Gender: Gender,
   Species: Species,
@@ -52,23 +52,23 @@ var models = {
 };
 
 function _dateToString (date) {
-  var str = JSON.stringify(date);
-  var len = str.length;
+  const str = JSON.stringify(date);
+  const len = str.length;
   return str.substring(1, len - 1);
 }
 
-var jsonSchema = require('../json-schema-draft4');
-var schemasByNameMap = {};
-var schemas = [];
+const jsonSchema = require('../json-schema-draft4');
+const schemasByNameMap = {};
+const schemas = [];
 
 // create z-schema validator
-var ZSchema = require('z-schema');
-var zschemaValidator = new ZSchema();
+const ZSchema = require('z-schema');
+const zschemaValidator = new ZSchema();
 
 // create JaySchema validator
-var JaySchema = require('jayschema');
-var jschemaValidator = new JaySchema(function loader (ref, callback) {
-  var schema = schemasByNameMap[ref];
+const JaySchema = require('jayschema');
+const jschemaValidator = new JaySchema(function loader (ref, callback) {
+  const schema = schemasByNameMap[ref];
   if (schema) {
     callback(null, schema);
   } else {
@@ -78,12 +78,12 @@ var jschemaValidator = new JaySchema(function loader (ref, callback) {
 
 function _validateObject (data, Type) {
   return new Promise((resolve, reject) => {
-    var schema = schemasByNameMap[Type.typeName];
+    const schema = schemasByNameMap[Type.typeName];
 
-    var valid = zschemaValidator.validate(data, schema);
+    const valid = zschemaValidator.validate(data, schema);
     if (!valid) {
-      var err = zschemaValidator.getLastError();
-      var betterErr = new Error(err.name + ' - ' + err.message + ': ' + err.details
+      const err = zschemaValidator.getLastError();
+      const betterErr = new Error(err.name + ' - ' + err.message + ': ' + err.details
         .toString());
       betterErr.stack = err.stack;
       return reject(betterErr);
@@ -101,16 +101,16 @@ function _validateObject (data, Type) {
 
 test.before(function () {
   Object.keys(models).forEach(function (typeName) {
-    var Type = models[typeName];
+    const Type = models[typeName];
     Type.typeName = typeName;
 
-    var schema = schemasByNameMap[typeName] = jsonSchema.fromModel(Type);
+    const schema = schemasByNameMap[typeName] = jsonSchema.fromModel(Type);
     schemas.push(schema);
   });
 });
 
 test.before(function () {
-  var allSchemasValid = zschemaValidator.validateSchema(schemas);
+  const allSchemasValid = zschemaValidator.validateSchema(schemas);
   if (!allSchemasValid) {
     throw zschemaValidator.getLastError();
   }
@@ -198,9 +198,9 @@ test('should generate JSON schemas', function (t) {
 });
 
 test('should handle converting model type to json schema without using composition', function (t) {
-  var jsonSchema = require('../json-schema-draft4');
+  const jsonSchema = require('../json-schema-draft4');
 
-  var Response = Model.extend({
+  const Response = Model.extend({
     properties: {
       result: {
         type: Object,
@@ -209,7 +209,7 @@ test('should handle converting model type to json schema without using compositi
     }
   });
 
-  var PaginationResponse = Response.extend({
+  const PaginationResponse = Response.extend({
     properties: {
       limit: require('../Integer'),
       offset: require('../Integer'),
@@ -217,11 +217,11 @@ test('should handle converting model type to json schema without using compositi
     }
   });
 
-  var schema = jsonSchema.fromModel(PaginationResponse, {
+  const schema = jsonSchema.fromModel(PaginationResponse, {
     useAllOf: false
   });
 
-  var properties = {};
+  const properties = {};
 
   PaginationResponse.forEachProperty(function (property) {
     properties[property.getKey()] = true;
@@ -277,7 +277,7 @@ test('should validate complex data', async function (t) {
 });
 
 test('should handle copying extra property metadata', function (t) {
-  var MyType = Model.extend({
+  const MyType = Model.extend({
     properties: {
       something: {
         type: Object,
@@ -286,7 +286,7 @@ test('should handle copying extra property metadata', function (t) {
     }
   });
 
-  var schema = jsonSchema.fromModel(MyType, {
+  const schema = jsonSchema.fromModel(MyType, {
     handleProperty: function (propertyName, src, dest) {
       dest.extra = src.extra;
     }

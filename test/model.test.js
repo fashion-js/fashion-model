@@ -1,41 +1,41 @@
 const test = require('ava');
 
-var Model = require('../Model');
-var Enum = require('../Enum');
-var DateType = require('../Date');
-var ObservableModel = require('../ObservableModel');
-var ArrayType = require('../Array');
-var IntegerType = require('../Integer');
-var BooleanType = require('../Boolean');
-var ObjectType = require('../Object');
-var StringType = require('../String');
-var NumberType = require('../Number');
-var FunctionType = require('../Function');
+const Model = require('../Model');
+const Enum = require('../Enum');
+const DateType = require('../Date');
+const ObservableModel = require('../ObservableModel');
+const ArrayType = require('../Array');
+const IntegerType = require('../Integer');
+const BooleanType = require('../Boolean');
+const ObjectType = require('../Object');
+const StringType = require('../String');
+const NumberType = require('../Number');
+const FunctionType = require('../Function');
 
 test('should provide metadata', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       dateOfBirth: Date
     }
   });
 
-  var DerivedPerson = Person.extend({
+  const DerivedPerson = Person.extend({
   });
 
-  var Stub = Model.extend({
+  const Stub = Model.extend({
   });
 
-  var DerivedStub = Stub.extend({
+  const DerivedStub = Stub.extend({
     properties: {
       name: String
     }
   });
 
-  var Simple = Stub.extend({
+  const Simple = Stub.extend({
     properties: {}
   });
 
-  var ToString = Model.extend({
+  const ToString = Model.extend({
     wrap: false,
     coerce: function (value) {
       return (value == null) ? value : value.toString();
@@ -62,112 +62,112 @@ test('should provide metadata', function (t) {
 });
 
 test('should handle Date type', function (t) {
-  var date = DateType.coerce('1980-02-01T00:00:00.000Z');
+  const date = DateType.coerce('1980-02-01T00:00:00.000Z');
   t.deepEqual(date.getTime(), new Date(Date.UTC(1980, 1, 1, 0, 0, 0)).getTime());
 
   t.throws(function () {
     DateType.coerce(true);
   }, Error);
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       dateOfBirth: Date
     }
   });
 
-  var person = new Person();
+  const person = new Person();
   t.is(person.Model.properties.dateOfBirth.getName(), 'dateOfBirth');
   person.setDateOfBirth(new Date(1980, 1, 1));
   t.deepEqual(person.getDateOfBirth(), new Date(1980, 1, 1));
 });
 
 test('should serialize and deserialize date properly', function (t) {
-  var date = new Date();
+  const date = new Date();
 
-  var Ping = Model.extend({
+  const Ping = Model.extend({
     properties: {
       timestamp: Date
     }
   });
 
-  var ping = new Ping({
+  const ping = new Ping({
     timestamp: date
   });
 
-  var pong = Ping.wrap(JSON.parse(JSON.stringify(ping.clean())));
+  const pong = Ping.wrap(JSON.parse(JSON.stringify(ping.clean())));
 
   t.is(pong.getTimestamp().getTime(), ping.getTimestamp().getTime());
 });
 
 test('should serialize and deserialize date properly without Z suffix', function (t) {
-  var date = new Date('2016-04-13T18:00:00');
+  const date = new Date('2016-04-13T18:00:00');
 
-  var Ping = Model.extend({
+  const Ping = Model.extend({
     properties: {
       timestamp: Date
     }
   });
 
-  var ping = new Ping({
+  const ping = new Ping({
     timestamp: date
   });
 
   t.is(ping.getTimestamp(), date);
 
-  var pong = Ping.wrap(JSON.parse(JSON.stringify(ping.clean())));
+  const pong = Ping.wrap(JSON.parse(JSON.stringify(ping.clean())));
   t.is(pong.getTimestamp().getTime(), ping.getTimestamp().getTime());
 });
 
 test('should parse dates without Z suffix', function (t) {
-  var dateStr = '2016-04-13T18:00:00';
-  var date = new Date(dateStr);
+  const dateStr = '2016-04-13T18:00:00';
+  const date = new Date(dateStr);
 
-  var Ping = Model.extend({
+  const Ping = Model.extend({
     properties: {
       timestamp: Date
     }
   });
 
-  var ping = new Ping();
+  const ping = new Ping();
   ping.setTimestamp(dateStr);
 
   t.is(ping.getTimestamp().getTime(), date.getTime());
 });
 
 test('should provide setters', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       name: String,
       dateOfBirth: Date
     }
   });
 
-  var person = new Person();
+  const person = new Person();
   person.setName('John Doe');
   person.setDateOfBirth(new Date(1980, 1, 1));
 
   t.is(person.getName(), 'John Doe');
   t.deepEqual(person.getDateOfBirth(), new Date(1980, 1, 1));
 
-  var rawPerson = person.unwrap();
+  const rawPerson = person.unwrap();
   t.is(rawPerson.name, 'John Doe');
   t.deepEqual(rawPerson.dateOfBirth, new Date(1980, 1, 1));
 });
 
 test('should allow wrapping existing', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       name: String,
       dateOfBirth: Date
     }
   });
 
-  var rawPerson = {
+  const rawPerson = {
     name: 'John Doe',
     dateOfBirth: new Date(1980, 1, 1)
   };
 
-  var person = new Person(rawPerson);
+  const person = new Person(rawPerson);
   person.setName('Jane Doe');
 
   // raw person should also reflect any changes
@@ -178,7 +178,7 @@ test('should allow wrapping existing', function (t) {
 });
 
 test('should allow custom property names', function (t) {
-  var Entity = Model.extend({
+  const Entity = Model.extend({
     properties: {
       id: {
         type: String,
@@ -187,14 +187,14 @@ test('should allow custom property names', function (t) {
     }
   });
 
-  var Person = Entity.extend({
+  const Person = Entity.extend({
     properties: {
       name: String,
       dateOfBirth: Date
     }
   });
 
-  var person = new Person({
+  const person = new Person({
     _id: 'test',
     name: 'John Doe',
     dateOfBirth: new Date(1980, 1, 1)
@@ -204,9 +204,9 @@ test('should allow custom property names', function (t) {
 });
 
 test('should allow opaque wrapper type', function (t) {
-  var Token = Model.extend({});
+  const Token = Model.extend({});
 
-  var token = new Token({
+  const token = new Token({
     a: 1,
     b: 2
   });
@@ -216,7 +216,7 @@ test('should allow opaque wrapper type', function (t) {
     b: 2
   });
 
-  var raw = token.unwrap();
+  const raw = token.unwrap();
 
   t.is(raw.a, 1);
   t.is(raw.b, 2);
@@ -228,7 +228,7 @@ test('should allow opaque wrapper type', function (t) {
 });
 
 test('should support simplified enum array type', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: ['red', 'green', 'blue']
   });
 
@@ -236,17 +236,17 @@ test('should support simplified enum array type', function (t) {
   t.is(Color.RED.value(), 'red');
   t.is(Color.RED.toString(), 'red');
 
-  var ColorPalette = Model.extend({
+  const ColorPalette = Model.extend({
     properties: {
       colors: [Color]
     }
   });
 
-  var colorPalette = new ColorPalette({
+  const colorPalette = new ColorPalette({
     colors: ['red', 'green', 'blue']
   });
 
-  var colors = [];
+  const colors = [];
   colorPalette.getColors().forEach(function (color, index) {
     t.is(color.constructor, Color);
     colors[index] = color;
@@ -263,7 +263,7 @@ test('should support simplified enum array type', function (t) {
 });
 
 test('should handle enum conversion errors', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: ['red', 'green', 'blue']
   });
 
@@ -276,27 +276,27 @@ test('should handle enum conversion errors', function (t) {
     }
   }, Error);
 
-  var errors;
+  let errors;
 
   errors = [];
   // "yellow" is not a valid color
   Color.coerce('yellow', errors);
   t.is(errors.length, 1);
 
-  var Shirt = Model.extend({
+  const Shirt = Model.extend({
     properties: {
       color: Color
     }
   });
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       shirt: Shirt
     }
   });
 
   errors = [];
-  var person = new Person({
+  const person = new Person({
     shirt: {
       // "pink" is not a valid color
       color: 'pink'
@@ -310,7 +310,7 @@ test('should handle enum conversion errors', function (t) {
   // Manually add unrecognized property
   person.data.blah = true;
 
-  var rawPerson = person.clean(errors);
+  const rawPerson = person.clean(errors);
   t.is(errors.length, 1);
 
   // color will be undefined since it is invalid
@@ -320,13 +320,13 @@ test('should handle enum conversion errors', function (t) {
 });
 
 test('should coerce Number primitive type', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       age: Number
     }
   });
 
-  var person = new Person();
+  const person = new Person();
   person.setAge('10');
   t.is(person.getAge(), 10);
 
@@ -336,13 +336,13 @@ test('should coerce Number primitive type', function (t) {
 });
 
 test('should coerce Boolean primitive type', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       happy: Boolean
     }
   });
 
-  var person = new Person();
+  const person = new Person();
   person.setHappy(1);
   t.true(person.getHappy());
 
@@ -357,13 +357,13 @@ test('should coerce Boolean primitive type', function (t) {
 });
 
 test('should coerce String primitive type', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       message: String
     }
   });
 
-  var person = new Person();
+  const person = new Person();
 
   person.setMessage(true);
   t.is(person.getMessage(), 'true');
@@ -385,18 +385,18 @@ test('should coerce String primitive type', function (t) {
 });
 
 test('should coerce array of primitives', function (t) {
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       arrayOfBooleans: [Boolean],
       arrayOfAnything: []
     }
   });
 
-  var something = Something.wrap({
+  const something = Something.wrap({
     arrayOfBooleans: [0, 1, 'abc', -1, 'true']
   });
 
-  var arrayOfBooleans = something.getArrayOfBooleans();
+  const arrayOfBooleans = something.getArrayOfBooleans();
   t.false(arrayOfBooleans[0]);
   t.true(arrayOfBooleans[1]);
   t.false(arrayOfBooleans[2]);
@@ -410,13 +410,13 @@ test('should coerce array of primitives', function (t) {
 });
 
 test('should allow array as argument to wrap', function (t) {
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       anything: Object
     }
   });
 
-  var somethingList = Something.wrap([
+  const somethingList = Something.wrap([
     {
       anything: 123
     },
@@ -434,21 +434,21 @@ test('should allow array as argument to wrap', function (t) {
 });
 
 test('should coerce array of enums', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: ['red', 'green', 'blue']
   });
 
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       favoriteColors: [Color]
     }
   });
 
-  var person = Person.wrap({
+  let person = Person.wrap({
     favoriteColors: ['red', 'green', 'blue']
   });
 
-  var favoriteColors = person.getFavoriteColors();
+  const favoriteColors = person.getFavoriteColors();
   t.is(favoriteColors[0], Color.RED);
   t.is(favoriteColors[1], Color.GREEN);
   t.is(favoriteColors[2], Color.BLUE);
@@ -459,7 +459,7 @@ test('should coerce array of enums', function (t) {
     });
   }, Error);
 
-  var errors = [];
+  const errors = [];
   person = Person.wrap({
     favoriteColors: ['fake']
   }, errors);
@@ -469,19 +469,19 @@ test('should coerce array of enums', function (t) {
 });
 
 test('should coerce array of models', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       happy: Boolean
     }
   });
 
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       people: [Person]
     }
   });
 
-  var something = Something.wrap({
+  const something = Something.wrap({
     people: [
       {
         happy: 0
@@ -498,7 +498,7 @@ test('should coerce array of models', function (t) {
     ]
   });
 
-  var people = something.getPeople();
+  const people = something.getPeople();
   t.false(people[0].getHappy());
   t.false(people[1].getHappy());
   t.true(people[2].getHappy());
@@ -509,7 +509,7 @@ test('should coerce array of models', function (t) {
   t.true(Person.wrap(something.getPeople()[2]).getHappy());
   t.true(Person.wrap(something.getPeople()[3]).getHappy());
 
-  var cleanSomething = Model.clean(something);
+  const cleanSomething = Model.clean(something);
   t.deepEqual(cleanSomething, {
     people: [
       {
@@ -529,10 +529,10 @@ test('should coerce array of models', function (t) {
 });
 
 test('should support integer type', function (t) {
-  var IntegerType = require('../Integer');
-  var ArrayType = require('../Array');
+  const IntegerType = require('../Integer');
+  const ArrayType = require('../Array');
 
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       first: 'integer',
       second: IntegerType,
@@ -550,16 +550,16 @@ test('should support integer type', function (t) {
 });
 
 test('should support complex object validation', function (t) {
-  var IntegerType = require('../Integer');
+  const IntegerType = require('../Integer');
 
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       name: String,
       age: IntegerType
     }
   });
 
-  var errors;
+  let errors;
 
   errors = [];
   Something.wrap({
@@ -583,9 +583,9 @@ test('should support complex object validation', function (t) {
 });
 
 test('should support strict validation', function (t) {
-  var IntegerType = require('../Integer');
+  const IntegerType = require('../Integer');
 
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       someString: String,
       someBoolean: Boolean,
@@ -596,7 +596,7 @@ test('should support strict validation', function (t) {
     additionalProperties: true
   });
 
-  var errors = [];
+  const errors = [];
 
   Something.wrap({
     someString: 123,
@@ -613,15 +613,15 @@ test('should support strict validation', function (t) {
 });
 
 test('should support array of array type', function (t) {
-  var IntegerType = require('../Integer');
-  var Item = Model.extend({
+  const IntegerType = require('../Integer');
+  const Item = Model.extend({
     typeName: 'Item',
     properties: {
       id: IntegerType
     }
   });
 
-  var Something = Model.extend({
+  const Something = Model.extend({
     typeName: 'Something',
     properties: {
       // short-hand for defining an Array of Array
@@ -639,8 +639,8 @@ test('should support array of array type', function (t) {
     additionalProperties: true
   });
 
-  var errors;
-  var something;
+  let errors;
+  let something;
 
   errors = [];
   something = Something.wrap({
@@ -660,20 +660,20 @@ test('should support array of array type', function (t) {
 });
 
 test('should not wrap and unwrap Model instances if property type is declared as object', function (t) {
-  var Item = Model.extend({
+  const Item = Model.extend({
     properties: {
       id: String
     }
   });
 
-  var Something = Model.extend({
+  const Something = Model.extend({
     properties: {
       // Use Object as type
       item: Object
     }
   });
 
-  var something = new Something();
+  const something = new Something();
   something.setItem(new Item({
     id: 'abc'
   }));
@@ -682,13 +682,13 @@ test('should not wrap and unwrap Model instances if property type is declared as
 });
 
 test('should allow Function type', function (t) {
-  var Item = Model.extend({
+  const Item = Model.extend({
     properties: {
       handler: Function
     }
   });
 
-  var item;
+  let item;
 
   t.throws(function () {
     item = new Item({
@@ -704,7 +704,7 @@ test('should allow Function type', function (t) {
 });
 
 test('should implement isPrimitive', function (t) {
-  var Item = Model.extend({
+  const Item = Model.extend({
     properties: {
       handler: Function
     }
@@ -712,16 +712,16 @@ test('should implement isPrimitive', function (t) {
 
   t.false(Item.isPrimitive());
 
-  var primitives = require('../primitives');
+  const primitives = require('../primitives');
 
   Object.keys(primitives).forEach(function (name) {
-    var Type = primitives[name];
+    const Type = primitives[name];
     t.true(Type.isPrimitive());
   });
 });
 
 test('should provide an ObservableModel that emits change event', function (t) {
-  var Test = ObservableModel.extend({
+  const Test = ObservableModel.extend({
     typeName: 'Test',
 
     properties: {
@@ -729,7 +729,7 @@ test('should provide an ObservableModel that emits change event', function (t) {
     }
   });
 
-  var DerivedTest = Test.extend({
+  const DerivedTest = Test.extend({
     typeName: 'DerivedTest',
 
     properties: {
@@ -737,9 +737,9 @@ test('should provide an ObservableModel that emits change event', function (t) {
     }
   });
 
-  var emitCount = 0;
+  let emitCount = 0;
 
-  var test = new Test();
+  const test = new Test();
 
   test.on('change', function () {
     emitCount++;
@@ -753,7 +753,7 @@ test('should provide an ObservableModel that emits change event', function (t) {
   // reset emit count
   emitCount = 0;
 
-  var derivedTest = new DerivedTest();
+  const derivedTest = new DerivedTest();
 
   derivedTest.on('change', function () {
     emitCount++;
@@ -766,10 +766,10 @@ test('should provide an ObservableModel that emits change event', function (t) {
 });
 
 test('should support getters and setters', function (t) {
-  var getCallCount = 0;
-  var setCallCount = 0;
+  let getCallCount = 0;
+  let setCallCount = 0;
 
-  var Test = Model.extend({
+  const Test = Model.extend({
     properties: {
       name: {
         type: String,
@@ -793,7 +793,7 @@ test('should support getters and setters', function (t) {
     }
   });
 
-  var test = new Test();
+  const test = new Test();
 
   test.setName('TEST');
 
@@ -811,20 +811,20 @@ test('should support getters and setters', function (t) {
 });
 
 test('should allow self type references in property type', function (t) {
-  var NodeValue = Enum.create({
+  const NodeValue = Enum.create({
     values: ['a', 'b', 'c']
   });
 
-  var Node = Model.extend({
+  const Node = Model.extend({
     properties: {
       next: 'self',
       value: NodeValue
     }
   });
 
-  var errors = [];
+  let errors = [];
 
-  var node = new Node();
+  const node = new Node();
   node.setNext({
     // invalid value
     value: 'd'
@@ -844,20 +844,20 @@ test('should allow self type references in property type', function (t) {
 });
 
 test('should allow self array type references in property type (version 1)', function (t) {
-  var TreeNodeValue = Enum.create({
+  const TreeNodeValue = Enum.create({
     values: ['a', 'b', 'c']
   });
 
-  var TreeNode = Model.extend({
+  const TreeNode = Model.extend({
     properties: {
       children: 'self[]',
       value: TreeNodeValue
     }
   });
 
-  var errors = [];
+  const errors = [];
 
-  var node = new TreeNode();
+  const node = new TreeNode();
   node.setChildren([
     {
       value: 'a'
@@ -882,20 +882,20 @@ test('should allow self array type references in property type (version 1)', fun
 });
 
 test('should allow self array type references in property type (version 2)', function (t) {
-  var TreeNodeValue = Enum.create({
+  const TreeNodeValue = Enum.create({
     values: ['a', 'b', 'c']
   });
 
-  var TreeNode = Model.extend({
+  const TreeNode = Model.extend({
     properties: {
       children: ['self'],
       value: TreeNodeValue
     }
   });
 
-  var errors = [];
+  const errors = [];
 
-  var node = new TreeNode();
+  const node = new TreeNode();
   node.setChildren([
     {
       value: 'a'
@@ -920,13 +920,13 @@ test('should allow self array type references in property type (version 2)', fun
 });
 
 test('should handle wrapping array values', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: ['red', 'green', 'blue', 'yellow']
   });
 
   // original array
-  var colors = ['red', 'GREEN', 'blue'];
-  var newColors = Color.convertArray(colors);
+  const colors = ['red', 'GREEN', 'blue'];
+  const newColors = Color.convertArray(colors);
 
   // values in original array are untouched
   t.is(colors[0], 'red');
@@ -940,8 +940,8 @@ test('should handle wrapping array values', function (t) {
 });
 
 test('should handle converting simple type array values', function (t) {
-  var values = [0, 1];
-  var newValues = BooleanType.convertArray(values);
+  const values = [0, 1];
+  const newValues = BooleanType.convertArray(values);
 
   t.true(values !== newValues);
 
@@ -955,11 +955,11 @@ test('should handle converting simple type array values', function (t) {
 });
 
 test('should handle converting Object type array values', function (t) {
-  var v0 = {a: 1};
-  var v1 = {a: 2};
+  const v0 = {a: 1};
+  const v1 = {a: 2};
 
-  var values = [v0, v1];
-  var newValues = ObjectType.convertArray(values);
+  const values = [v0, v1];
+  const newValues = ObjectType.convertArray(values);
 
   t.true(values !== newValues);
   t.deepEqual(values, newValues);
@@ -983,36 +983,36 @@ test('should handle null/undefined when wrapping primitives', function (t) {
 });
 
 test('should handle wrapping an object that was created with a null prototype', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       name: String
     }
   });
 
-  var data = Object.create(null);
+  const data = Object.create(null);
   data.name = 'Austin';
 
-  var errors = [];
-  var person = Person.wrap(data, errors);
+  const errors = [];
+  const person = Person.wrap(data, errors);
 
   t.is(errors.length, 0);
   t.is(person.getName(), 'Austin');
 });
 
 test('should handle wrapping property value whose type is Array', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: ['red', 'green', 'blue', 'yellow']
   });
 
-  var Palette = Model.extend({
+  const Palette = Model.extend({
     properties: {
       colors: [Color]
     }
   });
 
   // original array
-  var colors = ['red', 'GREEN', 'blue'];
-  var palette = new Palette({
+  const colors = ['red', 'GREEN', 'blue'];
+  const palette = new Palette({
     colors: colors
   });
 
@@ -1037,19 +1037,19 @@ test('should handle wrapping property value whose type is Array', function (t) {
 });
 
 test('should handle cleaning model with arrays', function (t) {
-  var Color = Enum.create({
+  const Color = Enum.create({
     values: ['red', 'green', 'blue', 'yellow']
   });
 
-  var Palette = Model.extend({
+  const Palette = Model.extend({
     properties: {
       colors: [Color]
     }
   });
 
   // original array
-  var colors = ['red', 'green', 'blue'];
-  var palette = new Palette({
+  const colors = ['red', 'green', 'blue'];
+  const palette = new Palette({
     colors: colors
   });
 
@@ -1069,18 +1069,18 @@ test('should handle cleaning model with arrays', function (t) {
 });
 
 test('should addToProperty method for modifying arrays of primitive types', function (t) {
-  var Collection = Model.extend({
+  const Collection = Model.extend({
     properties: {
       items: [Object]
     }
   });
 
   // original array
-  var items = [
+  const items = [
     'abc',
     'def'
   ];
-  var collection = new Collection({
+  const collection = new Collection({
     items: items
   });
 
@@ -1106,21 +1106,21 @@ test('should addToProperty method for modifying arrays of primitive types', func
 });
 
 test('should addToProperty method for modifying arrays of models', function (t) {
-  var Person = Model.extend({
+  const Person = Model.extend({
     properties: {
       name: String,
       age: IntegerType
     }
   });
 
-  var Group = Model.extend({
+  const Group = Model.extend({
     properties: {
       people: [Person]
     }
   });
 
   // original array
-  var people = [
+  const people = [
     {
       name: 'John',
       age: 10
@@ -1130,7 +1130,7 @@ test('should addToProperty method for modifying arrays of models', function (t) 
       age: 12
     }
   ];
-  var group = new Group({
+  const group = new Group({
     people: people
   });
 
