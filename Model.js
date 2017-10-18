@@ -113,7 +113,7 @@ function _ensureArray (model, property) {
   var array = model.data[propertyKey];
   if (!array) {
     model.data[propertyKey] = array = [];
-    array.Model = ArrayType;
+    ArrayType.flagAsArrayType(array);
   }
 
   return array;

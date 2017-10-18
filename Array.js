@@ -2,10 +2,20 @@ var Model = require('./Model');
 
 var ArrayType;
 
+function flagAsArrayType (array) {
+  Object.defineProperty(array, 'Model', {
+    enumerable: false,
+    configurable: false,
+    writable: false,
+    value: ArrayType
+  });
+}
 function _createModelArray (rawArray) {
   // only create second array if we need to wrap data with Model instance
   var newArray = new Array(rawArray.length);
-  newArray.Model = ArrayType;
+
+  flagAsArrayType(newArray);
+
   return newArray;
 }
 
@@ -54,7 +64,9 @@ ArrayType = module.exports = Model.extend({
     return value && (value.Model === ArrayType);
   },
 
-  convertArrayItems: convertArrayItems,
+  convertArrayItems,
+
+  flagAsArrayType,
 
   clean: function (value, options) {
     var property;
@@ -114,7 +126,7 @@ ArrayType = module.exports = Model.extend({
       });
     } else {
       newArray = oldArray.slice(0);
-      newArray.Model = ArrayType;
+      flagAsArrayType(newArray);
     }
 
     return newArray;
