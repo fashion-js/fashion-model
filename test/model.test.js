@@ -412,7 +412,7 @@ test('should coerce array of primitives', function (t) {
 test('should allow array as argument to wrap', function (t) {
   const Something = Model.extend({
     properties: {
-      anything: Object
+      anything: {}
     }
   });
 
@@ -1071,7 +1071,7 @@ test('should handle cleaning model with arrays', function (t) {
 test('should addToProperty method for modifying arrays of primitive types', function (t) {
   const Collection = Model.extend({
     properties: {
-      items: [Object]
+      items: []
     }
   });
 

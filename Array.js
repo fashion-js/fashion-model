@@ -10,6 +10,7 @@ function flagAsArrayType (array) {
     value: ArrayType
   });
 }
+
 function _createModelArray (rawArray) {
   // only create second array if we need to wrap data with Model instance
   const newArray = new Array(rawArray.length);

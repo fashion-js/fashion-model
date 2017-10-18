@@ -38,7 +38,8 @@ const Person = Entity.extend({
     age: 'integer',
     pets: [Pet],
     favoriteNumbers: ['integer'],
-    anything: [],
+    arrayOfAnything: [],
+    anything: {},
     blob: Object
   }
 });
@@ -186,7 +187,8 @@ test('should generate JSON schemas', function (t) {
           type: 'integer'
         }
       },
-      anything: {
+      anything: {},
+      arrayOfAnything: {
         type: 'array',
         items: {}
       },
@@ -267,7 +269,7 @@ test('should validate complex data', async function (t) {
       }
     ],
     favoriteNumbers: [1, 2, 3],
-    anything: ['a', 'b'],
+    arrayOfAnything: ['a', 'b'],
     blob: {
       test: 123
     }

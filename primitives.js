@@ -10,6 +10,7 @@ function isPrimitive () {
   require('./Number'),
   require('./String'),
   require('./Object'),
+  require('./Any'),
   require('./Function')
 ].forEach(function (PrimitiveType) {
   PrimitiveType.isPrimitive = isPrimitive;

@@ -623,7 +623,7 @@ function _parseTypeConfig (propertyName, propertyConfig, resolver, Type) {
       }
     }
   } else {
-    propertyConfig.type = primitives.object;
+    propertyConfig.type = primitives.any;
   }
 
   return propertyConfig;
@@ -806,7 +806,12 @@ function _extend (Base, config, resolver) {
   _concatToArray(Type, '_onSet', Base._onSet);
 
   // Store reference to Model
-  Type.Model = Model;
+  Object.defineProperty(Type, 'Model', {
+    enumerable: false,
+    configurable: false,
+    writable: false,
+    value: Model
+  });
 
   if (coerce) {
     // Create a proxy coerce function that guarantees that options

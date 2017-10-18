@@ -495,7 +495,7 @@ test('should clean object that has property with type that extends Array', funct
   const Filter = Model.extend({
     properties: {
       property: String,
-      value: Object
+      value: {}
     }
   });
 

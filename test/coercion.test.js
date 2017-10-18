@@ -177,3 +177,17 @@ test('should handle calling coerce to convert model of one type to another witho
   t.is(message.getFrom().getUri(), 'abc');
   t.is(message.getFrom().getType(), AddressType.CLIENT);
 });
+
+test('should handle coercing "object" type', function (t) {
+  const Blah = Model.extend({
+    properties: {
+      abc: Object
+    }
+  });
+
+  const blah = new Blah();
+
+  t.throws(() => {
+    blah.setAbc(1);
+  }, Error);
+});

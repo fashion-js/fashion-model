@@ -14,6 +14,12 @@ const DEFAULT_IS_IGNORED_PROPERTY = function (name, property) {
 };
 
 const SPECIAL_TYPES = {
+  'any': {
+    configureJsonSchemaProperty: function (jsonSchemaProperty) {
+      delete jsonSchemaProperty.type;
+    }
+  },
+
   'object': {
     configureJsonSchemaProperty: function (jsonSchemaProperty) {
       jsonSchemaProperty.type = 'object';
