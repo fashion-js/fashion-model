@@ -2,7 +2,7 @@ function isPrimitive () {
   return true;
 }
 
-[
+for (const PrimitiveType of [
   require('./Array'),
   require('./Boolean'),
   require('./Date'),
@@ -12,7 +12,7 @@ function isPrimitive () {
   require('./Object'),
   require('./Any'),
   require('./Function')
-].forEach(function (PrimitiveType) {
+]) {
   PrimitiveType.isPrimitive = isPrimitive;
   exports[PrimitiveType.typeName] = PrimitiveType;
-});
+}

@@ -63,6 +63,7 @@ The following primitive types are supported:
 
 | Data Type | JavaScript Type | Alias           | Model Type                          |
 |-----------|-----------------|-----------------|-------------------------------------|
+| Any       |                 | `"any"`         | `require("fashion-model/Any")`     |
 | Date      | Date            | `"date"`        | `require("fashion-model/Date")`     |
 | Boolean   | Boolean         | `"boolean"`     | `require("fashion-model/Boolean")`  |
 | Number    | Number          | `"number"`      | `require("fashion-model/Number")`   |
@@ -76,10 +77,14 @@ The following primitive types are supported:
 **Declare custom complex object type:**
 ```javascript
 const Address = Model.extend({
-    properties: {
-        city: String,
-        state: String
-    }
+  properties: {
+    city: String,
+    state: String,
+    primary: Boolean,
+
+    // The `{}` is equivalent to `"any"` data type
+    metadata: {}
+  }
 });
 ```
 
@@ -89,14 +94,20 @@ const Address = Model.extend({
 const address = new Address();
 address.setCity('San Francisco');
 address.setState('CA');
+address.setPrimary(true);
+address.setMetadata({a: 'b'});
 ```
 
 **Create instance via `new` constructor with some initial data:**
 ```javascript
 // Create via constructor with initial data
 const address = new Address({
-    city: 'San Francisco',
-    state: 'CA'
+  city: 'San Francisco',
+  state: 'CA',
+  primary: true,
+  metadata: {
+    a: 'b'
+  }
 });
 ```
 
@@ -106,14 +117,22 @@ const address = new Address({
 const address = Address.create();
 address.setCity('San Francisco');
 address.setState('CA');
+address.setPrimary(true);
+address.setMetadata({a: 'b'});
 ```
 
 **Create instance by wrapping existing data:**
 ```javascript
-// Create via "wrap" function
+// Create via "wrap" function.
+// If the argument to `Address.wrap(...)` function is already
+// the correct type then the original value will be returned.
 address = Address.wrap({
-    city: 'San Francisco',
-    state: 'CA'
+  city: 'San Francisco',
+  state: 'CA',
+  primary: true,
+  metadata: {
+    a: 'b'
+  }
 });
 ```
 
@@ -129,9 +148,9 @@ events
 
 ```javascript
 const Something = require('fashion-model/ObservableModel').extend({
-    properties: {
-        value: String
-    }
+  properties: {
+    value: String
+  }
 });
 ```
 
@@ -139,10 +158,10 @@ const Something = require('fashion-model/ObservableModel').extend({
 
 ```javascript
 const Something = require('fashion-model/Model').extend({
-    properties: {
-        value: String
-    },
-    mixins: [require('fashion-model/mixins/EventEmitter')]
+  properties: {
+    value: String
+  },
+  mixins: [require('fashion-model/mixins/EventEmitter')]
 });
 ```
 
@@ -153,18 +172,18 @@ const Something = require('fashion-model/Model').extend({
 const something = new Something();
 
 something.on('change:value', function (event) {
-    // The "value" property changed
-    console.log(
-        'Old value: ' + event.oldValue,
-        'New value: ' + event.newValue);
+  // The "value" property changed
+  console.log(
+    'Old value: ' + event.oldValue,
+    'New value: ' + event.newValue);
 });
 
 something.on('change', function (event) {
-    // Some property changed
-    console.log(
-        'Property: ' + event.propertyName,
-        'Old value: ' + event.oldValue,
-        'New value: ' + event.newValue);
+  // Some property changed
+  console.log(
+    'Property: ' + event.propertyName,
+    'Old value: ' + event.oldValue,
+    'New value: ' + event.newValue);
 });
 ```
 
@@ -182,37 +201,37 @@ node.
 // Declare a linked list node type that has a pointer
 // to the next node
 const LinkedListNode = Model.extend({
-    properties: {
-        next: 'self',
-        value: Object
-    }
+  properties: {
+    next: 'self',
+    value: Object
+  }
 });
 
 // Here is another functionally equivalent variation of LinkedListNode
 const LinkedListNode = Model.extend({
-    properties: {
-        next: {
-            type: 'self'
-        },
-        value: Object
-    }
+  properties: {
+    next: {
+      type: 'self'
+    },
+    value: Object
+  }
 });
 
 // An example of self-type reference within an array
 const TreeNode = Model.extend({
-    properties: {
-        children: ['self'],
-        value: Object
-    }
+  properties: {
+    children: ['self'],
+    value: Object
+  }
 });
 
 // Here is another functionally equivalent variation of TreeNode
 const TreeNode = Model.extend({
-    properties: {
-        // Brackets at end of type name are used to denote arrays
-        children: 'self[]',
-        value: Object
-    }
+  properties: {
+    // Brackets at end of type name are used to denote arrays
+    children: 'self[]',
+    value: Object
+  }
 });
 ```
 
@@ -224,10 +243,10 @@ for each property defined in the model.
 ```javascript
 // Define an Address model
 const Address = Model.extend({
-    properties: {
-        city: String,
-        state: String
-    }
+  properties: {
+    city: String,
+    state: String
+  }
 });
 
 // Create instance of Address
@@ -253,15 +272,15 @@ configuration.
 **For example:**
 ```javascript
 const Person = Entity.extend({
-    properties: {
-        firstName: String,
-        lastName: String
-    },
-    prototype: {
-        getDisplayName: function () {
-            return this.getFirstName() + ' ' + this.getLastName();
-        }
+  properties: {
+    firstName: String,
+    lastName: String
+  },
+  prototype: {
+    getDisplayName: function () {
+      return this.getFirstName() + ' ' + this.getLastName();
     }
+  }
 });
 ```
 
@@ -270,18 +289,18 @@ const Person = Entity.extend({
 **Define your base Entity type:**
 ```javascript
 const Entity = Model.extend({
-    properties: {
-        id: String
-    }
+  properties: {
+    id: String
+  }
 });
 ```
 
 **Define a type that extends Entity:**
 ```javascript
 const Person = Entity.extend({
-    properties: {
-        email: String
-    }
+  properties: {
+    email: String
+  }
 });
 ```
 
@@ -299,16 +318,16 @@ You can also create getters for computed/derived properties.
 **For example:**
 ```javascript
 const Person = Entity.extend({
-    properties: {
-        firstName: String,
-        lastName: String,
-        displayName: {
-            type: String
-            get: function (property) {
-                return this.getFirstName() + ' ' + this.getLastName();
-            }
-        }
+  properties: {
+    firstName: String,
+    lastName: String,
+    displayName: {
+      type: String
+      get: function (property) {
+        return this.getFirstName() + ' ' + this.getLastName();
+      }
     }
+  }
 });
 ```
 
@@ -326,30 +345,30 @@ function _updateDisplayName (person) {
 }
 
 const Person = Entity.extend({
-    properties: {
-        firstName: {
-            type: String,
-            set: function (value, property) {
-                this.data[property.getKey()] = value;
-                _updateDisplayName(this);
-            }
-        },
-        lastName: {
-            type: String,
-            set: function (value, property) {
-                this.data[property.getKey()] = value;
-                _updateDisplayName(this);
-            }
-        },
-        // displayName is updated whenever firstName or lastName change
-        displayName: {
-            type: String,
+  properties: {
+    firstName: {
+      type: String,
+      set: function (value, property) {
+        this.data[property.getKey()] = value;
+        _updateDisplayName(this);
+      }
+    },
+    lastName: {
+      type: String,
+      set: function (value, property) {
+        this.data[property.getKey()] = value;
+        _updateDisplayName(this);
+      }
+    },
+    // displayName is updated whenever firstName or lastName change
+    displayName: {
+      type: String,
 
-            // do not persist displayName when clean() is called since it is
-            // a derived value
-            persist: false
-        }
+      // do not persist displayName when clean() is called since it is
+      // a derived value
+      persist: false
     }
+  }
 });
 
 const person = new Person({
@@ -376,15 +395,15 @@ will simply be returned.
 **Examples:**
 ```javascript
 const Address = Model.extend({
-    properties: {
-        city: String,
-        state: String
-    }
+  properties: {
+    city: String,
+    state: String
+  }
 });
 
 const address = new Address({
-    city: 'San Francisco',
-    state: 'CA'
+  city: 'San Francisco',
+  state: 'CA'
 });
 
 // Create an instance of Address
@@ -409,8 +428,8 @@ given argument is non-null and not a primitive.
 
 ```javascript
 const address = new Address({
-    city: 'San Francisco',
-    state: 'CA'
+  city: 'San Francisco',
+  state: 'CA'
 });
 
 // When saving a model object to disk or storage, use clean to remove
@@ -431,52 +450,52 @@ to a Base64 encoded string:
 
 ```javascript
 const Binary = Model.extend({
-    // Don't wrap binary data because we want to use the raw Buffer type
-    // provided by Node.js runtime environment
-    wrap: false,
+  // Don't wrap binary data because we want to use the raw Buffer type
+  // provided by Node.js runtime environment
+  wrap: false,
 
-    // Provide a clean function that will be used to clean values
-    // associated with properties whose type is Binary
-    clean: function (value) {
-        // clean will convert to base64
-        return value.toString('base64');
-    },
+  // Provide a clean function that will be used to clean values
+  // associated with properties whose type is Binary
+  clean: function (value) {
+    // clean will convert to base64
+    return value.toString('base64');
+  },
 
-    coerce: function (value, options) {
-        if (value == null) {
-            return value;
-        }
-
-        if (value.constructor === Buffer) {
-            // no conversion needed
-            return value;
-        }
-
-        // Buffers can be of type array. We assume that if an array is provided,
-        // that it is an array of bytes.
-        if (Array.isArray(value)) {
-            return new Buffer(value);
-        }
-
-        if (value.constructor === String) {
-            // assume that a string represents base64 encoded data
-            return new Buffer(value, 'base64');
-        }
-
-        this.coercionError(value, options, 'Invalid binary data.');
+  coerce: function (value, options) {
+    if (value == null) {
+        return value;
     }
+
+    if (value.constructor === Buffer) {
+        // no conversion needed
+        return value;
+    }
+
+    // Buffers can be of type array. We assume that if an array is provided,
+    // that it is an array of bytes.
+    if (Array.isArray(value)) {
+        return new Buffer(value);
+    }
+
+    if (value.constructor === String) {
+        // assume that a string represents base64 encoded data
+        return new Buffer(value, 'base64');
+    }
+
+    this.coercionError(value, options, 'Invalid binary data.');
+  }
 });
 
 const Image = Model.extend({
-    properties: {
-        data: Binary
-    }
+  properties: {
+    data: Binary
+  }
 });
 
 const image = new Image({
-    // data can be provided as Array of bytes, base64 encoded string, or Buffer
-    // because Binary.coerce function handles each of these.
-    data: someData
+  // data can be provided as Array of bytes, base64 encoded string, or Buffer
+  // because Binary.coerce function handles each of these.
+  data: someData
 });
 
 // the data will be converted to Buffer object via Binary.coerce function
@@ -518,35 +537,35 @@ automatically coerces Strings to actual instances of `require('mongodb').ObjectI
 const MongoDbObjectID = require('mongodb').ObjectID;
 
 const ObjectId = Model.extend({
-    // Don't wrap object ID.
-    // This means that the getters for properties of this type
-    // will return the raw MongoDB ObjectID type
-    wrap: false,
+  // Don't wrap object ID.
+  // This means that the getters for properties of this type
+  // will return the raw MongoDB ObjectID type
+  wrap: false,
 
-    // We provide a "coerce" function to convert a value to the proper
-    // MongoDB ObjectID type
-    coerce: function (data) {
-        if (data == null) {
-            return data;
-        } else {
-            // Use the MongoDB ObjectID constructor to coerce our
-            // value (for example, it will handle String instances)
-            return new MongoDbObjectID(data);
-        }
+  // We provide a "coerce" function to convert a value to the proper
+  // MongoDB ObjectID type
+  coerce: function (data) {
+    if (data == null) {
+      return data;
+    } else {
+      // Use the MongoDB ObjectID constructor to coerce our
+      // value (for example, it will handle String instances)
+      return new MongoDbObjectID(data);
     }
+  }
 });
 
 const Entity = Model.extend({
-    id: {
-        // ObjectId is a type that we use just to make sure that the value
-        // is automatically converted to the type that we need for storage
-        type: ObjectId,
+  id: {
+    // ObjectId is a type that we use just to make sure that the value
+    // is automatically converted to the type that we need for storage
+    type: ObjectId,
 
-        // MongoDB data storage expects a document to store its
-        // identifier in the "_id" property but we still want to
-        // access it via "getId" and "setId" (and not "get_id" and "set_id")
-        key: '_id'
-    }
+    // MongoDB data storage expects a document to store its
+    // identifier in the "_id" property but we still want to
+    // access it via "getId" and "setId" (and not "get_id" and "set_id")
+    key: '_id'
+  }
 })
 ```
 Models that use the primitive `Date` type also benefit from type coercion.
@@ -558,7 +577,7 @@ to Strings using the standard ISO format.
 **For example:**
 ```javascript
 const Document = Model.extend({
-    dateCreated: Date
+  dateCreated: Date
 });
 
 const document = new Document();
@@ -579,7 +598,7 @@ const Color = Enum.create(['red', 'green', 'blue']);
 
 ```javascript
 const Color = Enum.create({
-    values: ['red', 'green', 'blue']
+  values: ['red', 'green', 'blue']
 });
 ```
 
@@ -614,22 +633,22 @@ assert(Color.RED.ordinal() === 0);
 **Object enum values:**
 ```javascript
 const Color = Enum.create({
-    values: {
-        red: {
-            hex: '#FF0000',
-            name: 'Red'
-        },
+  values: {
+    red: {
+      hex: '#FF0000',
+      name: 'Red'
+    },
 
-        green: {
-            hex: '#00FF00',
-            name: 'Green'
-        },
+    green: {
+      hex: '#00FF00',
+      name: 'Green'
+    },
 
-        blue: {
-            hex: '#0000FF',
-            name: 'Blue'
-        }
+    blue: {
+      hex: '#0000FF',
+      name: 'Blue'
     }
+  }
 });
 
 // The following assertions will be true:
@@ -645,14 +664,14 @@ assert(Color.RED.ordinal() === 0);
 **Loop over values:**
 ```javascript
 Color.values.forEach(function (colorValue) {
-    console.log('Color ' + colorValue.name());
+  console.log('Color ' + colorValue.name());
 });
 ```
 
 **Loop over names:**
 ```javascript
 Color.names.forEach(function (colorName) {
-    console.log('Color ' + colorName);
+  console.log('Color ' + colorName);
 });
 ```
 
@@ -661,44 +680,44 @@ Color.names.forEach(function (colorName) {
 **Syntax:**
 ```javascript
 const Color = Enum.create({
-    values: ['red', 'green', 'blue']
+  values: ['red', 'green', 'blue']
 });
 
 const ColorPalette = Model.extend({
-    properties: {
-        colors: {
-            // colors has type array
-            type: Array,
+  properties: {
+    colors: {
+      // colors has type array
+      type: Array,
 
-            // each item in the array is a Color
-            items: Color
-        }
+      // each item in the array is a Color
+      items: Color
     }
+  }
 });
 ```
 
 **Short-hand syntax:**
 ```javascript
 const ColorPalette = Model.extend({
-    properties: {
-        // Using an Array instance is short-hand for specifying
-        // that the property is of type array. The first item
-        // in this array indicates the type of each item.
-        colors: [Color]
-    }
+  properties: {
+    // Using an Array instance is short-hand for specifying
+    // that the property is of type array. The first item
+    // in this array indicates the type of each item.
+    colors: [Color]
+  }
 });
 ```
 
 **Accessing an array property:**
 ```javascript
 const colorPalette = new ColorPalette({
-    colors: ['red', 'green', 'blue']
+  colors: ['red', 'green', 'blue']
 });
 
 // getColors() will return an Array and we can use the "forEach" function.
 // Each item in the returned Array will be an instance of Color.
 colorPalette.getColors().forEach(function (color, index) {
-    assert(color.constructor === Color);
+  assert(color.constructor === Color);
 });
 ```
 
@@ -712,14 +731,14 @@ const errors = [];
 
 // collect errors while wrapping existing person data
 const person1 = Person.wrap({
-    name: 'John',
-    age: 'bad integer'
+  name: 'John',
+  age: 'bad integer'
 }, errors);
 
 // collect errors while constructing new person
 const person2 = new Person({
-    name: 'John',
-    age: 'bad integer'
+  name: 'John',
+  age: 'bad integer'
 }, errors);
 ```
 
@@ -727,18 +746,18 @@ const person2 = new Person({
 
 ```javascript
 const options = {
-    // array that will collect errors
-    errors: [],
+  // array that will collect errors
+  errors: [],
 
-    // strict mode is used by some primitive types to require
-    // that values be of the same primitive types
-    // (no automatic type coercion)
-    strict: true
+  // strict mode is used by some primitive types to require
+  // that values be of the same primitive types
+  // (no automatic type coercion)
+  strict: true
 };
 
 const person = new Person({
-    name: 'John',
-    age: 'bad integer'
+  name: 'John',
+  age: 'bad integer'
 }, options);
 ```
 
@@ -766,48 +785,48 @@ const Model = require('fashion-model/Model');
 const Enum = require('fashion-model/Enum');
 
 const Entity = Model.extend({
-    typeName: 'Entity',
-    properties: {
-        id: String
-    }
+  typeName: 'Entity',
+  properties: {
+    id: String
+  }
 });
 
 const Gender = Enum.create({
-    typeName: 'Gender',
-    title: 'Gender',
-    description: 'A person\'s gender',
-    values: ['M', 'F']
+  typeName: 'Gender',
+  title: 'Gender',
+  description: 'A person\'s gender',
+  values: ['M', 'F']
 });
 
 const Species = Enum.create({
-    typeName: 'Species',
-    title: 'Species',
-    description: 'A species',
-    values: ['dog', 'cat']
+  typeName: 'Species',
+  title: 'Species',
+  description: 'A species',
+  values: ['dog', 'cat']
 });
 
 const Pet = Model.extend({
-    typeName: 'Pet',
-    properties: {
-        name: String,
-        species: Species
-    }
+  typeName: 'Pet',
+  properties: {
+    name: String,
+    species: Species
+  }
 });
 
 const Person = Entity.extend({
-    typeName: 'Person',
-    title: 'Person',
-    description: 'A person',
-    properties: {
-        name: String,
-        dateOfBirth: Date,
-        gender: Gender,
-        age: 'integer',
-        pets: [Pet],
-        favoriteNumbers: ['integer'],
-        anything: [],
-        blob: Object
-    }
+  typeName: 'Person',
+  title: 'Person',
+  description: 'A person',
+  properties: {
+    name: String,
+    dateOfBirth: Date,
+    gender: Gender,
+    age: 'integer',
+    pets: [Pet],
+    favoriteNumbers: ['integer'],
+    anything: [],
+    blob: Object
+  }
 });
 ```
 
@@ -816,9 +835,9 @@ const Person = Entity.extend({
 ```javascript
 const jsonSchema = require('fashion-model/json-schema-draft4');
 const jsonSchemaOptions = {
-    toRef: function (Model) {
-        return Model.typeName;
-    }
+  toRef: function (Model) {
+    return Model.typeName;
+  }
 };
 
 const EntitySchema = jsonSchema.fromModel(Entity, jsonSchemaOptions);
@@ -832,13 +851,13 @@ const PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Entity",
-   "type": "object",
-   "properties": {
-      "id": {
-         "type": "string"
-      }
-   }
+  "id": "Entity",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    }
+  }
 }
 ```
 
@@ -846,14 +865,14 @@ const PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Gender",
-   "title": "Gender",
-   "description": "A person's gender",
-   "type": "string",
-   "enum": [
-      "M",
-      "F"
-   ]
+  "id": "Gender",
+  "title": "Gender",
+  "description": "A person's gender",
+  "type": "string",
+  "enum": [
+    "M",
+    "F"
+  ]
 }
 ```
 
@@ -861,14 +880,14 @@ const PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Species",
-   "title": "Species",
-   "description": "A species",
-   "type": "string",
-   "enum": [
-      "dog",
-      "cat"
-   ]
+  "id": "Species",
+  "title": "Species",
+  "description": "A species",
+  "type": "string",
+  "enum": [
+    "dog",
+    "cat"
+  ]
 }
 ```
 
@@ -876,16 +895,16 @@ const PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Pet",
-   "type": "object",
-   "properties": {
-      "name": {
-         "type": "string"
-      },
-      "species": {
-         "$ref": "Species"
-      }
-   }
+  "id": "Pet",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "species": {
+      "$ref": "Species"
+    }
+  }
 }
 ```
 
@@ -893,47 +912,47 @@ const PersonSchema = jsonSchema.fromModel(Person, jsonSchemaOptions);
 
 ```json
 {
-   "id": "Person",
-   "title": "Person",
-   "description": "A person",
-   "allOf": [
-      {
-         "$ref": "Entity"
+  "id": "Person",
+  "title": "Person",
+  "description": "A person",
+  "allOf": [
+    {
+      "$ref": "Entity"
+    }
+  ],
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "dateOfBirth": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "gender": {
+      "$ref": "Gender"
+    },
+    "age": {
+      "type": "integer"
+    },
+    "pets": {
+      "type": "array",
+      "items": {
+        "$ref": "Pet"
       }
-   ],
-   "type": "object",
-   "properties": {
-      "name": {
-         "type": "string"
-      },
-      "dateOfBirth": {
-         "type": "string",
-         "format": "date-time"
-      },
-      "gender": {
-         "$ref": "Gender"
-      },
-      "age": {
-         "type": "integer"
-      },
-      "pets": {
-         "type": "array",
-         "items": {
-            "$ref": "Pet"
-         }
-      },
-      "favoriteNumbers": {
-         "type": "array",
-         "items": {
-            "type": "integer"
-         }
-      },
-      "anything": {
-         "type": "array"
-      },
-      "blob": {
-         "type": "object"
+    },
+    "favoriteNumbers": {
+      "type": "array",
+      "items": {
+        "type": "integer"
       }
-   }
+    },
+    "anything": {
+      "type": "array"
+    },
+    "blob": {
+      "type": "object"
+    }
+  }
 }
 ```

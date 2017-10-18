@@ -728,9 +728,9 @@ function _installMixin (mixin, Type, Base, existingProperties) {
 
   let mixins;
   if ((mixins = mixin.mixins)) {
-    mixins.forEach(function (mixin) {
+    for (const mixin of mixins) {
       _installMixin(mixin, Type, Base, existingProperties);
-    });
+    }
   }
 }
 
@@ -776,7 +776,7 @@ function _extend (Base, config, resolver) {
   }
 
   // Selectively copy properties from Model to Type
-  [
+  for (const property of [
     'getProperty',
     'getProperties',
     'hasProperty',
@@ -788,9 +788,9 @@ function _extend (Base, config, resolver) {
     'isCompatibleWith',
     'isInstance',
     'isPrimitive'
-  ].forEach(function (property) {
+  ]) {
     Type[property] = Model[property];
-  });
+  }
 
   Type.convertArray = _convertArray;
 
@@ -909,9 +909,9 @@ function _extend (Base, config, resolver) {
 
     if (mixins) {
       const mixinProperties = _emptyObject();
-      mixins.forEach(function (mixin) {
+      for (const mixin of mixins) {
         _installMixin(mixin, Type, Base, mixinProperties);
-      });
+      }
 
       const mixinPropertyNames = Object.keys(mixinProperties);
 
@@ -936,7 +936,7 @@ function _extend (Base, config, resolver) {
 
     if (properties) {
       const propertiesPrototype = Type.Properties.prototype;
-      propertyNames.forEach(function (propertyName) {
+      for (const propertyName of propertyNames) {
         const property = _toProperty(propertyName, properties[propertyName], resolver, Type);
         const propertyKey = property.getKey();
 
@@ -966,7 +966,7 @@ function _extend (Base, config, resolver) {
           funcName = 'addTo' + funcSuffix;
           classPrototype[funcName] = _generateAddValueTo(property);
         }
-      });
+      }
     }
 
     Type.properties = new Type.Properties();
