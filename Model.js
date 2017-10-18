@@ -1,8 +1,9 @@
 /* eslint camelcase: ["off"] */
 
+const inherit = require('./util/inherit');
+
 let ArrayType;
 let primitives;
-const inherit = require('raptor-util/inherit');
 let Model;
 
 function _emptyObject () {
