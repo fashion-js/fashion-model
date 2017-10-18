@@ -29,11 +29,10 @@
     "eslint-plugin-promise": "^3.4.1",
     "eslint-plugin-standard": "^3.0.1",
     "jayschema": "^0.3.1",
-    "np": "^2.16.0",
     "z-schema": "^3.9.4"
   },
   "dependencies": {
     "events": "^1.1.1"
   },
-  "version": "5.0.21"
+  "version": "6.0.0"
 }
