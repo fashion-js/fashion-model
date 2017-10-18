@@ -15,7 +15,7 @@
   },
   "author": "Phil Gates-Idem <phillip.idem@gmail.com",
   "scripts": {
-    "test": "node_modules/.bin/mocha --ui bdd --reporter spec ./test/**/*-test.js"
+    "test": "node_modules/.bin/mocha --ui bdd --reporter spec './test/**/*-test.js'"
   },
   "main": "./Model.js",
   "devDependencies": {
@@ -30,7 +30,6 @@
     "eslint-plugin-standard": "^3.0.1",
     "jayschema": "^0.3.1",
     "mocha": "^3.2.0",
-    "np": "^2.16.0",
     "z-schema": "^3.9.4"
   },
   "dependencies": {
