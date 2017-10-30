@@ -552,6 +552,10 @@ function _parseType (type) {
       return ArrayType;
   }
 
+  if ((typeof type === 'object') && (Object.keys(type).length === 0)) {
+    return primitives.any;
+  }
+
   return null;
 }
 

@@ -16,7 +16,7 @@
     "author": "Phil Gates-Idem <phillip.idem@gmail.com",
     "scripts": {
         "lint": "eslint .",
-        "test": "ava --verbose test/**/*.test.js"
+        "test": "ava --verbose 'test/**/*.test.js'"
     },
     "main": "./Model.js",
     "devDependencies": {

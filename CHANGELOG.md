@@ -5,6 +5,21 @@ CHANGELOG
 
 ## 6.0.x
 
+### 6.0.1
+
+**FIX:** Allows
+
+```javascript
+const Something = Entity.extend({
+  properties: {
+    // `anything` is property whose type is `{}` (which means "anything")
+    anything: {
+      type: {}
+    }
+  }
+});
+```
+
 ### 6.0.0
 
 - BREAKING: Switched to ES6 syntax (`async`/`await`, `for ... of`, `const`/`let`, `Object.defineProperty(...)`).

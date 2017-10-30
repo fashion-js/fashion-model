@@ -388,7 +388,10 @@ test('should coerce array of primitives', function (t) {
   const Something = Model.extend({
     properties: {
       arrayOfBooleans: [Boolean],
-      arrayOfAnything: []
+      arrayOfAnything: [],
+      alsoArrayOfAnything: [{}],
+      anotherArrayOfAnything: [{type: {}}],
+      arrayOfIntegers: [{type: 'integer'}]
     }
   });
 
@@ -404,33 +407,58 @@ test('should coerce array of primitives', function (t) {
   t.true(arrayOfBooleans[4]);
 
   something.setArrayOfAnything([123, 'abc', true]);
+  something.setAlsoArrayOfAnything([123, 'abc', true]);
+  something.setAnotherArrayOfAnything([123, 'abc', true]);
+  something.setArrayOfIntegers([123, 456]);
+
   t.is(something.getArrayOfAnything()[0], 123);
   t.is(something.getArrayOfAnything()[1], 'abc');
   t.true(something.getArrayOfAnything()[2]);
+
+  t.is(something.getAlsoArrayOfAnything()[0], 123);
+  t.is(something.getAlsoArrayOfAnything()[1], 'abc');
+  t.true(something.getAlsoArrayOfAnything()[2]);
+
+  t.is(something.getAnotherArrayOfAnything()[0], 123);
+  t.is(something.getAnotherArrayOfAnything()[1], 'abc');
+  t.true(something.getAnotherArrayOfAnything()[2]);
+
+  t.is(something.getArrayOfIntegers()[0], 123);
+  t.is(something.getArrayOfIntegers()[1], 456);
 });
 
 test('should allow array as argument to wrap', function (t) {
   const Something = Model.extend({
     properties: {
-      anything: {}
+      anything: {},
+      alsoAnything: {
+        type: {}
+      }
     }
   });
 
   const somethingList = Something.wrap([
     {
-      anything: 123
+      anything: 123,
+      alsoAnything: 123
     },
     {
-      anything: 'abc'
+      anything: 'abc',
+      alsoAnything: 'abc'
     },
     {
-      anything: true
+      anything: true,
+      alsoAnything: true
     }
   ]);
 
   t.is(somethingList[0].getAnything(), 123);
   t.is(somethingList[1].getAnything(), 'abc');
   t.true(somethingList[2].getAnything());
+
+  t.is(somethingList[0].getAlsoAnything(), 123);
+  t.is(somethingList[1].getAlsoAnything(), 'abc');
+  t.true(somethingList[2].getAlsoAnything());
 });
 
 test('should coerce array of enums', function (t) {
