@@ -512,6 +512,32 @@ assert(typeof cleanedImage.data.constructor === 'string');
 console.log(cleanedImage.data);
 ```
 
+Implementing a `clean` function on individual properties is also supported:
+
+```js
+const Person = Model.extend({
+  properties: {
+    name: String,
+    ssn: {
+      type: String,
+      clean: function (value, options) {
+        // Only return the value of the ssn property if the `showSensitive`
+        // option is passed to `clean`.
+        return (options.showSensitive) ? value : undefined;
+      }
+    }
+  }
+});
+
+const person = new Person({ name: 'John', ssn: 'abc123' });
+
+assert.deepEqual(person.clean(), { name: 'John' });
+assert.deepEqual(person.clean({ showSensitive: true }), {
+  name: 'John',
+  ssn: 'abc123'
+});
+```
+
 ### Stringify
 
 Model instances have a `stringify` function that can be used to

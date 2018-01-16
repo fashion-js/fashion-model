@@ -370,11 +370,15 @@ Model_proto.clean = function (options) {
           }
         } else {
           const propertyType = property.type;
+          const propertyClean = property.clean;
           const clean = propertyType.clean;
           const oldProperty = options.property;
           options.property = property;
 
-          if (clean) {
+          if (propertyClean) {
+            // call the clean method on the property
+            value = propertyClean(value, options);
+          } else if (clean) {
             // call the clean function provided by model
             value = propertyType.clean(value, options);
           } else if (value.Model || propertyType.isWrapped()) {

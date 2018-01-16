@@ -756,3 +756,55 @@ test('should allow enum values to override clean in static method', function (t)
   t.is(Model.clean(Gender.MALE), 'M');
   t.is(Model.clean(Gender.FEMALE), 'F');
 });
+
+test('should allow clean function on individual properties', function (t) {
+  const Person = Model.extend({
+    properties: {
+      name: String,
+      ssn: {
+        type: String,
+        clean: function (val, options) {
+          t.is(val, 'abc123');
+          if (options.showSensitive) return val;
+        }
+      }
+    }
+  });
+
+  const person = Person.wrap({
+    name: 'John',
+    ssn: 'abc123'
+  });
+
+  t.deepEqual(person.clean(), { name: 'John' });
+  t.deepEqual(person.clean({ showSensitive: true }), {
+    name: 'John',
+    ssn: 'abc123'
+  });
+});
+
+test('should allow clean function on individual properties when using Model.clean', function (t) {
+  const Person = Model.extend({
+    properties: {
+      name: String,
+      ssn: {
+        type: String,
+        clean: function (val, options) {
+          t.is(val, 'abc123');
+          if (options.showSensitive) return val;
+        }
+      }
+    }
+  });
+
+  const person = Person.wrap({
+    name: 'John',
+    ssn: 'abc123'
+  });
+
+  t.deepEqual(Model.clean(person), { name: 'John' });
+  t.deepEqual(Model.clean(person, { showSensitive: true }), {
+    name: 'John',
+    ssn: 'abc123'
+  });
+});
