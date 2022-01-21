@@ -81,6 +81,28 @@ test('should handle Date type', function (t) {
   t.deepEqual(person.getDateOfBirth(), new Date(1980, 1, 1));
 });
 
+test('should coerce date with sub-millisecond precision when using static date coercion', function (t) {
+  const date = DateType.coerce('2022-01-10T21:15:41.573740635Z');
+  t.deepEqual(date.getTime(), 1641849341573);
+});
+
+test('should coerce date with sub-millisecond precision when using model getter/setter', function (t) {
+  const Document = Model.extend({
+    properties: {
+      dateCreated: Date
+    }
+  });
+
+  const document = new Document();
+  document.setDateCreated('2022-01-10T21:15:41.573740635Z');
+  t.deepEqual(document.getDateCreated().getTime(), 1641849341573);
+});
+
+test('should return null if invalid date supplied to date coercion', function (t) {
+  const date = DateType.coerce('invalid date');
+  t.deepEqual(date, null);
+});
+
 test('should serialize and deserialize date properly', function (t) {
   const date = new Date();
 
